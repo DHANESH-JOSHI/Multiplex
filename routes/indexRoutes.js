@@ -15,8 +15,8 @@ router.use("/movies", movieRoutes);
 router.use("/favorite", favoriteRoutes);
 router.use("/genres", genreRoutes);
 router.use("/user", userRoutes);
-router.use("/", homeContentRoutes);
-router.use("/channel", channelRoutes);
-router.use("/subscription", subscriptionRoutes);
+router.use("/home_content_for_android", homeContentRoutes);
+router.use("/getchannellist", channelRoutes);
+router.use("/check_user_subscription_status", subscriptionRoutes);
 
 module.exports = router;

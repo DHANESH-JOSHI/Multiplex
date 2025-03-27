@@ -7,7 +7,7 @@ const rateLimit = require("express-rate-limit");
 const app = express();
 
 // Importing v130 Routes
-const v130Routes = require("./routes/indexRoutes");
+const indexRoutes = require("./routes/indexRoutes");
 
 // Clear console before starting
 console.clear();
@@ -28,7 +28,7 @@ app.use(express.json({ limit: "10kb" }));
 app.use(apiKeyMiddleware); // Apply API key check to all incoming requests
 
 // Routes
-app.use("/rest-api/v130", v130Routes);
+app.use("/rest-api/v130", indexRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

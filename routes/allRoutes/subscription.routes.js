@@ -2,6 +2,6 @@ const express = require("express");
 const router = express.Router();
 const { getUserSubscriptionStatus } = require("../../controllers/api/subscription.controller");
 
-router.get("/check_user_subscription_status", getUserSubscriptionStatus);
+router.get("/", getUserSubscriptionStatus);
 
 module.exports = router;
