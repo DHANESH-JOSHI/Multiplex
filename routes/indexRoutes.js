@@ -2,15 +2,15 @@ const express = require("express");
 const router = express.Router();
 
 // Importing individual route modules
-const configRoutes = require("./allRoutes/config.routes");
-const movieRoutes = require("./allRoutes/movies.routes");
-const favoriteRoutes = require("./allRoutes/favorite.routes");
-const genreRoutes = require("./allRoutes/genre.routes");
-const userLoginRoutes = require("./allRoutes/userLogin.routes");
-const homeContentRoutes = require("./allRoutes/homeContent.routes");
-const channelRoutes = require("./allRoutes/channel.routes");
-const subscriptionRoutes = require("./allRoutes/subscription.routes");
-const adminLoginRoutes = require("./allRoutes/adminLogin.routes");
+const configRoutes = require("./mobileRoutes/config.routes");
+const movieRoutes = require("./mobileRoutes/movies.routes");
+const favoriteRoutes = require("./mobileRoutes/favorite.routes");
+const genreRoutes = require("./mobileRoutes/genre.routes");
+const userLoginRoutes = require("./mobileRoutes/userLogin.routes");
+const homeContentRoutes = require("./mobileRoutes/homeContent.routes");
+const channelRoutes = require("./mobileRoutes/channel.routes");
+const subscriptionRoutes = require("./mobileRoutes/subscription.routes");
+const adminLoginRoutes = require("./adminLogin.routes");
 
 // Assigning routes
 router.use("/config", configRoutes);

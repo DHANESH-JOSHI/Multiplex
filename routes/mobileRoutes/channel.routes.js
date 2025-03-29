@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { getChannelListController } = require("../../controllers/api/channel.controller");
+const { getChannelListController } = require("../../controllers/mobileControllers/channel.controller");
 
 router.get("/", getChannelListController);
 

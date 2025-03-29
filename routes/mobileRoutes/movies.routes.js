@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { getAllMovies, getMovieById, createMovie, updateMovie, deleteMovie } = require("../../controllers/api/movies.controller");
+const { getAllMovies, getMovieById, createMovie, updateMovie, deleteMovie } = require("../../controllers/mobileControllers/movies.controller");
 
 router.get("/", getAllMovies);
 router.get("/:id", getMovieById);

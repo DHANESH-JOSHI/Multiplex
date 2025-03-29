@@ -1,4 +1,4 @@
-const { getChannelList, createChannel, updateChannel, deleteChannel } = require('../../services/api/channel.service');
+const { getChannelList, createChannel, updateChannel, deleteChannel } = require('../../services/mobileServices/channel.service');
 
 const getChannelListController = async (req, res) => {
     try {

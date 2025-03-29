@@ -1,4 +1,4 @@
-const configService = require('../../services/api/config.service');
+const configService = require('../../services/mobileServices/config.service');
 
 exports.getFullConfig = async (req, res) => {
   try {

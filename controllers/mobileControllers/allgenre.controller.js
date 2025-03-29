@@ -1,4 +1,4 @@
-const GenreService = require('../../services/api/genre.service');
+const GenreService = require('../../services/mobileServices/genre.service');
 
 const getAllGenres = async (req, res) => {
   try {

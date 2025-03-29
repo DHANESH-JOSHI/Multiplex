@@ -1,4 +1,4 @@
-const HomeContentService = require('../../services/api/homeContent.service');
+const HomeContentService = require('../../services/mobileServices/homeContent.service');
 
 const getHomeContentForAndroid = async (req, res) => {
   try {

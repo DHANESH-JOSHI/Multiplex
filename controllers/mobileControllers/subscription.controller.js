@@ -1,4 +1,4 @@
-const subscriptionService = require('../../services/api/subscription.service.js');
+const subscriptionService = require('../../services/mobileServices/subscription.service.js');
 
 exports.getUserSubscriptionStatus = async (req, res) => {
   // Retrieve user_id from the query string

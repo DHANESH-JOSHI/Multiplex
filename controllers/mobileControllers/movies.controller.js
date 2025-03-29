@@ -1,4 +1,4 @@
-const movieService = require('../../services/api/movies.service');
+const movieService = require('../../services/mobileServices/movies.service');
 
 // Get all movies
 const getAllMovies = async (req, res) => {

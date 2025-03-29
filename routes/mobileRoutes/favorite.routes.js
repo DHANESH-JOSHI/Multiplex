@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { getFavorites, addFavorite, verifyFavorite, removeFavorite } = require("../../controllers/api/favorite.controller");
+const { getFavorites, addFavorite, verifyFavorite, removeFavorite } = require("../../controllers/mobileControllers/favorite.controller");
 
 router.get("/", getFavorites);
 router.post("/add", addFavorite);

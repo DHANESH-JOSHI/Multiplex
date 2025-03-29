@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { getFullConfig } = require('../../controllers/api/config.controller');
+const { getFullConfig } = require('../../controllers/mobileControllers/config.controller');
 
 router.get('/', getFullConfig);
 

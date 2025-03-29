@@ -1,4 +1,4 @@
-const videoService = require('../../services/api/video.service');
+const videoService = require('../../services/mobileServices/video.service');
 
 /**
  * GET /api/videos

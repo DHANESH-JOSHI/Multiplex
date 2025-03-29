@@ -1,4 +1,4 @@
-const FavoriteService = require("../../services/api/favorite.service");
+const FavoriteService = require("../../services/mobileServices/favorite.service");
 
 class FavoriteController {
   async getFavorites(req, res) {
