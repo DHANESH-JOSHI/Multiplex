@@ -1,4 +1,4 @@
-const userService = require('../../services/api/user.service');
+const userService = require('../../services/api/userLogin.service');
 // const commonService = require('../../services/api/common.service');
 const crypto = require('crypto');
 
