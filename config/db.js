@@ -8,7 +8,7 @@ const connectDB = async () => {
   };
 
   try {
-    await mongoose.connect('mongodb+srv://root:n6WmFL1HSV3dbSR7@dhanesh.was4l.mongodb.net/multiplex?retryWrites=true&w=majority', options);
+    await mongoose.connect('mongodb+srv://root:n6WmFL1HSV3dbSR7@dhanesh.was4l.mongodb.net/multiplex_test?retryWrites=true&w=majority&auth=admin', options);
     console.log(chalk.bold.green('✨ 🎉 MongoDB connected successfully! 🚀 ✅'));
   } catch (error) {
     console.error('MongoDB connection error:', error);

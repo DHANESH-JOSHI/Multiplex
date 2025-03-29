@@ -4,7 +4,8 @@ const channelSchema = new mongoose.Schema({
   channel_id: { type: Number, required: true },
   channel_name: { type: String, required: true },
   // Relationship: channel.user references a User document
-  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  // user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  user_id: { type: Number, required: true },
   deactivate_reason: String,
   last_login: Date,
   join_date: Date,
