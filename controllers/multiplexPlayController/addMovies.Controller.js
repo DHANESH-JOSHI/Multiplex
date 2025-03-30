@@ -1,6 +1,9 @@
+const axios = require("axios");
 const videoSchema = require("../../models/videos.model");
 
-// Create a new movie with proper error handling
+const BUNNY_API_URL = "https://your-bunny-api-endpoint.com/movies"; // Replace with actual Bunny API URL
+
+// Create a new movie with Bunny API integration
 exports.addMovies = async (req, res) => {
     try {
         const { videos_id, title } = req.body;
@@ -14,7 +17,13 @@ exports.addMovies = async (req, res) => {
             return res.status(409).json({ message: "Movie with this videos_id already exists" });
         }
 
-        const newMovie = new videoSchema(req.body);
+        // Fetch movie data from Bunny API
+        const bunnyResponse = await axios.get(`${BUNNY_API_URL}/${videos_id}`);
+        if (!bunnyResponse.data) {
+            return res.status(404).json({ message: "Movie data not found on Bunny API" });
+        }
+
+        const newMovie = new videoSchema({ ...bunnyResponse.data, videos_id });
         await newMovie.save();
         res.status(201).json({ message: "Movie added successfully", data: newMovie });
     } catch (error) {
