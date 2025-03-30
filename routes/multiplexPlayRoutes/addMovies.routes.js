@@ -6,9 +6,9 @@ const {
     getMovieById,
     updateMovie,
     deleteMovie
-} = require("../../controllers/multiplexPlayController/addMovies.Controller");
+} = require("../../controllers/multiplexPlayController/addMovies.controller");
 
-router.post("/addmovie", addMovies);
+router.post("/movies", addMovies);
 router.get("/movies", getAllMovies);
 router.get("/movie/:id", getMovieById);
 router.put("/movie/:id", updateMovie);
