@@ -46,7 +46,7 @@ exports.registration = async (req, res) => {
         const lastChannel = await channelSchema.findOne({}, { channel_id: 1 }).sort({ channel_id: -1 });
         const lastUser = await userSchema.findOne({}, { user_id: 1 }).sort({ user_id: -1 });
 
-        console.log(lastChannel,lastUser);
+        console.log(lastChannel, lastUser);
         const newChannelId = lastChannel ? lastChannel.channel_id + 1 : 1;
         const newUserId = lastUser ? lastUser.user_id + 1 : 1;
 

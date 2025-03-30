@@ -10,9 +10,8 @@ const userLoginRoutes = require("./mobileRoutes/userLogin.routes");
 const homeContentRoutes = require("./mobileRoutes/homeContent.routes");
 const channelRoutes = require("./mobileRoutes/channel.routes");
 const subscriptionRoutes = require("./mobileRoutes/subscription.routes");
-const adminLoginRoutes = require("./adminAuthroutes");
 
-// Assigning routes
+// Mobile Routes
 router.use("/config", configRoutes);
 router.use("/movies", movieRoutes);
 router.use("/favorite", favoriteRoutes);
@@ -21,6 +20,14 @@ router.use("/user", userLoginRoutes); // User Login
 router.use("/home_content_for_android", homeContentRoutes);
 router.use("/getchannellist", channelRoutes);
 router.use("/check_user_subscription_status", subscriptionRoutes);
+
+
+//Import Admin Routes modules
+const adminLoginRoutes = require("./multiplexPlayRoutes/adminAuth.routes");
+const addMovieRoutes = require("./multiplexPlayRoutes/addMovies.routes");
+
+//Import Admin Routes
 router.use("/adminauth", adminLoginRoutes); // Admin Login
+router.use("/addmovie", addMovieRoutes);
 
 module.exports = router;
