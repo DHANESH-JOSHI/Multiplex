@@ -1,4 +1,3 @@
-// controllers/addWebseries.controller.js
 const Episode = require("../../models/episodes.model");
 
 // Create a new web series episode with error handling

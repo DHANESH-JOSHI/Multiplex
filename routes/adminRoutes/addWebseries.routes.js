@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { addWebseries, getAllWebseries, getWebseriesById, updateWebseries, deleteWebseries } = require("../../controllers/multiplexPlayController/addWebseries.controller");
+const { addWebseries, getAllWebseries, getWebseriesById, updateWebseries, deleteWebseries } = require("../../controllers/adminController/addWebseries.controller");
 
 router.post("/webseries", addWebseries);
 router.get("/webseries", getAllWebseries);

@@ -23,9 +23,10 @@ router.use("/check_user_subscription_status", subscriptionRoutes);
 
 
 //Import Admin Routes modules
-const adminLoginRoutes = require("./multiplexPlayRoutes/adminAuth.routes");
-const addMovieRoutes = require("./multiplexPlayRoutes/addMovies.routes");
-const addWebseriesRoutes = require("./multiplexPlayRoutes/addWebseries.routes");
+const adminLoginRoutes = require("./adminRoutes/adminAuth.routes");
+const addMovieRoutes = require("./adminRoutes/addMovies.routes");
+const addWebseriesRoutes = require("./adminRoutes/addWebseries.routes");
+
 //Import Admin Routes
 router.use("/adminauth", adminLoginRoutes); // Admin Login
 router.use("/adminmovies", addMovieRoutes); // CURD of Movies
