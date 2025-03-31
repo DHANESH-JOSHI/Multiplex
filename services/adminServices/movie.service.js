@@ -1,6 +1,6 @@
 const Movie = require("../../models/videos.model");
 const BunnyCDNService = require("../services/bunnyCDN.service");
-const CRUDService = require("../services/crud.service");
+const CRUDService = require("../../services/crud.service");
 
 class MovieService {
     /**
