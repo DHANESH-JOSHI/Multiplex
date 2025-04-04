@@ -1,5 +1,5 @@
 const Movie = require("../../models/videos.model");
-const BunnyCDNService = require("../services/bunnyCDN.service");
+const BunnyCDNService = require("../../services/adminServices/bunnyCDN.service");
 const CRUDService = require("../../services/crud.service");
 
 class MovieService {
@@ -19,7 +19,7 @@ class MovieService {
         }
 
         // Upload video to BunnyCDN
-        const uploadResponse = await BunnyCDNService.uploadFile("movies", videos_id, file);
+        const uploadResponse = await BunnyCDNService.uploadVideo("movies", videos_id, file);
         if (!uploadResponse.success) {
             throw new Error("Failed to upload video to BunnyCDN");
         }

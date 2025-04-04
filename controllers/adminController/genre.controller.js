@@ -23,13 +23,16 @@ class GenreController {
 
     // Get Genre by ID
     async getGenreById(req, res) {
+
         try {
-            const result = await GenreService.getGenreById(req.params.id);
+            const id = req.params.id; // id 
+            const idField = req.query.newKey; //query pass 
+            const result = await GenreService.getGenreById(idField, id); 
             res.status(200).json(result);
         } catch (error) {
             res.status(404).json({ message: error.message });
         }
-    }
+    }  
 
     // Update Genre
     async updateGenre(req, res) {

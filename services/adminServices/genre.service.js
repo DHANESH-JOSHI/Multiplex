@@ -44,7 +44,7 @@ class GenreService {
     async getAllGenres() {
         try {
             const genres = await CRUDService.getAll(Genre);
-            if (!genres.length) {
+            if (!genres.data.length) {
                 throw new Error("No genres found.");
             }
             return genres;
@@ -54,14 +54,17 @@ class GenreService {
     }
 
     // Get Genre by ID
-    async getGenreById(genreId) {
+    async getGenreById(idField, id) {
         try {
-            if (!genreId) throw new Error("Genre ID is required.");
-            const genre = await CRUDService.getById(Genre, genreId);
-            if (!genre) throw new Error("Genre not found.");
+            console.log(idField, id);
+            if (!id) throw new Error("Genre ID is required.");
+            console.log(idField);
+            const genre = await CRUDService.getById(Genre, idField, id);
+            if (!genre.data) throw new Error("Genre not found.");
             return genre;
+
         } catch (error) {
-            throw new Error(`Failed to fetch genre: ${error.message}`);
+            throw new Error(`${error}`);
         }
     }
 

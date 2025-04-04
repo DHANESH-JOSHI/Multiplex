@@ -9,3 +9,4 @@ router.put("/:id", GenreController.updateGenre);   // Update Genre
 router.delete("/:id", GenreController.deleteGenre);// Delete Genre
 
 module.exports = router;
+
