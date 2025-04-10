@@ -57,8 +57,8 @@ class CRUDService {
     // Get a single document by ID
     async getById(model, idField, id) {
         try {
-            let query = mongoose.Types.ObjectId.isValid(id) 
-                ? { [idField]: id } 
+            let query = mongoose.Types.ObjectId.isValid(id)
+                ? { [idField]: id }
                 : { [idField]: parseInt(id) };
 
             const record = await model.findOne(query);
@@ -75,8 +75,8 @@ class CRUDService {
     // Update a document by ID
     async update(model, idField, id, updateData) {
         try {
-            let query = mongoose.Types.ObjectId.isValid(id) 
-                ? { [idField]: id } 
+            let query = mongoose.Types.ObjectId.isValid(id)
+                ? { [idField]: id }
                 : { [idField]: parseInt(id) };
 
             const updatedRecord = await model.findOneAndUpdate(query, updateData, { new: true, runValidators: true });
@@ -93,8 +93,8 @@ class CRUDService {
     //  Delete a document by ID
     async delete(model, idField, id) {
         try {
-            let query = mongoose.Types.ObjectId.isValid(id) 
-                ? { [idField]: id } 
+            let query = mongoose.Types.ObjectId.isValid(id)
+                ? { [idField]: id }
                 : { [idField]: parseInt(id) };
 
             const deletedRecord = await model.findOneAndDelete(query);

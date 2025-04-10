@@ -31,9 +31,9 @@ class MovieService {
         }
 
         // Create new movie entry
-        return await CRUDService.create(Movie, { 
-            ...movieData, videos_id, title 
-        
+        return await CRUDService.create(Movie, {
+            ...movieData, videos_id, title
+
         });
     }
 

@@ -6,7 +6,7 @@ const {
     getMovieById,
     updateMovie,
     deleteMovie
-} = require("../../controllers/adminController/addMovies.Controller");
+} = require("../../controllers/adminController/movies.controller");
 
 router.post("/movies", addMovies);
 router.get("/movies", getAllMovies);

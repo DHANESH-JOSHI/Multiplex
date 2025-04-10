@@ -24,12 +24,16 @@ router.use("/check_user_subscription_status", subscriptionRoutes);
 
 //Import Admin Routes modules
 const adminLoginRoutes = require("./adminRoutes/adminAuth.routes");
-const addMovieRoutes = require("./adminRoutes/addMovies.routes");
-const addWebseriesRoutes = require("./adminRoutes/addWebseries.routes");
+const addMovieRoutes = require("./adminRoutes/movies.routes");
+const addWebseriesRoutes = require("./adminRoutes/webseries.routes");
+const addPlanRoutes = require("./adminRoutes/plan.routes");
+const addBannerRoutes = require("./adminRoutes/banner.routes");
 
 //Import Admin Routes
 router.use("/adminauth", adminLoginRoutes); // Admin Login
 router.use("/adminmovies", addMovieRoutes); // CURD of Movies
 router.use("/adminwebseries", addWebseriesRoutes); //CRUD of Webseries
+router.use("/adminplans", addPlanRoutes); //CURD of Plans
+router.use("/adminbanner", addBannerRoutes); //CURD of Banner
 
 module.exports = router;
