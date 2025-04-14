@@ -6,6 +6,7 @@ const commentRoutes = require('./mobileRoutes/comment.routes');
 const countryRoutes = require('./mobileRoutes/country.routes');
 const configRoutes = require("./mobileRoutes/config.routes");
 const movieRoutes = require("./mobileRoutes/movies.routes");
+const webseriesRoutes = require("./mobileRoutes/webseries.routes");
 const favoriteRoutes = require("./mobileRoutes/favorite.routes");
 const genreRoutes = require("./adminRoutes/genre.routes");
 const userLoginRoutes = require("./mobileRoutes/userLogin.routes");
@@ -18,9 +19,10 @@ router.use("/comment", commentRoutes);
 router.use("/country", countryRoutes);
 router.use("/config", configRoutes);
 router.use("/movies", movieRoutes);
+router.use("/webseries", webseriesRoutes);
 router.use("/favorite", favoriteRoutes);
 router.use("/genres", genreRoutes);
-router.use("/user", userLoginRoutes); // User Login 
+router.use("/user", userLoginRoutes); // User Login
 router.use("/home_content_for_android", homeContentRoutes);
 router.use("/getchannellist", channelRoutes);
 router.use("/check_user_subscription_status", subscriptionRoutes);

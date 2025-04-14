@@ -1,7 +1,7 @@
 const Config = require('../../models/config.model');
 const Genre = require('../../models/genre.model');
 const Country = require('../../models/country.model');
-const LiveTvCategory = require('../../models/live_tv_category.model');
+// const LiveTvCategory = require('../../models/live_tv_category.model');
 const Currency = require('../../models/currency.model');
 
 // Helper to convert string "true"/"false" to boolean, if applicable.

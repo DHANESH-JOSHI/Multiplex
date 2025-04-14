@@ -3,20 +3,10 @@ const Episode = require("../../models/episodes.model");
 // Create a new web series episode with error handling
 exports.addWebseries = async (req, res) => {
     try {
-        const { episodes_id, episodes_name, video, season } = req.body;
-
-        if (!episodes_id || !episodes_name || !video || !season) {
-            return res.status(400).json({ message: "episodes_id, episodes_name, video, and season are required" });
-        }
-
-        const existingEpisode = await Episode.findOne({ episodes_id });
-        if (existingEpisode) {
-            return res.status(409).json({ message: "Episode with this episodes_id already exists" });
-        }
-
-        const newEpisode = new Episode(req.body);
-        await newEpisode.save();
-        res.status(201).json({ message: "Web series episode added successfully", data: newEpisode });
+        let data = req.body;
+        await video_file.create({ data });
+        //bunny folder API for webseries
+        res.send(response);
     } catch (error) {
         res.status(500).json({ message: "Error adding web series episode", error: error.message });
     }

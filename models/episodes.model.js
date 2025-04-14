@@ -1,18 +1,39 @@
-// models/episode.model.js
 const mongoose = require('mongoose');
 
-const episodepSchema = new mongoose.Schema({
-  episodes_id: { type: Number, required: true },
+const episodeSchema = new mongoose.Schema({
+  episode_number: { type: Number, required: true },
+  title: { type: String, required: true },
+  description: String,
+  duration: String, // "45min"
+  video_url: String,
+  thumbnail: String,
   stream_key: String,
-  video: { type: mongoose.Schema.Types.ObjectId, ref: 'Video' },
-  season: { type: mongoose.Schema.Types.ObjectId, ref: 'Season' },
-  episodes_name: String,
   file_source: String,
   source_type: String,
-  file_url: String,
-  order: { type: Number, default: 0 },
-  last_ep_added: { type: Date, default: Date.now },
-  date_added: { type: Date, default: Date.now }
+  release_date: Date,
+  added_on: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.model('EpisodeP', episodepSchema);
+const seasonSchema = new mongoose.Schema({
+  season_number: { type: Number, required: true },
+  title: { type: String, required: true },
+  description: String,
+  release_year: Number,
+  episodes: [episodeSchema], // Embedded episodes
+  added_on: { type: Date, default: Date.now }
+});
+
+const webSeriesSchema = new mongoose.Schema({
+  title: { type: String, required: true }, // Web Series name
+  description: String,
+  genre: [String], // e.g., ["Drama", "Thriller"]
+  language: String,
+  release_year: Number,
+  thumbnail: String,
+  banner_image: String,
+  seasons: [seasonSchema], // Embedded seasons
+  created_at: { type: Date, default: Date.now },
+  updated_at: { type: Date, default: Date.now }
+});
+
+module.exports = mongoose.model('WebSeries', webSeriesSchema);
