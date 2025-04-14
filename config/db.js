@@ -10,7 +10,7 @@ const connectDB = async () => {
     serverSelectionTimeoutMS: 5000,
     socketTimeoutMS: 45000,
   };
-  let DB_URL= process.env.MONGOURL;
+  let DB_URL = process.env.MONGOURL;
   try {
     await mongoose.connect(DB_URL, options);
     console.log(chalk.bold.green('✨ 🎉 MongoDB connected successfully! 🚀 ✅'));

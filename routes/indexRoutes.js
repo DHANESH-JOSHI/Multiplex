@@ -2,6 +2,8 @@ const express = require("express");
 const router = express.Router();
 
 // Importing individual route modules
+const commentRoutes = require('./mobileRoutes/comment.routes');
+const countryRoutes = require('./mobileRoutes/country.routes');
 const configRoutes = require("./mobileRoutes/config.routes");
 const movieRoutes = require("./mobileRoutes/movies.routes");
 const favoriteRoutes = require("./mobileRoutes/favorite.routes");
@@ -12,6 +14,8 @@ const channelRoutes = require("./mobileRoutes/channel.routes");
 const subscriptionRoutes = require("./mobileRoutes/subscription.routes");
 
 // Mobile Routes
+router.use("/comment", commentRoutes);
+router.use("/country", countryRoutes);
 router.use("/config", configRoutes);
 router.use("/movies", movieRoutes);
 router.use("/favorite", favoriteRoutes);

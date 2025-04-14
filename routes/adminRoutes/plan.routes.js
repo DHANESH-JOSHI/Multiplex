@@ -6,7 +6,7 @@ const {
     getPlanById,
     updatePlan,
     deletePlan
-} = require("../../controllers/adminController/addPlan.Controller");
+} = require("../../controllers/adminController/plan.Controller");
 
 router.post("/plans", addPlan);
 router.get("/plans", getAllPlans);

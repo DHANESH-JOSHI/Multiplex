@@ -7,7 +7,7 @@ class FavoriteController {
       if (!user_id) return res.status(400).json({ message: "User ID is required" });
 
       const favorites = await FavoriteService.getFavorites(user_id);
-      
+
       if (!favorites || favorites.length === 0) {
         return res.status(404).json({ message: "No favorites found." });
       }
@@ -22,7 +22,7 @@ class FavoriteController {
   async addFavorite(req, res) {
     try {
       const { wish_list_id, wish_list_type, user_id, video_id, episode_id } = req.body;
-      if (!user_id || !wish_list_id || !wish_list_type) 
+      if (!user_id || !wish_list_id || !wish_list_type)
         return res.status(400).json({ message: "Missing required fields" });
 
       // Check if favorite already exists
@@ -42,7 +42,7 @@ class FavoriteController {
   async verifyFavorite(req, res) {
     try {
       const { user_id, video_id, episode_id } = req.query;
-      if (!user_id || (!video_id && !episode_id)) 
+      if (!user_id || (!video_id && !episode_id))
         return res.status(400).json({ message: "User ID and either Video or Episode ID required" });
 
       const favorite = await FavoriteService.isFavorite(user_id, video_id, episode_id);
@@ -56,7 +56,7 @@ class FavoriteController {
   async removeFavorite(req, res) {
     try {
       const { user_id, video_id, episode_id } = req.query;
-      if (!user_id || (!video_id && !episode_id)) 
+      if (!user_id || (!video_id && !episode_id))
         return res.status(400).json({ message: "User ID and either Video or Episode ID required" });
 
       const result = await FavoriteService.removeFavorite(user_id, video_id, episode_id);
