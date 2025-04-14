@@ -3,7 +3,7 @@ const subscriptionService = require('../../services/mobileServices/subscription.
 exports.getUserSubscriptionStatus = async (req, res) => {
   // Retrieve user_id from the query string
   const userId = req.query.user_id;
-  
+
   // Validate user_id is provided
   if (!userId) {
     return res.status(400).json({
@@ -11,7 +11,7 @@ exports.getUserSubscriptionStatus = async (req, res) => {
       message: 'You must provide user ID.'
     });
   }
-  
+
   try {
     // Get subscription data from the service layer
     const subscriptionData = await subscriptionService.checkUserSubscriptionStatus(userId);
