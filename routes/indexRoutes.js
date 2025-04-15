@@ -42,4 +42,10 @@ router.use("/adminwebseries", addWebseriesRoutes); //CRUD of Webseries
 router.use("/adminplans", addPlanRoutes); //CURD of Plans
 router.use("/adminbanner", addBannerRoutes); //CURD of Banner
 
+// Import Web Routes modules
+const webAuthRoutes = require("./webRoutes/auth.routes");
+
+// Web Routes
+router.use("/web/auth", webAuthRoutes); // Web Authentication
+
 module.exports = router;

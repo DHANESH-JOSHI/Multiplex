@@ -24,7 +24,10 @@ const userSchema = new mongoose.Schema({
   vstatus: { type: Number, required: true, default: 1 },
   deviceid: String,
   fcm: String,
-  versioncode: { type: String, default: '1' }
+  versioncode: { type: String, default: '1' },
+  // OAuth fields
+  google_id: String,
+  profile_picture: String
 }, {collection: "user" });
 
 module.exports = mongoose.model('User', userSchema);

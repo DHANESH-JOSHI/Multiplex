@@ -4,6 +4,8 @@ const apiKeyMiddleware = require("./middleware/apiKey");
 const chalk = require("chalk");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
+const session = require("express-session");
+const passport = require("./config/passport");
 const app = express();
 
 // Importing v130 Routes
@@ -26,6 +28,16 @@ connectDB();
 // Middleware
 app.use(express.json({ limit: "10kb" }));
 app.use(apiKeyMiddleware); // Apply API key check to all incoming requests
+
+// Session and Passport setup
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: process.env.NODE_ENV === 'production' }
+}));
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Routes
 app.use("/rest-api/v130", indexRoutes);

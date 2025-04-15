@@ -3,7 +3,7 @@ const subscriptionService = require('../../services/mobileServices/subscription.
 exports.getUserSubscriptionStatus = async (req, res) => {
   // Retrieve user_id from the query string
   const userId = req.query.user_id;
-
+  console.log(typeof userId);
   // Validate user_id is provided
   if (!userId) {
     return res.status(400).json({

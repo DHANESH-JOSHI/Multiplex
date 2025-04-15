@@ -57,10 +57,10 @@ const createWebseries = async (req, res) => {
 
     // Get file data if available
     const fileData = req.file ? req.file.buffer : null;
-    
+
     // Create web series
     const webseries = await webseriesService.createWebseries(req.body, fileData);
-    
+
     res.status(201).json({
       status: 'success',
       message: 'Web series created successfully',
@@ -84,10 +84,10 @@ const updateWebseries = async (req, res) => {
   try {
     // Get file data if available
     const fileData = req.file ? req.file.buffer : null;
-    
+
     // Update web series
     const webseries = await webseriesService.updateWebseries(req.params.id, req.body, fileData);
-    
+
     res.status(200).json({
       status: 'success',
       message: 'Web series updated successfully',
@@ -110,7 +110,7 @@ const updateWebseries = async (req, res) => {
 const deleteWebseries = async (req, res) => {
   try {
     await webseriesService.deleteWebseries(req.params.id);
-    
+
     res.status(200).json({
       status: 'success',
       message: 'Web series deleted successfully'
@@ -142,10 +142,10 @@ const addSeason = async (req, res) => {
 
     // Get file data if available
     const fileData = req.file ? req.file.buffer : null;
-    
+
     // Add season
     const season = await webseriesService.addSeason(req.params.id, req.body, fileData);
-    
+
     res.status(201).json({
       status: 'success',
       message: 'Season added successfully',
@@ -181,15 +181,15 @@ const addEpisode = async (req, res) => {
 
     // Get file data if available
     const fileData = req.file ? req.file.buffer : null;
-    
+
     // Add episode
     const episode = await webseriesService.addEpisode(
-      req.params.id, 
-      req.params.seasonId, 
-      req.body, 
+      req.params.id,
+      req.params.seasonId,
+      req.body,
       fileData
     );
-    
+
     res.status(201).json({
       status: 'success',
       message: 'Episode added successfully',
@@ -207,11 +207,11 @@ const addEpisode = async (req, res) => {
   }
 };
 
-module.exports = { 
-  getAllWebseries, 
-  getWebseriesById, 
-  createWebseries, 
-  updateWebseries, 
+module.exports = {
+  getAllWebseries,
+  getWebseriesById,
+  createWebseries,
+  updateWebseries,
   deleteWebseries,
   addSeason,
   addEpisode
