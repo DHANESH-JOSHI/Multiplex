@@ -1,13 +1,13 @@
-// models/plan.model.js
 const mongoose = require('mongoose');
 
 const planSchema = new mongoose.Schema({
-  plan_id: { type: Number, required: true },
+  plan_id: { type: Number, required: true, unique: true },
   name: { type: String, required: true },
-  day: { type: Number, default: 0 },
-  screens: String,
-  price: { type: String, required: true },
-  status: { type: Number, required: true }
-});
+  country: { type: String, required: true }, // e.g., 'IN', 'US'
+  day: { type: Number, default: 0 }, // Duration in days
+  screens: { type: String },
+  price: { type: String, required: true }, // Store price as string
+  status: { type: Number, required: true } // 1 = active, 0 = inactive
+}, { collection: "plans", timestamps: true });
 
 module.exports = mongoose.model('Plan', planSchema);
