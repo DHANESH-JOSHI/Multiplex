@@ -13,6 +13,7 @@ const userLoginRoutes = require("./mobileRoutes/userLogin.routes");
 const homeContentRoutes = require("./mobileRoutes/homeContent.routes");
 const channelRoutes = require("./mobileRoutes/channel.routes");
 const subscriptionRoutes = require("./mobileRoutes/subscription.routes");
+const planRoutes = require("./adminRoutes/plan.routes");
 
 // Mobile Routes
 router.use("/comment", commentRoutes);
@@ -26,6 +27,7 @@ router.use("/user", userLoginRoutes); // User Login
 router.use("/home_content_for_android", homeContentRoutes);
 router.use("/getchannellist", channelRoutes);
 router.use("/check_user_subscription_status", subscriptionRoutes);
+router.use("/all_package", planRoutes);
 
 
 //Import Admin Routes modules

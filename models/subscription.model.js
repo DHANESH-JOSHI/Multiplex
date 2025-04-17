@@ -12,7 +12,8 @@ const subscriptionSchema = new mongoose.Schema({
   payment_timestamp: { type: Number, required: true },
   recurring: { type: Number, required: true, default: 1 },
   status: { type: Number, required: true, default: 0 },
-  ispayment: { type: Number, default: 0 }
+  ispayment: { type: Number, default: 0 },
+  recipt: { type: String, required: true }
 }, { collection: 'subscription' });
 
 module.exports = mongoose.model('Subscription', subscriptionSchema);

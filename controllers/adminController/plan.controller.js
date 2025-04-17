@@ -4,18 +4,19 @@ const PlanSchema = require("../../models/plan.model");
 // Add a new plan
 exports.addPlan = async (req, res) => {
     try {
-        const { plan_id, name, day, screens, price, status } = req.body;
+        const { plan_id, name, day, screens, price, status, country } = req.body;
 
         if (!plan_id || !name || !price || status === undefined) {
             return res.status(400).json({ message: "plan_id, name, price and status are required" });
         }
 
-        const existingPlan = await Plan.findOne({ plan_id });
+        const existingPlan = await PlanSchema.findOne({ plan_id });
         if (existingPlan) {
             return res.status(409).json({ message: "Plan with this plan_id already exists" });
         }
 
-        const newPlan = new Plan({ plan_id, name, day, screens, price, status });
+        const newPlan = new PlanSchema(req.body);
+
         await newPlan.save();
         res.status(201).json({ message: "Plan added successfully", data: newPlan });
     } catch (error) {
@@ -26,7 +27,7 @@ exports.addPlan = async (req, res) => {
 // Get all plans
 exports.getAllPlans = async (req, res) => {
     try {
-        const plans = await Plan.find();
+        const plans = await PlanSchema.find();
         res.status(200).json({ message: "Plans retrieved successfully", data: plans });
     } catch (error) {
         res.status(500).json({ message: "Error fetching plans", error: error.message });
@@ -36,7 +37,7 @@ exports.getAllPlans = async (req, res) => {
 // Get single plan by ID
 exports.getPlanById = async (req, res) => {
     try {
-        const plan = await Plan.findById(req.params.id);
+        const plan = await PlanSchema.findById(req.params.id);
         if (!plan) {
             return res.status(404).json({ message: "Plan not found" });
         }
@@ -49,7 +50,7 @@ exports.getPlanById = async (req, res) => {
 // Update plan by ID
 exports.updatePlan = async (req, res) => {
     try {
-        const updatedPlan = await Plan.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const updatedPlan = await PlanSchema.findByIdAndUpdate(req.params.id, req.body, { new: true });
         if (!updatedPlan) {
             return res.status(404).json({ message: "Plan not found" });
         }
@@ -62,7 +63,7 @@ exports.updatePlan = async (req, res) => {
 // Delete plan by ID
 exports.deletePlan = async (req, res) => {
     try {
-        const deletedPlan = await Plan.findByIdAndDelete(req.params.id);
+        const deletedPlan = await PlanSchema.findByIdAndDelete(req.params.id);
         if (!deletedPlan) {
             return res.status(404).json({ message: "Plan not found" });
         }

@@ -48,8 +48,8 @@ const createRazorpayOrder = async (amount, currencyCode) => {
 const verifyRazorpayPayment = (payment_id, order_id, signature) => {
   const body = `${order_id}|${payment_id}`;
   const expectedSignature = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
-                                  .update(body)
-                                  .digest('hex');
+    .update(body)
+    .digest('hex');
 
   return expectedSignature === signature;
 };
