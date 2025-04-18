@@ -1,23 +1,38 @@
 const axios = require("axios");
-const SubscriptionSchema = require("../../models/subscription.model");
+const { createRazorpayOrder } = require('../../services/razorpayService');
+const SubscriptionSchema = require('../../models/subscription.model');
 
-// Add a new subscription
+// Create Razorpay order and save subscription
 exports.addSubscription = async (req, res) => {
     try {
         const { plan_id, user_id, ammount, currencyCode, country } = req.body;
 
+        // 1. Create Razorpay Order
+        const razorpayOrder = await createRazorpayOrder(ammount, currencyCode);
+
+        // 2. Save subscription with order ID
         const newSubscription = new SubscriptionSchema({
             plan_id,
             user_id,
             ammount,
             currencyCode,
-            country
+            country,
+            razorpay_order_id: razorpayOrder.id // Add this field in your schema if not already
         });
 
         const savedSubscription = await newSubscription.save();
-        res.status(201).json({ message: "Subscription added successfully", data: savedSubscription });
+
+        res.status(201).json({
+            message: "Razorpay order created and subscription added successfully",
+            data: {
+                subscription: savedSubscription,
+                razorpayOrder
+            }
+        });
+
     } catch (error) {
-        res.status(500).json({ message: "Error adding subscription", error: error.message });
+        console.error("Error in createSubscriptionWithPayment:", error);
+        res.status(500).json({ message: "Failed to create subscription with payment", error: error.message });
     }
 };
 

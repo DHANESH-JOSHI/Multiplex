@@ -1,6 +1,6 @@
-# API Routes Documentation
+# Multiplex API Routes Documentation
 
-This document provides a comprehensive list of all API routes available in the Multiplex application.
+This document provides a comprehensive list of all API routes available in the Multiplex application, organized by category.
 
 ## Base URL
 
@@ -9,7 +9,27 @@ All API endpoints are prefixed with:
 /nodeapi/rest-api/v130
 ```
 
+## Authentication
+
+Most API endpoints require authentication. There are two authentication methods:
+
+1. **API Key Authentication**: Required for most endpoints
+   - Add the API key to the request header: `x-api-key: YOUR_API_KEY`
+
+2. **User Authentication**: Required for user-specific operations
+   - Login to obtain a JWT token
+   - Add the token to the request header: `Authorization: Bearer YOUR_JWT_TOKEN`
+
+## Table of Contents
+
+1. [Mobile Routes](#mobile-routes)
+2. [Admin Routes](#admin-routes)
+3. [Web Routes](#web-routes)
+4. [Generic CRUD Routes](#generic-crud-routes)
+
 ## Mobile Routes
+
+These routes are primarily used by mobile applications to interact with the Multiplex platform.
 
 ### Comment Routes
 Base path: `/comment`
@@ -47,6 +67,36 @@ Base path: `/movies`
 | PUT    | `/:id` | Update a movie |
 | DELETE | `/:id` | Delete a movie |
 
+#### Example Request/Response
+
+**Request - Get all movies**
+```http
+GET /nodeapi/rest-api/v130/movies
+Content-Type: application/json
+x-api-key: your-api-key
+```
+
+**Response**
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "videos_id": 1,
+      "title": "Example Movie",
+      "description": "This is an example movie",
+      "slug": "example-movie",
+      "release": "2023-01-01",
+      "is_paid": "1",
+      "runtime": "120",
+      "video_quality": "HD",
+      "thumbnail_url": "https://example.com/thumbnail.jpg",
+      "poster_url": "https://example.com/poster.jpg"
+    }
+  ]
+}
+```
+
 ### Web Series Routes
 Base path: `/webseries`
 
@@ -77,6 +127,34 @@ Base path: `/user`
 |--------|----------|-------------|
 | POST   | `/login` | User login |
 
+#### Example Request/Response
+
+**Request - User Login**
+```http
+POST /nodeapi/rest-api/v130/user/login
+Content-Type: application/json
+x-api-key: your-api-key
+
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+```
+
+**Response**
+```json
+{
+  "status": "success",
+  "message": "Login successful",
+  "data": {
+    "user_id": 123,
+    "name": "John Doe",
+    "email": "user@example.com",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+}
+```
+
 ### Home Content Routes
 Base path: `/home_content_for_android`
 
@@ -92,6 +170,8 @@ Base path: `/check_user_subscription_status`
 | GET    | `/` | Get user subscription status |
 
 ## Admin Routes
+
+These routes are used for administrative functions and content management.
 
 ### Genre Routes
 Base path: `/genres`
@@ -145,6 +225,35 @@ Base path: `/adminauth`
 | POST   | `/login` | Admin login |
 | POST   | `/register` | Admin registration |
 
+#### Example Request/Response
+
+**Request - Admin Login**
+```http
+POST /nodeapi/rest-api/v130/adminauth/login
+Content-Type: application/json
+x-api-key: your-api-key
+
+{
+  "email": "admin@example.com",
+  "password": "admin123"
+}
+```
+
+**Response**
+```json
+{
+  "status": "success",
+  "message": "Admin login successful",
+  "data": {
+    "admin_id": 1,
+    "name": "Admin User",
+    "email": "admin@example.com",
+    "role": "admin",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+}
+```
+
 ### Admin Movies Routes
 Base path: `/adminmovies`
 
@@ -190,7 +299,20 @@ Base path: `/adminbanner`
 | PUT    | `/slider/:id` | Update a slider |
 | DELETE | `/slider/:id` | Delete a slider |
 
+### Payment Routes
+Base path: `/payment`
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET    | `/` | Get all subscriptions |
+| GET    | `/:id` | Get subscription by ID |
+| POST   | `/` | Add a new subscription |
+| PUT    | `/:id` | Update a subscription |
+| DELETE | `/:id` | Delete a subscription |
+
 ## Web Routes
+
+These routes are specifically designed for web application interfaces.
 
 ### Web Authentication Routes
 Base path: `/web/auth`
@@ -203,16 +325,49 @@ Base path: `/web/auth`
 
 ## Generic CRUD Routes
 
-The application also includes generic CRUD routes that can be used with any model:
+The application includes generic CRUD routes that can be used with any model. These provide a standardized way to perform common operations on any data model in the system.
 
 Base path: `/crud/:model`
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST   | `/` | Create a new record |
-| GET    | `/` | Get all records |
-| GET    | `/:id` | Get a record by ID |
-| PUT    | `/:id` | Update a record |
-| DELETE | `/:id` | Delete a record |
+| Method | Endpoint | Description | Example |
+|--------|----------|-------------|--------|
+| POST   | `/` | Create a new record | `POST /crud/users` |
+| GET    | `/` | Get all records | `GET /crud/movies` |
+| GET    | `/:id` | Get a record by ID | `GET /crud/genres/5` |
+| PUT    | `/:id` | Update a record | `PUT /crud/channels/3` |
+| DELETE | `/:id` | Delete a record | `DELETE /crud/comments/7` |
 
-Note: These routes require API key authentication.
+**Note:**
+- These routes require API key authentication
+- Replace `:model` with the name of your data model
+- The model name should match the collection name in MongoDB (usually lowercase plural)
+
+## Error Handling
+
+All API endpoints follow a consistent error handling pattern:
+
+```json
+{
+  "status": "error",
+  "message": "Error message describing what went wrong",
+  "error": {
+    "code": "ERROR_CODE",
+    "details": "Additional error details if available"
+  }
+}
+```
+
+## Status Codes
+
+| Status Code | Description |
+|------------|-------------|
+| 200 | OK - The request was successful |
+| 201 | Created - A new resource was successfully created |
+| 400 | Bad Request - The request was invalid or cannot be served |
+| 401 | Unauthorized - Authentication failed or user doesn't have permissions |
+| 404 | Not Found - The resource was not found |
+| 500 | Internal Server Error - Server error occurred |
+
+## Conclusion
+
+This documentation covers all the API routes available in the Multiplex application. For additional details about specific endpoints or request/response formats, please contact the development team.
