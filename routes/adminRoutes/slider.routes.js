@@ -18,15 +18,15 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // Create with file upload (field name: image_file)
-router.post('/slider', upload.single('image_file'), createSlider);
+router.post('/', upload.single('image_file'), createSlider);
 
 // Read All
-router.get('/slider', getAllSliders);
+router.get('/', getAllSliders);
 // Read by ID
-router.get('/slider/:id', getSliderById);
+router.get('/:id', getSliderById);
 // Update
-router.put('/slider/:id', upload.single('image_file'), updateSlider);
+router.put('/:id', upload.single('image_file'), updateSlider);
 // Delete
-router.delete('/slider/:id', deleteSlider);
+router.delete('/:id', deleteSlider);
 
 module.exports = router;

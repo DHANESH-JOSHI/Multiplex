@@ -29,7 +29,7 @@ router.use("/home_content_for_android", homeContentRoutes);
 router.use("/getchannellist", channelRoutes);
 router.use("/check_user_subscription_status", subscriptionRoutes);
 router.use("/all_package", planRoutes);
-router.use("/get_slider", sliderRoutes);
+router.use("/slider", sliderRoutes);
 
 
 //Import Admin Routes modules
