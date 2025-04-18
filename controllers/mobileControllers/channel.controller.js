@@ -1,4 +1,4 @@
-const { getChannelList, createChannel, updateChannel, deleteChannel } = require('../../services/mobileServices/channel.service');
+const { getChannelList, createChannel, updateChannel, deleteChannel, getChannelById } = require('../../services/mobileServices/channel.service');
 
 const getChannelListController = async (req, res) => {
   try {
@@ -61,9 +61,43 @@ const deleteChannelController = async (req, res) => {
   }
 };
 
+const statusChannelController = async (req, res) => {
+  try {
+    const { channel_id, status } = req.body;
+    // Check if status is valid
+    const validStatuses = ['pending', 'approve', 'rejected', 'block'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ message: 'Invalid status provided.' });
+    }
+
+    // Check identifier
+    if (!channel_id) {
+      return res.status(400).json({ message: 'channel_id is required.' });
+    }
+
+    // Find channel
+    const channel = await getChannelById(channel_id);
+
+    if (!channel) {
+      return res.status(404).json({ message: 'Channel not found.' });
+    }
+
+    // Update status
+    channel.status = status;
+    await channel.save();
+
+    res.status(200).json({ message: 'Channel status updated successfully.', channel });
+
+  } catch (err) {
+    console.error('Error updating channel status:', err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
 module.exports = {
   getChannelListController,
   createChannelController,
   updateChannelController,
-  deleteChannelController
+  deleteChannelController,
+  statusChannelController
 };

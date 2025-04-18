@@ -11,9 +11,10 @@ const favoriteRoutes = require("./mobileRoutes/favorite.routes");
 const genreRoutes = require("./adminRoutes/genre.routes");
 const userLoginRoutes = require("./mobileRoutes/userLogin.routes");
 const homeContentRoutes = require("./mobileRoutes/homeContent.routes");
-const channelRoutes = require("./mobileRoutes/channel.routes");
+const channelRoutes = require("./adminRoutes/channel.routes");
 const subscriptionRoutes = require("./mobileRoutes/subscription.routes");
 const planRoutes = require("./adminRoutes/plan.routes");
+const sliderRoutes = require("./adminRoutes/slider.routes");
 
 // Mobile Routes
 router.use("/comment", commentRoutes);
@@ -28,6 +29,7 @@ router.use("/home_content_for_android", homeContentRoutes);
 router.use("/getchannellist", channelRoutes);
 router.use("/check_user_subscription_status", subscriptionRoutes);
 router.use("/all_package", planRoutes);
+router.use("/get_slider", sliderRoutes);
 
 
 //Import Admin Routes modules

@@ -73,7 +73,8 @@ const deleteChannel = async (channelId) => {
 
 // Get single channel by ID
 const getChannelById = async (channelId) => {
-  return await Channel.findById(channelId).populate('video');
+  return await Channel.findOne({ channel_id: channelId });
+  // return await Channel.findOne(channelId).populate('video');
 };
 
 module.exports = {

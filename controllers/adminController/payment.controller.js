@@ -5,8 +5,6 @@ const SubscriptionSchema = require("../../models/subscription.model");
 exports.addSubscription = async (req, res) => {
     try {
         const { plan_id, user_id, ammount, currencyCode, country } = req.body;
-        
-        
 
         const newSubscription = new SubscriptionSchema({
             plan_id,
