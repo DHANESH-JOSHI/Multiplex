@@ -19,7 +19,6 @@ const upload = multer({ storage });
 
 // Create with file upload (field name: image_file)
 router.post('/', upload.single('image_file'), createSlider);
-
 // Read All
 router.get('/', getAllSliders);
 // Read by ID

@@ -1,9 +1,12 @@
 const express = require("express");
 const router = express.Router();
-const { getChannelListController, statusChannelController } = require("../../controllers/mobileControllers/channel.controller");
+const { getChannelListController, createChannelController, updateChannelController, deleteChannelController, statusChannelController } = require("../../controllers/mobileControllers/channel.controller");
 
 //Mobuile Channel Routes
 router.get("/", getChannelListController);
+router.post("/", createChannelController);
+router.put("/:id", updateChannelController);
+router.delete("/:id", deleteChannelController);
 router.post("/status", statusChannelController);
 
 //Admin Channel Routes

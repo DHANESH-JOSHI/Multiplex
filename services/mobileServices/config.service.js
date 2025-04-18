@@ -394,7 +394,7 @@ exports.getFullConfig = async () => {
         "url": "https://multiplexplay.com/office/country/india.html",
         "image_url": "https://multiplexplay.com/office/uploads/default_image/country.png"
     },];
-    const tv_category = await LiveTvCategory.find({}).lean();
+    // const tv_category = await LiveTvCategory.find({}).lean();
 
     return {
         app_config,
@@ -402,7 +402,7 @@ exports.getFullConfig = async () => {
         payment_config,
         apk_version_info,
         genre,
-        country,
-        tv_category
+        country
+        // tv_category
     };
 };
