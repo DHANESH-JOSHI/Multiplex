@@ -1,7 +1,7 @@
 const razorpay = require('razorpay');
 const crypto = require('crypto');
 const dotenv = require('dotenv');
-const Currency = require('../models/currency.model');
+const currencySchema = require('../models/currency.model');
 dotenv.config();
 
 const instance = new razorpay({
@@ -13,7 +13,9 @@ const instance = new razorpay({
 const createRazorpayOrder = async (amount, currencyCode) => {
   try {
     // Get the exchange rate for the provided currency
-    const currency = await Currency.findOne({ iso_code: currencyCode });
+    const currency = await currencySchema.findOne({ iso_code: currencyCode });
+    
+    console.log(currency);
 
     if (!currency) {
       throw new Error('Currency not supported');
