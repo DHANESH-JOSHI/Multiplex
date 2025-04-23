@@ -1,0 +1,3456 @@
+{
+	"info": {
+		"_postman_id": "e168f35d-81a8-4c4c-8be9-1b9d5cb052c6",
+		"name": "Multiplex_API",
+		"schema": "http://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "32247248"
+	},
+	"item": [
+		{
+			"name": "MultiplexAPI",
+			"item": [
+				{
+					"name": "ChannelApi",
+					"item": [
+						{
+							"name": "Channel_GetChannelList",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost/office/rest-api/channel/getchannellist?limit=0",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"channel",
+										"getchannellist"
+									],
+									"query": [
+										{
+											"key": "limit",
+											"value": "0"
+										}
+									]
+								},
+								"description": "Gets information about the authenticated user."
+							},
+							"response": [
+								{
+									"name": "Successful Response",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://api.getpostman.com/me",
+											"protocol": "http",
+											"host": [
+												"api",
+												"getpostman",
+												"com"
+											],
+											"path": [
+												"me"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"name": "Content-Type",
+											"description": {
+												"content": "",
+												"type": "text/plain"
+											}
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"user\": {\n        \"id\": 12345678,\n        \"username\": \"taylor-lee\",\n        \"email\": \"taylor.lee@example.com\",\n        \"fullName\": \"Taylor Lee\",\n        \"avatar\": \"http://example.com/user/r5u9qpvmujfjf6lbqmga.jpg\",\n        \"isPublic\": true\n    },\n    \"operations\": [\n        {\n            \"name\": \"mock_usage\",\n            \"limit\": 1000000,\n            \"usage\": 110276,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"monitor_request_runs\",\n            \"limit\": 10000000,\n            \"usage\": 1141750,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"api_usage\",\n            \"limit\": 1000000,\n            \"usage\": 16240,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"custom_domains\",\n            \"limit\": 25,\n            \"usage\": 25,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"serverless_requests\",\n            \"limit\": 10000,\n            \"usage\": 0,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"integrations\",\n            \"limit\": 5000,\n            \"usage\": 1018,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"cloud_agent_requests\",\n            \"limit\": 1000000,\n            \"usage\": 1615,\n            \"overage\": 0\n        }\n    ]\n}"
+								},
+								{
+									"name": "Rate Limit Exceeded",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://api.getpostman.com/me",
+											"protocol": "http",
+											"host": [
+												"api",
+												"getpostman",
+												"com"
+											],
+											"path": [
+												"me"
+											]
+										}
+									},
+									"status": "Too Many Requests",
+									"code": 429,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"description": {
+												"content": "",
+												"type": "text/plain"
+											}
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"error\": \"rateLimited\",\n    \"message\": \"Rate limit exceeded. Please retry after 1669048687\"\n}"
+								}
+							]
+						},
+						{
+							"name": "Channel_GetChannelInfo",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost/office/rest-api/channel/getchannelinfo?cid=11&user_id=1",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"channel",
+										"getchannelinfo"
+									],
+									"query": [
+										{
+											"key": "cid",
+											"value": "11"
+										},
+										{
+											"key": "user_id",
+											"value": "1"
+										}
+									]
+								},
+								"description": "Gets information about the authenticated user."
+							},
+							"response": [
+								{
+									"name": "Successful Response",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://api.getpostman.com/me",
+											"protocol": "http",
+											"host": [
+												"api",
+												"getpostman",
+												"com"
+											],
+											"path": [
+												"me"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"name": "Content-Type",
+											"description": {
+												"content": "",
+												"type": "text/plain"
+											}
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"user\": {\n        \"id\": 12345678,\n        \"username\": \"taylor-lee\",\n        \"email\": \"taylor.lee@example.com\",\n        \"fullName\": \"Taylor Lee\",\n        \"avatar\": \"http://example.com/user/r5u9qpvmujfjf6lbqmga.jpg\",\n        \"isPublic\": true\n    },\n    \"operations\": [\n        {\n            \"name\": \"mock_usage\",\n            \"limit\": 1000000,\n            \"usage\": 110276,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"monitor_request_runs\",\n            \"limit\": 10000000,\n            \"usage\": 1141750,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"api_usage\",\n            \"limit\": 1000000,\n            \"usage\": 16240,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"custom_domains\",\n            \"limit\": 25,\n            \"usage\": 25,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"serverless_requests\",\n            \"limit\": 10000,\n            \"usage\": 0,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"integrations\",\n            \"limit\": 5000,\n            \"usage\": 1018,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"cloud_agent_requests\",\n            \"limit\": 1000000,\n            \"usage\": 1615,\n            \"overage\": 0\n        }\n    ]\n}"
+								},
+								{
+									"name": "Rate Limit Exceeded",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://api.getpostman.com/me",
+											"protocol": "http",
+											"host": [
+												"api",
+												"getpostman",
+												"com"
+											],
+											"path": [
+												"me"
+											]
+										}
+									},
+									"status": "Too Many Requests",
+									"code": 429,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"description": {
+												"content": "",
+												"type": "text/plain"
+											}
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"error\": \"rateLimited\",\n    \"message\": \"Rate limit exceeded. Please retry after 1669048687\"\n}"
+								}
+							]
+						},
+						{
+							"name": "getchannelvideo",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost/office/rest-api/channel/getchannelvideo?cid=11&user_id=1",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"channel",
+										"getchannelvideo"
+									],
+									"query": [
+										{
+											"key": "cid",
+											"value": "11"
+										},
+										{
+											"key": "user_id",
+											"value": "1"
+										}
+									]
+								},
+								"description": "Gets information about the authenticated user."
+							},
+							"response": [
+								{
+									"name": "Successful Response",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://api.getpostman.com/me",
+											"protocol": "http",
+											"host": [
+												"api",
+												"getpostman",
+												"com"
+											],
+											"path": [
+												"me"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"name": "Content-Type",
+											"description": {
+												"content": "",
+												"type": "text/plain"
+											}
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"user\": {\n        \"id\": 12345678,\n        \"username\": \"taylor-lee\",\n        \"email\": \"taylor.lee@example.com\",\n        \"fullName\": \"Taylor Lee\",\n        \"avatar\": \"http://example.com/user/r5u9qpvmujfjf6lbqmga.jpg\",\n        \"isPublic\": true\n    },\n    \"operations\": [\n        {\n            \"name\": \"mock_usage\",\n            \"limit\": 1000000,\n            \"usage\": 110276,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"monitor_request_runs\",\n            \"limit\": 10000000,\n            \"usage\": 1141750,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"api_usage\",\n            \"limit\": 1000000,\n            \"usage\": 16240,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"custom_domains\",\n            \"limit\": 25,\n            \"usage\": 25,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"serverless_requests\",\n            \"limit\": 10000,\n            \"usage\": 0,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"integrations\",\n            \"limit\": 5000,\n            \"usage\": 1018,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"cloud_agent_requests\",\n            \"limit\": 1000000,\n            \"usage\": 1615,\n            \"overage\": 0\n        }\n    ]\n}"
+								},
+								{
+									"name": "Rate Limit Exceeded",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://api.getpostman.com/me",
+											"protocol": "http",
+											"host": [
+												"api",
+												"getpostman",
+												"com"
+											],
+											"path": [
+												"me"
+											]
+										}
+									},
+									"status": "Too Many Requests",
+									"code": 429,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"description": {
+												"content": "",
+												"type": "text/plain"
+											}
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"error\": \"rateLimited\",\n    \"message\": \"Rate limit exceeded. Please retry after 1669048687\"\n}"
+								}
+							]
+						},
+						{
+							"name": "setsubcribe",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost/office/rest-api/channel/setsubcribe?id=11&user_id=1",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"channel",
+										"setsubcribe"
+									],
+									"query": [
+										{
+											"key": "id",
+											"value": "11"
+										},
+										{
+											"key": "user_id",
+											"value": "1"
+										}
+									]
+								},
+								"description": "Gets information about the authenticated user."
+							},
+							"response": [
+								{
+									"name": "Successful Response",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://api.getpostman.com/me",
+											"protocol": "http",
+											"host": [
+												"api",
+												"getpostman",
+												"com"
+											],
+											"path": [
+												"me"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"name": "Content-Type",
+											"description": {
+												"content": "",
+												"type": "text/plain"
+											}
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"user\": {\n        \"id\": 12345678,\n        \"username\": \"taylor-lee\",\n        \"email\": \"taylor.lee@example.com\",\n        \"fullName\": \"Taylor Lee\",\n        \"avatar\": \"http://example.com/user/r5u9qpvmujfjf6lbqmga.jpg\",\n        \"isPublic\": true\n    },\n    \"operations\": [\n        {\n            \"name\": \"mock_usage\",\n            \"limit\": 1000000,\n            \"usage\": 110276,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"monitor_request_runs\",\n            \"limit\": 10000000,\n            \"usage\": 1141750,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"api_usage\",\n            \"limit\": 1000000,\n            \"usage\": 16240,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"custom_domains\",\n            \"limit\": 25,\n            \"usage\": 25,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"serverless_requests\",\n            \"limit\": 10000,\n            \"usage\": 0,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"integrations\",\n            \"limit\": 5000,\n            \"usage\": 1018,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"cloud_agent_requests\",\n            \"limit\": 1000000,\n            \"usage\": 1615,\n            \"overage\": 0\n        }\n    ]\n}"
+								},
+								{
+									"name": "Rate Limit Exceeded",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://api.getpostman.com/me",
+											"protocol": "http",
+											"host": [
+												"api",
+												"getpostman",
+												"com"
+											],
+											"path": [
+												"me"
+											]
+										}
+									},
+									"status": "Too Many Requests",
+									"code": 429,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"description": {
+												"content": "",
+												"type": "text/plain"
+											}
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"error\": \"rateLimited\",\n    \"message\": \"Rate limit exceeded. Please retry after 1669048687\"\n}"
+								}
+							]
+						},
+						{
+							"name": "channellist",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost/office/rest-api/channel/channellist?c_id=11&user_id=1",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"channel",
+										"channellist"
+									],
+									"query": [
+										{
+											"key": "c_id",
+											"value": "11"
+										},
+										{
+											"key": "user_id",
+											"value": "1"
+										}
+									]
+								},
+								"description": "Gets information about the authenticated user."
+							},
+							"response": [
+								{
+									"name": "Successful Response",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://api.getpostman.com/me",
+											"protocol": "http",
+											"host": [
+												"api",
+												"getpostman",
+												"com"
+											],
+											"path": [
+												"me"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"name": "Content-Type",
+											"description": {
+												"content": "",
+												"type": "text/plain"
+											}
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"user\": {\n        \"id\": 12345678,\n        \"username\": \"taylor-lee\",\n        \"email\": \"taylor.lee@example.com\",\n        \"fullName\": \"Taylor Lee\",\n        \"avatar\": \"http://example.com/user/r5u9qpvmujfjf6lbqmga.jpg\",\n        \"isPublic\": true\n    },\n    \"operations\": [\n        {\n            \"name\": \"mock_usage\",\n            \"limit\": 1000000,\n            \"usage\": 110276,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"monitor_request_runs\",\n            \"limit\": 10000000,\n            \"usage\": 1141750,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"api_usage\",\n            \"limit\": 1000000,\n            \"usage\": 16240,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"custom_domains\",\n            \"limit\": 25,\n            \"usage\": 25,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"serverless_requests\",\n            \"limit\": 10000,\n            \"usage\": 0,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"integrations\",\n            \"limit\": 5000,\n            \"usage\": 1018,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"cloud_agent_requests\",\n            \"limit\": 1000000,\n            \"usage\": 1615,\n            \"overage\": 0\n        }\n    ]\n}"
+								},
+								{
+									"name": "Rate Limit Exceeded",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://api.getpostman.com/me",
+											"protocol": "http",
+											"host": [
+												"api",
+												"getpostman",
+												"com"
+											],
+											"path": [
+												"me"
+											]
+										}
+									},
+									"status": "Too Many Requests",
+									"code": 429,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"description": {
+												"content": "",
+												"type": "text/plain"
+											}
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"error\": \"rateLimited\",\n    \"message\": \"Rate limit exceeded. Please retry after 1669048687\"\n}"
+								}
+							]
+						},
+						{
+							"name": "checkVideoStatus",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost/office/rest-api/channel/checkvideostatus?user_id=1&video_id=297",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"channel",
+										"checkvideostatus"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "1"
+										},
+										{
+											"key": "video_id",
+											"value": "297"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "setQRLogin",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "api-key",
+										"value": "{{api-key}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost/office/rest-api/channel/setqrlogin?user_id=1&qr=297",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"channel",
+										"setqrlogin"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "1"
+										},
+										{
+											"key": "qr",
+											"value": "297"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "regUser",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "api-key",
+										"value": "{{api-key}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost/office/rest-api/channel/regUser?email=vpnusfluid@gmail.com&phone=7623890736",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"channel",
+										"regUser"
+									],
+									"query": [
+										{
+											"key": "email",
+											"value": "vpnusfluid@gmail.com"
+										},
+										{
+											"key": "phone",
+											"value": "7623890736"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "User",
+					"item": [
+						{
+							"name": "Channel_GetChannelInfo",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost/office/rest-api/channel/getchannelinfo?cid=11&user_id=1",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"channel",
+										"getchannelinfo"
+									],
+									"query": [
+										{
+											"key": "cid",
+											"value": "11"
+										},
+										{
+											"key": "user_id",
+											"value": "1"
+										}
+									]
+								},
+								"description": "Gets information about the authenticated user."
+							},
+							"response": [
+								{
+									"name": "Successful Response",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://api.getpostman.com/me",
+											"protocol": "http",
+											"host": [
+												"api",
+												"getpostman",
+												"com"
+											],
+											"path": [
+												"me"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"name": "Content-Type",
+											"description": {
+												"content": "",
+												"type": "text/plain"
+											}
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"user\": {\n        \"id\": 12345678,\n        \"username\": \"taylor-lee\",\n        \"email\": \"taylor.lee@example.com\",\n        \"fullName\": \"Taylor Lee\",\n        \"avatar\": \"http://example.com/user/r5u9qpvmujfjf6lbqmga.jpg\",\n        \"isPublic\": true\n    },\n    \"operations\": [\n        {\n            \"name\": \"mock_usage\",\n            \"limit\": 1000000,\n            \"usage\": 110276,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"monitor_request_runs\",\n            \"limit\": 10000000,\n            \"usage\": 1141750,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"api_usage\",\n            \"limit\": 1000000,\n            \"usage\": 16240,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"custom_domains\",\n            \"limit\": 25,\n            \"usage\": 25,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"serverless_requests\",\n            \"limit\": 10000,\n            \"usage\": 0,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"integrations\",\n            \"limit\": 5000,\n            \"usage\": 1018,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"cloud_agent_requests\",\n            \"limit\": 1000000,\n            \"usage\": 1615,\n            \"overage\": 0\n        }\n    ]\n}"
+								},
+								{
+									"name": "Rate Limit Exceeded",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://api.getpostman.com/me",
+											"protocol": "http",
+											"host": [
+												"api",
+												"getpostman",
+												"com"
+											],
+											"path": [
+												"me"
+											]
+										}
+									},
+									"status": "Too Many Requests",
+									"code": 429,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"description": {
+												"content": "",
+												"type": "text/plain"
+											}
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"error\": \"rateLimited\",\n    \"message\": \"Rate limit exceeded. Please retry after 1669048687\"\n}"
+								}
+							]
+						},
+						{
+							"name": "getchannelvideo",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost/office/rest-api/channel/getchannelinfo?cid=11&user_id=1",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"channel",
+										"getchannelinfo"
+									],
+									"query": [
+										{
+											"key": "cid",
+											"value": "11"
+										},
+										{
+											"key": "user_id",
+											"value": "1"
+										}
+									]
+								},
+								"description": "Gets information about the authenticated user."
+							},
+							"response": [
+								{
+									"name": "Successful Response",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://api.getpostman.com/me",
+											"protocol": "http",
+											"host": [
+												"api",
+												"getpostman",
+												"com"
+											],
+											"path": [
+												"me"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"name": "Content-Type",
+											"description": {
+												"content": "",
+												"type": "text/plain"
+											}
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"user\": {\n        \"id\": 12345678,\n        \"username\": \"taylor-lee\",\n        \"email\": \"taylor.lee@example.com\",\n        \"fullName\": \"Taylor Lee\",\n        \"avatar\": \"http://example.com/user/r5u9qpvmujfjf6lbqmga.jpg\",\n        \"isPublic\": true\n    },\n    \"operations\": [\n        {\n            \"name\": \"mock_usage\",\n            \"limit\": 1000000,\n            \"usage\": 110276,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"monitor_request_runs\",\n            \"limit\": 10000000,\n            \"usage\": 1141750,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"api_usage\",\n            \"limit\": 1000000,\n            \"usage\": 16240,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"custom_domains\",\n            \"limit\": 25,\n            \"usage\": 25,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"serverless_requests\",\n            \"limit\": 10000,\n            \"usage\": 0,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"integrations\",\n            \"limit\": 5000,\n            \"usage\": 1018,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"cloud_agent_requests\",\n            \"limit\": 1000000,\n            \"usage\": 1615,\n            \"overage\": 0\n        }\n    ]\n}"
+								},
+								{
+									"name": "Rate Limit Exceeded",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://api.getpostman.com/me",
+											"protocol": "http",
+											"host": [
+												"api",
+												"getpostman",
+												"com"
+											],
+											"path": [
+												"me"
+											]
+										}
+									},
+									"status": "Too Many Requests",
+									"code": 429,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"description": {
+												"content": "",
+												"type": "text/plain"
+											}
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"error\": \"rateLimited\",\n    \"message\": \"Rate limit exceeded. Please retry after 1669048687\"\n}"
+								}
+							]
+						},
+						{
+							"name": "channellist",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost/office/rest-api/channel/channellist?c_id=11&user_id=1",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"channel",
+										"channellist"
+									],
+									"query": [
+										{
+											"key": "c_id",
+											"value": "11"
+										},
+										{
+											"key": "user_id",
+											"value": "1"
+										}
+									]
+								},
+								"description": "Gets information about the authenticated user."
+							},
+							"response": [
+								{
+									"name": "Successful Response",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://api.getpostman.com/me",
+											"protocol": "http",
+											"host": [
+												"api",
+												"getpostman",
+												"com"
+											],
+											"path": [
+												"me"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"name": "Content-Type",
+											"description": {
+												"content": "",
+												"type": "text/plain"
+											}
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"user\": {\n        \"id\": 12345678,\n        \"username\": \"taylor-lee\",\n        \"email\": \"taylor.lee@example.com\",\n        \"fullName\": \"Taylor Lee\",\n        \"avatar\": \"http://example.com/user/r5u9qpvmujfjf6lbqmga.jpg\",\n        \"isPublic\": true\n    },\n    \"operations\": [\n        {\n            \"name\": \"mock_usage\",\n            \"limit\": 1000000,\n            \"usage\": 110276,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"monitor_request_runs\",\n            \"limit\": 10000000,\n            \"usage\": 1141750,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"api_usage\",\n            \"limit\": 1000000,\n            \"usage\": 16240,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"custom_domains\",\n            \"limit\": 25,\n            \"usage\": 25,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"serverless_requests\",\n            \"limit\": 10000,\n            \"usage\": 0,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"integrations\",\n            \"limit\": 5000,\n            \"usage\": 1018,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"cloud_agent_requests\",\n            \"limit\": 1000000,\n            \"usage\": 1615,\n            \"overage\": 0\n        }\n    ]\n}"
+								},
+								{
+									"name": "Rate Limit Exceeded",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://api.getpostman.com/me",
+											"protocol": "http",
+											"host": [
+												"api",
+												"getpostman",
+												"com"
+											],
+											"path": [
+												"me"
+											]
+										}
+									},
+									"status": "Too Many Requests",
+									"code": 429,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"description": {
+												"content": "",
+												"type": "text/plain"
+											}
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"error\": \"rateLimited\",\n    \"message\": \"Rate limit exceeded. Please retry after 1669048687\"\n}"
+								}
+							]
+						},
+						{
+							"name": "checkVideoStatus",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost/office/rest-api/channel/checkvideostatus?user_id=1&video_id=297",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"channel",
+										"checkvideostatus"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "1"
+										},
+										{
+											"key": "video_id",
+											"value": "297"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "sendOTP",
+							"request": {
+								"method": "GET",
+								"header": []
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Movies",
+					"item": [
+						{
+							"name": "getMovie",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost/office/rest-api//v130/movies?page=1",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"",
+										"v130",
+										"movies"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "get_video",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://multiplexplay.com/office/rest-api//v130/single_details?type=movie&id=297",
+									"protocol": "http",
+									"host": [
+										"multiplexplay",
+										"com"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"",
+										"v130",
+										"single_details"
+									],
+									"query": [
+										{
+											"key": "type",
+											"value": "movie"
+										},
+										{
+											"key": "id",
+											"value": "297"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "single_Details",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost/office/rest-api//v130/single_details?type=movie&id=312",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"",
+										"v130",
+										"single_details"
+									],
+									"query": [
+										{
+											"key": "type",
+											"value": "movie"
+										},
+										{
+											"key": "id",
+											"value": "312"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Package",
+					"item": [
+						{
+							"name": "all_package",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost/office/rest-api//v130/all_package",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"",
+										"v130",
+										"all_package"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "HomeScreen",
+					"item": [
+						{
+							"name": "homeScreen",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "file",
+									"file": {}
+								},
+								"url": {
+									"raw": "http://multiplexplay.com/nodeapi/rest-api/v130/get_slider",
+									"protocol": "http",
+									"host": [
+										"multiplexplay",
+										"com"
+									],
+									"path": [
+										"nodeapi",
+										"rest-api",
+										"v130",
+										"get_slider"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Cron_Payment",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost/office/cron/checkpayment",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"cron",
+										"checkpayment"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Comments",
+					"item": [
+						{
+							"name": "AllComments",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost/office/rest-api//v130/all_comments?id=312",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"",
+										"v130",
+										"all_comments"
+									],
+									"query": [
+										{
+											"key": "id",
+											"value": "312"
+										},
+										{
+											"key": "",
+											"value": "",
+											"disabled": true
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Favorite",
+					"item": [
+						{
+							"name": "verify_favorite",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost/office/rest-api//v130/verify_favorite_list?user_id=1&videos_id=312",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"",
+										"v130",
+										"verify_favorite_list"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "1"
+										},
+										{
+											"key": "videos_id",
+											"value": "312"
+										},
+										{
+											"key": "",
+											"value": "",
+											"disabled": true
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Payments",
+					"item": [
+						{
+							"name": "store_payment_info",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost/office/rest-api//v130/store_payment_info",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"",
+										"v130",
+										"store_payment_info"
+									],
+									"query": [
+										{
+											"key": "",
+											"value": "",
+											"disabled": true
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "check_user_subscription_status",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost/office/rest-api//v130/check_user_subscription_status?user_id=1",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"",
+										"v130",
+										"check_user_subscription_status"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "1"
+										},
+										{
+											"key": "",
+											"value": "",
+											"disabled": true
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			],
+			"description": "The `/me` endpoints let you manage information about the authenticated user."
+		},
+		{
+			"name": "MultiplexAPINode",
+			"item": [
+				{
+					"name": "ChannelApi",
+					"item": [
+						{
+							"name": "Channel_GetChannelList",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:3000/nodeapi/rest-api/v130/channel/getchannellist",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"nodeapi",
+										"rest-api",
+										"v130",
+										"channel",
+										"getchannellist"
+									]
+								},
+								"description": "Gets information about the authenticated user."
+							},
+							"response": [
+								{
+									"name": "Successful Response",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://api.getpostman.com/me",
+											"protocol": "http",
+											"host": [
+												"api",
+												"getpostman",
+												"com"
+											],
+											"path": [
+												"me"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"name": "Content-Type",
+											"description": {
+												"content": "",
+												"type": "text/plain"
+											}
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"user\": {\n        \"id\": 12345678,\n        \"username\": \"taylor-lee\",\n        \"email\": \"taylor.lee@example.com\",\n        \"fullName\": \"Taylor Lee\",\n        \"avatar\": \"http://example.com/user/r5u9qpvmujfjf6lbqmga.jpg\",\n        \"isPublic\": true\n    },\n    \"operations\": [\n        {\n            \"name\": \"mock_usage\",\n            \"limit\": 1000000,\n            \"usage\": 110276,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"monitor_request_runs\",\n            \"limit\": 10000000,\n            \"usage\": 1141750,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"api_usage\",\n            \"limit\": 1000000,\n            \"usage\": 16240,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"custom_domains\",\n            \"limit\": 25,\n            \"usage\": 25,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"serverless_requests\",\n            \"limit\": 10000,\n            \"usage\": 0,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"integrations\",\n            \"limit\": 5000,\n            \"usage\": 1018,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"cloud_agent_requests\",\n            \"limit\": 1000000,\n            \"usage\": 1615,\n            \"overage\": 0\n        }\n    ]\n}"
+								},
+								{
+									"name": "Rate Limit Exceeded",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://api.getpostman.com/me",
+											"protocol": "http",
+											"host": [
+												"api",
+												"getpostman",
+												"com"
+											],
+											"path": [
+												"me"
+											]
+										}
+									},
+									"status": "Too Many Requests",
+									"code": 429,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"description": {
+												"content": "",
+												"type": "text/plain"
+											}
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"error\": \"rateLimited\",\n    \"message\": \"Rate limit exceeded. Please retry after 1669048687\"\n}"
+								}
+							]
+						},
+						{
+							"name": "Channel_GetChannelInfo",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost/office/rest-api/channel/getchannelinfo?cid=11&user_id=1",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"channel",
+										"getchannelinfo"
+									],
+									"query": [
+										{
+											"key": "cid",
+											"value": "11"
+										},
+										{
+											"key": "user_id",
+											"value": "1"
+										}
+									]
+								},
+								"description": "Gets information about the authenticated user."
+							},
+							"response": [
+								{
+									"name": "Successful Response",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://api.getpostman.com/me",
+											"protocol": "http",
+											"host": [
+												"api",
+												"getpostman",
+												"com"
+											],
+											"path": [
+												"me"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"name": "Content-Type",
+											"description": {
+												"content": "",
+												"type": "text/plain"
+											}
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"user\": {\n        \"id\": 12345678,\n        \"username\": \"taylor-lee\",\n        \"email\": \"taylor.lee@example.com\",\n        \"fullName\": \"Taylor Lee\",\n        \"avatar\": \"http://example.com/user/r5u9qpvmujfjf6lbqmga.jpg\",\n        \"isPublic\": true\n    },\n    \"operations\": [\n        {\n            \"name\": \"mock_usage\",\n            \"limit\": 1000000,\n            \"usage\": 110276,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"monitor_request_runs\",\n            \"limit\": 10000000,\n            \"usage\": 1141750,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"api_usage\",\n            \"limit\": 1000000,\n            \"usage\": 16240,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"custom_domains\",\n            \"limit\": 25,\n            \"usage\": 25,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"serverless_requests\",\n            \"limit\": 10000,\n            \"usage\": 0,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"integrations\",\n            \"limit\": 5000,\n            \"usage\": 1018,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"cloud_agent_requests\",\n            \"limit\": 1000000,\n            \"usage\": 1615,\n            \"overage\": 0\n        }\n    ]\n}"
+								},
+								{
+									"name": "Rate Limit Exceeded",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://api.getpostman.com/me",
+											"protocol": "http",
+											"host": [
+												"api",
+												"getpostman",
+												"com"
+											],
+											"path": [
+												"me"
+											]
+										}
+									},
+									"status": "Too Many Requests",
+									"code": 429,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"description": {
+												"content": "",
+												"type": "text/plain"
+											}
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"error\": \"rateLimited\",\n    \"message\": \"Rate limit exceeded. Please retry after 1669048687\"\n}"
+								}
+							]
+						},
+						{
+							"name": "getchannelvideo",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost/office/rest-api/channel/getchannelinfo?cid=11&user_id=1",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"channel",
+										"getchannelinfo"
+									],
+									"query": [
+										{
+											"key": "cid",
+											"value": "11"
+										},
+										{
+											"key": "user_id",
+											"value": "1"
+										}
+									]
+								},
+								"description": "Gets information about the authenticated user."
+							},
+							"response": [
+								{
+									"name": "Successful Response",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://api.getpostman.com/me",
+											"protocol": "http",
+											"host": [
+												"api",
+												"getpostman",
+												"com"
+											],
+											"path": [
+												"me"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"name": "Content-Type",
+											"description": {
+												"content": "",
+												"type": "text/plain"
+											}
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"user\": {\n        \"id\": 12345678,\n        \"username\": \"taylor-lee\",\n        \"email\": \"taylor.lee@example.com\",\n        \"fullName\": \"Taylor Lee\",\n        \"avatar\": \"http://example.com/user/r5u9qpvmujfjf6lbqmga.jpg\",\n        \"isPublic\": true\n    },\n    \"operations\": [\n        {\n            \"name\": \"mock_usage\",\n            \"limit\": 1000000,\n            \"usage\": 110276,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"monitor_request_runs\",\n            \"limit\": 10000000,\n            \"usage\": 1141750,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"api_usage\",\n            \"limit\": 1000000,\n            \"usage\": 16240,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"custom_domains\",\n            \"limit\": 25,\n            \"usage\": 25,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"serverless_requests\",\n            \"limit\": 10000,\n            \"usage\": 0,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"integrations\",\n            \"limit\": 5000,\n            \"usage\": 1018,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"cloud_agent_requests\",\n            \"limit\": 1000000,\n            \"usage\": 1615,\n            \"overage\": 0\n        }\n    ]\n}"
+								},
+								{
+									"name": "Rate Limit Exceeded",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://api.getpostman.com/me",
+											"protocol": "http",
+											"host": [
+												"api",
+												"getpostman",
+												"com"
+											],
+											"path": [
+												"me"
+											]
+										}
+									},
+									"status": "Too Many Requests",
+									"code": 429,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"description": {
+												"content": "",
+												"type": "text/plain"
+											}
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"error\": \"rateLimited\",\n    \"message\": \"Rate limit exceeded. Please retry after 1669048687\"\n}"
+								}
+							]
+						},
+						{
+							"name": "setsubcribe",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost/office/rest-api/channel/setsubcribe?id=11&user_id=1",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"channel",
+										"setsubcribe"
+									],
+									"query": [
+										{
+											"key": "id",
+											"value": "11"
+										},
+										{
+											"key": "user_id",
+											"value": "1"
+										}
+									]
+								},
+								"description": "Gets information about the authenticated user."
+							},
+							"response": [
+								{
+									"name": "Successful Response",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://api.getpostman.com/me",
+											"protocol": "http",
+											"host": [
+												"api",
+												"getpostman",
+												"com"
+											],
+											"path": [
+												"me"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"name": "Content-Type",
+											"description": {
+												"content": "",
+												"type": "text/plain"
+											}
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"user\": {\n        \"id\": 12345678,\n        \"username\": \"taylor-lee\",\n        \"email\": \"taylor.lee@example.com\",\n        \"fullName\": \"Taylor Lee\",\n        \"avatar\": \"http://example.com/user/r5u9qpvmujfjf6lbqmga.jpg\",\n        \"isPublic\": true\n    },\n    \"operations\": [\n        {\n            \"name\": \"mock_usage\",\n            \"limit\": 1000000,\n            \"usage\": 110276,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"monitor_request_runs\",\n            \"limit\": 10000000,\n            \"usage\": 1141750,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"api_usage\",\n            \"limit\": 1000000,\n            \"usage\": 16240,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"custom_domains\",\n            \"limit\": 25,\n            \"usage\": 25,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"serverless_requests\",\n            \"limit\": 10000,\n            \"usage\": 0,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"integrations\",\n            \"limit\": 5000,\n            \"usage\": 1018,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"cloud_agent_requests\",\n            \"limit\": 1000000,\n            \"usage\": 1615,\n            \"overage\": 0\n        }\n    ]\n}"
+								},
+								{
+									"name": "Rate Limit Exceeded",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://api.getpostman.com/me",
+											"protocol": "http",
+											"host": [
+												"api",
+												"getpostman",
+												"com"
+											],
+											"path": [
+												"me"
+											]
+										}
+									},
+									"status": "Too Many Requests",
+									"code": 429,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"description": {
+												"content": "",
+												"type": "text/plain"
+											}
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"error\": \"rateLimited\",\n    \"message\": \"Rate limit exceeded. Please retry after 1669048687\"\n}"
+								}
+							]
+						},
+						{
+							"name": "channellist",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost/office/rest-api/channel/channellist?c_id=11&user_id=1",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"channel",
+										"channellist"
+									],
+									"query": [
+										{
+											"key": "c_id",
+											"value": "11"
+										},
+										{
+											"key": "user_id",
+											"value": "1"
+										}
+									]
+								},
+								"description": "Gets information about the authenticated user."
+							},
+							"response": [
+								{
+									"name": "Successful Response",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://api.getpostman.com/me",
+											"protocol": "http",
+											"host": [
+												"api",
+												"getpostman",
+												"com"
+											],
+											"path": [
+												"me"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"name": "Content-Type",
+											"description": {
+												"content": "",
+												"type": "text/plain"
+											}
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"user\": {\n        \"id\": 12345678,\n        \"username\": \"taylor-lee\",\n        \"email\": \"taylor.lee@example.com\",\n        \"fullName\": \"Taylor Lee\",\n        \"avatar\": \"http://example.com/user/r5u9qpvmujfjf6lbqmga.jpg\",\n        \"isPublic\": true\n    },\n    \"operations\": [\n        {\n            \"name\": \"mock_usage\",\n            \"limit\": 1000000,\n            \"usage\": 110276,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"monitor_request_runs\",\n            \"limit\": 10000000,\n            \"usage\": 1141750,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"api_usage\",\n            \"limit\": 1000000,\n            \"usage\": 16240,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"custom_domains\",\n            \"limit\": 25,\n            \"usage\": 25,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"serverless_requests\",\n            \"limit\": 10000,\n            \"usage\": 0,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"integrations\",\n            \"limit\": 5000,\n            \"usage\": 1018,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"cloud_agent_requests\",\n            \"limit\": 1000000,\n            \"usage\": 1615,\n            \"overage\": 0\n        }\n    ]\n}"
+								},
+								{
+									"name": "Rate Limit Exceeded",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://api.getpostman.com/me",
+											"protocol": "http",
+											"host": [
+												"api",
+												"getpostman",
+												"com"
+											],
+											"path": [
+												"me"
+											]
+										}
+									},
+									"status": "Too Many Requests",
+									"code": 429,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"description": {
+												"content": "",
+												"type": "text/plain"
+											}
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"error\": \"rateLimited\",\n    \"message\": \"Rate limit exceeded. Please retry after 1669048687\"\n}"
+								}
+							]
+						},
+						{
+							"name": "checkVideoStatus",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost/office/rest-api/channel/checkvideostatus?user_id=1&video_id=297",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"channel",
+										"checkvideostatus"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "1"
+										},
+										{
+											"key": "video_id",
+											"value": "297"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "setQRLogin",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "api-key",
+										"value": "{{api-key}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost/office/rest-api/channel/setqrlogin?user_id=1&qr=297",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"channel",
+										"setqrlogin"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "1"
+										},
+										{
+											"key": "qr",
+											"value": "297"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "regUser",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "api-key",
+										"value": "{{api-key}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost/office/rest-api/channel/regUser?email=vpnusfluid@gmail.com&phone=7623890736",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"channel",
+										"regUser"
+									],
+									"query": [
+										{
+											"key": "email",
+											"value": "vpnusfluid@gmail.com"
+										},
+										{
+											"key": "phone",
+											"value": "7623890736"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "User",
+					"item": [
+						{
+							"name": "Channel_GetChannelInfo",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost/office/rest-api/channel/getchannelinfo?cid=11&user_id=1",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"channel",
+										"getchannelinfo"
+									],
+									"query": [
+										{
+											"key": "cid",
+											"value": "11"
+										},
+										{
+											"key": "user_id",
+											"value": "1"
+										}
+									]
+								},
+								"description": "Gets information about the authenticated user."
+							},
+							"response": [
+								{
+									"name": "Successful Response",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://api.getpostman.com/me",
+											"protocol": "http",
+											"host": [
+												"api",
+												"getpostman",
+												"com"
+											],
+											"path": [
+												"me"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"name": "Content-Type",
+											"description": {
+												"content": "",
+												"type": "text/plain"
+											}
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"user\": {\n        \"id\": 12345678,\n        \"username\": \"taylor-lee\",\n        \"email\": \"taylor.lee@example.com\",\n        \"fullName\": \"Taylor Lee\",\n        \"avatar\": \"http://example.com/user/r5u9qpvmujfjf6lbqmga.jpg\",\n        \"isPublic\": true\n    },\n    \"operations\": [\n        {\n            \"name\": \"mock_usage\",\n            \"limit\": 1000000,\n            \"usage\": 110276,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"monitor_request_runs\",\n            \"limit\": 10000000,\n            \"usage\": 1141750,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"api_usage\",\n            \"limit\": 1000000,\n            \"usage\": 16240,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"custom_domains\",\n            \"limit\": 25,\n            \"usage\": 25,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"serverless_requests\",\n            \"limit\": 10000,\n            \"usage\": 0,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"integrations\",\n            \"limit\": 5000,\n            \"usage\": 1018,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"cloud_agent_requests\",\n            \"limit\": 1000000,\n            \"usage\": 1615,\n            \"overage\": 0\n        }\n    ]\n}"
+								},
+								{
+									"name": "Rate Limit Exceeded",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://api.getpostman.com/me",
+											"protocol": "http",
+											"host": [
+												"api",
+												"getpostman",
+												"com"
+											],
+											"path": [
+												"me"
+											]
+										}
+									},
+									"status": "Too Many Requests",
+									"code": 429,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"description": {
+												"content": "",
+												"type": "text/plain"
+											}
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"error\": \"rateLimited\",\n    \"message\": \"Rate limit exceeded. Please retry after 1669048687\"\n}"
+								}
+							]
+						},
+						{
+							"name": "getchannelvideo",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost/office/rest-api/channel/getchannelinfo?cid=11&user_id=1",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"channel",
+										"getchannelinfo"
+									],
+									"query": [
+										{
+											"key": "cid",
+											"value": "11"
+										},
+										{
+											"key": "user_id",
+											"value": "1"
+										}
+									]
+								},
+								"description": "Gets information about the authenticated user."
+							},
+							"response": [
+								{
+									"name": "Successful Response",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://api.getpostman.com/me",
+											"protocol": "http",
+											"host": [
+												"api",
+												"getpostman",
+												"com"
+											],
+											"path": [
+												"me"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"name": "Content-Type",
+											"description": {
+												"content": "",
+												"type": "text/plain"
+											}
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"user\": {\n        \"id\": 12345678,\n        \"username\": \"taylor-lee\",\n        \"email\": \"taylor.lee@example.com\",\n        \"fullName\": \"Taylor Lee\",\n        \"avatar\": \"http://example.com/user/r5u9qpvmujfjf6lbqmga.jpg\",\n        \"isPublic\": true\n    },\n    \"operations\": [\n        {\n            \"name\": \"mock_usage\",\n            \"limit\": 1000000,\n            \"usage\": 110276,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"monitor_request_runs\",\n            \"limit\": 10000000,\n            \"usage\": 1141750,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"api_usage\",\n            \"limit\": 1000000,\n            \"usage\": 16240,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"custom_domains\",\n            \"limit\": 25,\n            \"usage\": 25,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"serverless_requests\",\n            \"limit\": 10000,\n            \"usage\": 0,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"integrations\",\n            \"limit\": 5000,\n            \"usage\": 1018,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"cloud_agent_requests\",\n            \"limit\": 1000000,\n            \"usage\": 1615,\n            \"overage\": 0\n        }\n    ]\n}"
+								},
+								{
+									"name": "Rate Limit Exceeded",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://api.getpostman.com/me",
+											"protocol": "http",
+											"host": [
+												"api",
+												"getpostman",
+												"com"
+											],
+											"path": [
+												"me"
+											]
+										}
+									},
+									"status": "Too Many Requests",
+									"code": 429,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"description": {
+												"content": "",
+												"type": "text/plain"
+											}
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"error\": \"rateLimited\",\n    \"message\": \"Rate limit exceeded. Please retry after 1669048687\"\n}"
+								}
+							]
+						},
+						{
+							"name": "channellist",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost/office/rest-api/channel/channellist?c_id=11&user_id=1",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"channel",
+										"channellist"
+									],
+									"query": [
+										{
+											"key": "c_id",
+											"value": "11"
+										},
+										{
+											"key": "user_id",
+											"value": "1"
+										}
+									]
+								},
+								"description": "Gets information about the authenticated user."
+							},
+							"response": [
+								{
+									"name": "Successful Response",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://api.getpostman.com/me",
+											"protocol": "http",
+											"host": [
+												"api",
+												"getpostman",
+												"com"
+											],
+											"path": [
+												"me"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"name": "Content-Type",
+											"description": {
+												"content": "",
+												"type": "text/plain"
+											}
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"user\": {\n        \"id\": 12345678,\n        \"username\": \"taylor-lee\",\n        \"email\": \"taylor.lee@example.com\",\n        \"fullName\": \"Taylor Lee\",\n        \"avatar\": \"http://example.com/user/r5u9qpvmujfjf6lbqmga.jpg\",\n        \"isPublic\": true\n    },\n    \"operations\": [\n        {\n            \"name\": \"mock_usage\",\n            \"limit\": 1000000,\n            \"usage\": 110276,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"monitor_request_runs\",\n            \"limit\": 10000000,\n            \"usage\": 1141750,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"api_usage\",\n            \"limit\": 1000000,\n            \"usage\": 16240,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"custom_domains\",\n            \"limit\": 25,\n            \"usage\": 25,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"serverless_requests\",\n            \"limit\": 10000,\n            \"usage\": 0,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"integrations\",\n            \"limit\": 5000,\n            \"usage\": 1018,\n            \"overage\": 0\n        },\n        {\n            \"name\": \"cloud_agent_requests\",\n            \"limit\": 1000000,\n            \"usage\": 1615,\n            \"overage\": 0\n        }\n    ]\n}"
+								},
+								{
+									"name": "Rate Limit Exceeded",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://api.getpostman.com/me",
+											"protocol": "http",
+											"host": [
+												"api",
+												"getpostman",
+												"com"
+											],
+											"path": [
+												"me"
+											]
+										}
+									},
+									"status": "Too Many Requests",
+									"code": 429,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"description": {
+												"content": "",
+												"type": "text/plain"
+											}
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"error\": \"rateLimited\",\n    \"message\": \"Rate limit exceeded. Please retry after 1669048687\"\n}"
+								}
+							]
+						},
+						{
+							"name": "checkVideoStatus",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost/office/rest-api/channel/checkvideostatus?user_id=1&video_id=297",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"channel",
+										"checkvideostatus"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "1"
+										},
+										{
+											"key": "video_id",
+											"value": "297"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "sendOTP",
+							"request": {
+								"method": "GET",
+								"header": []
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Movies",
+					"item": [
+						{
+							"name": "getMovie",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost/office/rest-api//v130/movies?page=1",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"",
+										"v130",
+										"movies"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "get_video",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://multiplexplay.com/office/rest-api//v130/single_details?type=movie&id=297",
+									"protocol": "http",
+									"host": [
+										"multiplexplay",
+										"com"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"",
+										"v130",
+										"single_details"
+									],
+									"query": [
+										{
+											"key": "type",
+											"value": "movie"
+										},
+										{
+											"key": "id",
+											"value": "297"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "single_Details",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost/office/rest-api//v130/single_details?type=movie&id=312",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"",
+										"v130",
+										"single_details"
+									],
+									"query": [
+										{
+											"key": "type",
+											"value": "movie"
+										},
+										{
+											"key": "id",
+											"value": "312"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Package",
+					"item": [
+						{
+							"name": "all_package",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost/office/rest-api//v130/all_package",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"",
+										"v130",
+										"all_package"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "HomeScreen",
+					"item": [
+						{
+							"name": "homeScreen",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost/office/rest-api/channel/home_content_for_android_get",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"channel",
+										"home_content_for_android_get"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Cron_Payment",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost/office/cron/checkpayment",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"cron",
+										"checkpayment"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Comments",
+					"item": [
+						{
+							"name": "AllComments",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost/office/rest-api//v130/all_comments?id=312",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"",
+										"v130",
+										"all_comments"
+									],
+									"query": [
+										{
+											"key": "id",
+											"value": "312"
+										},
+										{
+											"key": "",
+											"value": "",
+											"disabled": true
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Favorite",
+					"item": [
+						{
+							"name": "verify_favorite",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost/office/rest-api//v130/verify_favorite_list?user_id=1&videos_id=312",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"",
+										"v130",
+										"verify_favorite_list"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "1"
+										},
+										{
+											"key": "videos_id",
+											"value": "312"
+										},
+										{
+											"key": "",
+											"value": "",
+											"disabled": true
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Payments",
+					"item": [
+						{
+							"name": "store_payment_info",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost/office/rest-api//v130/store_payment_info",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"",
+										"v130",
+										"store_payment_info"
+									],
+									"query": [
+										{
+											"key": "",
+											"value": "",
+											"disabled": true
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "check_user_subscription_status",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "API-KEY",
+										"value": "ec8590cb04e0e37c6706ab6c",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost/office/rest-api//v130/check_user_subscription_status?user_id=1",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"office",
+										"rest-api",
+										"",
+										"v130",
+										"check_user_subscription_status"
+									],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "1"
+										},
+										{
+											"key": "",
+											"value": "",
+											"disabled": true
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			],
+			"description": "The `/me` endpoints let you manage information about the authenticated user."
+		},
+		{
+			"name": "Config",
+			"item": [
+				{
+					"name": "config",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "api-key",
+								"value": "ec8590cb04e0e37c6706ab6c",
+								"type": "text"
+							},
+							{
+								"key": "x-platform",
+								"value": "android",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:3000/office/rest-api/v130/config",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"office",
+								"rest-api",
+								"v130",
+								"config"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "home_content_for_android",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "api-key",
+								"value": "ec8590cb04e0e37c6706ab6c",
+								"type": "text"
+							},
+							{
+								"key": "x-platform",
+								"value": "android",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "localhost:3000/rest-api/v130/home_content_for_android",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"rest-api",
+								"v130",
+								"home_content_for_android"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "check_user_subscription_status",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "api-key",
+								"value": "ec8590cb04e0e37c6706ab6c",
+								"type": "text"
+							},
+							{
+								"key": "x-platform",
+								"value": "android",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "localhost:3000/rest-api/v130/check_user_subscription_status?user_id=279",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"rest-api",
+								"v130",
+								"check_user_subscription_status"
+							],
+							"query": [
+								{
+									"key": "user_id",
+									"value": "279"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "all_genres",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "api-key",
+								"value": "ec8590cb04e0e37c6706ab6c",
+								"type": "text"
+							},
+							{
+								"key": "x-platform",
+								"value": "android",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "localhost:3000/rest-api/v130/genres",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"rest-api",
+								"v130",
+								"genres"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "movies",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "api-key",
+								"value": "ec8590cb04e0e37c6706ab6c",
+								"type": "text"
+							},
+							{
+								"key": "x-platform",
+								"value": "android",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "localhost:3000/rest-api/v130/genres",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"rest-api",
+								"v130",
+								"genres"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "favorite",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "api-key",
+								"value": "ec8590cb04e0e37c6706ab6c",
+								"type": "text"
+							},
+							{
+								"key": "x-platform",
+								"value": "android",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "localhost:3000/rest-api/v130/favorite?user_id=12703",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"rest-api",
+								"v130",
+								"favorite"
+							],
+							"query": [
+								{
+									"key": "user_id",
+									"value": "12703"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "New Folder",
+			"item": [
+				{
+					"name": "New Request",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://multiplexplay.com/office/rest-api/v130/clear_cache?api-key={{api-key}}",
+							"protocol": "http",
+							"host": [
+								"multiplexplay",
+								"com"
+							],
+							"path": [
+								"office",
+								"rest-api",
+								"v130",
+								"clear_cache"
+							],
+							"query": [
+								{
+									"key": "api-key",
+									"value": "{{api-key}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

@@ -3,7 +3,7 @@ const router = express.Router();
 const { getChannelListController, createChannelController, updateChannelController, deleteChannelController, statusChannelController } = require("../../controllers/mobileControllers/channel.controller");
 
 //Mobuile Channel Routes
-router.get("/", getChannelListController);
+router.get("/getchannellist", getChannelListController);
 router.post("/", createChannelController);
 router.put("/:id", updateChannelController);
 router.delete("/:id", deleteChannelController);

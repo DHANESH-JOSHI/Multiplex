@@ -25,7 +25,7 @@ router.use("/favorite", favoriteRoutes);
 router.use("/genres", genreRoutes);
 router.use("/user", userLoginRoutes); // User Login
 router.use("/home_content_for_android", homeContentRoutes);
-router.use("/getchannellist", channelRoutes);
+router.use("/channel", channelRoutes);
 router.use("/all_package", planRoutes);
 router.use("/slider", sliderRoutes);
 
