@@ -150,9 +150,90 @@ const getChannelInfoService = async (channel_id, uid) => {
   }
 };
 
-module.exports = { getChannelInfoService };
+const getSingleMovieDetailsByIdc = async (id, uid) => {
+  const videoObjectId = id;
 
+  // Aggregation pipeline
+  const video = await Video.aggregate([
+    { $match: { _id: videoObjectId } },
+    {
+      $lookup: {
+        from: 'channels',
+        localField: 'imdbid',
+        foreignField: 'channel_id',
+        as: 'channel_info'
+      }
+    },
+    {
+      $addFields: {
+        channel: { $arrayElemAt: ['$channel_info', 0] }
+      }
+    },
+    {
+      $project: {
+        channel_info: 0
+      }
+    }
+  ]);
 
+  if (!video[0]) return {};
+
+  const movie = video[0];
+
+  // Subscription check
+  let subscribed = 0;
+  if (uid) {
+    const sub = await Subscribe.findOne({ c_id: movie.imdbid, user_id: uid });
+    if (sub) subscribed = 1;
+  }
+
+  // Update view counts
+  await Video.updateOne(
+    { _id: id },
+    {
+      $inc: {
+        today_view: 1,
+        weekly_view: 1,
+        monthly_view: 1,
+        total_view: 1
+      }
+    }
+  );
+
+  return {
+    videos_id: video._id,
+    title: video.title,
+    description: video.description,
+    admin: video.imdbid ? 0 : 1,
+    subcribe: subscribed,
+    slug: video.slug,
+    release: video.release,
+    runtime: video.runtime,
+    video_quality: video.video_quality,
+    channel_name: video.channel?.channel_name,
+    channel_id: video.channel?.channel_id,
+    channel_img: video.channel?.img,
+    is_tvseries: '0',
+    is_paid: video.is_paid,
+    enable_download: video.enable_download,
+    download_links: video.enable_download ? video.download_links || [] : [],
+    thumbnail_url: video.thumbnail_url || '',
+    poster_url: video.poster_url || '',
+    videos: video.videos || [],
+    genre: video.genre || [],
+    country: video.country || [],
+    director: video.director || [],
+    writer: video.writer || [],
+    cast: video.cast || [],
+    cast_and_crew: [
+      ...(video.director || []),
+      ...(video.writer || []),
+      ...(video.cast || [])
+    ],
+    trailler_youtube_source: video.trailler_youtube_source,
+    related_movie: [] // Can add another aggregate call
+  };
+}
 // Create new channel
 const createChannel = async (channelData) => {
   const channel = new Channel(channelData);
@@ -182,6 +263,7 @@ const getChannelById = async (channelId) => {
 module.exports = {
   getChannelList,
   getChannelInfoService,
+  getSingleMovieDetailsByIdc,
   createChannel,
   updateChannel,
   deleteChannel,

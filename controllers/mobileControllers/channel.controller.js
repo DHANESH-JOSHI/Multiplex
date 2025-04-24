@@ -1,4 +1,4 @@
-const { getChannelList,getChannelInfoService, createChannel, updateChannel, deleteChannel, getChannelById } = require('../../services/mobileServices/channel.service');
+const { getChannelList,getChannelInfoService, createChannel, updateChannel, deleteChannel, getChannelById, getSingleMovieDetailsByIdc } = require('../../services/mobileServices/channel.service');
 
 
 const getChannelListController = async (req, res) => {
@@ -114,6 +114,19 @@ const getChannelInfoController = async (req, res) => {
 };
 
 
+const getChannelVideo = async (req, res) => { 
+  try {
+    const id = req.query.id;
+    const uid = req.query.user_id;
+    const data = await getSingleMovieDetailsByIdc(id, uid);
+    res.json(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+}
+
+
 const createChannelController = async (req, res) => {
   try {
     const channelData = req.body;
@@ -190,6 +203,7 @@ const statusChannelController = async (req, res) => {
 module.exports = {
   getChannelListController,
   getChannelInfoController,
+  getChannelVideo,
   createChannelController,
   updateChannelController,
   deleteChannelController,
