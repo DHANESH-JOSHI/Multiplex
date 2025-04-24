@@ -1,11 +1,11 @@
-const { getChannelList,getChannelInfoService, createChannel, updateChannel, deleteChannel, getChannelById, getSingleMovieDetailsByIdc } = require('../../services/mobileServices/channel.service');
+const { getChannelList, getChannelInfoService, createChannel, updateChannel, deleteChannel, getChannelById, getSingleMovieDetailsByIdc } = require('../../services/mobileServices/channel.service');
 
 
 const getChannelListController = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit, 10) || 0;
     let channel;
-      channel = await getChannelList(limit);
+    channel = await getChannelList(limit);
 
     res.json(channel);
   } catch (error) {
@@ -21,7 +21,7 @@ const getChannelListController = async (req, res) => {
 //     // 🛡️ Step 1: Validate and Parse channel_id
 //     const parsedChannelId = parseInt(channel_id);
 //     const parsedUserId = parseInt(uid);
-    
+
 //     if (isNaN(parsedChannelId)) {
 //       return res.status(400).json({ error: "Invalid channel_id. Must be a number." });
 //     }
@@ -114,10 +114,10 @@ const getChannelInfoController = async (req, res) => {
 };
 
 
-const getChannelVideo = async (req, res) => { 
+const getChannelVideo = async (req, res) => {
   try {
-    const id = req.query.id;
-    const uid = req.query.user_id;
+    const { id, uid } = req.query;
+
     const data = await getSingleMovieDetailsByIdc(id, uid);
     res.json(data);
   } catch (err) {
