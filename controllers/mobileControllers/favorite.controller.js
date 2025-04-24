@@ -7,7 +7,7 @@ class FavoriteController {
       if (!user_id) return res.status(400).json({ message: "User ID is required" });
 
       const favorites = await FavoriteService.getFavorites(user_id);
-
+      console.log(favorites);
       if (!favorites || favorites.length === 0) {
         return res.status(404).json({ message: "No favorites found." });
       }

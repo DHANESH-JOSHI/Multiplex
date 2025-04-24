@@ -1,4 +1,8 @@
 const { getChannelList, createChannel, updateChannel, deleteChannel, getChannelById } = require('../../services/mobileServices/channel.service');
+const videoSchema = require('../../models/videos.model');
+const Channel = require('../../models/channel.model');
+const Subscription = require('../../models/subcribe.model'); // or Subcribe if that's the actual name
+
 
 const getChannelListController = async (req, res) => {
   try {
@@ -20,6 +24,101 @@ const getChannelListController = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
+const getChannelInfoController = async (req, res) => {
+
+  const { cid, user_id } = req.query;
+  let channel_id = cid;
+  let userId = user_id;
+  // const channel_id = parseInt(cid);
+  const channel = await Channel.findOne({ channel_id });
+  console.log(channel);
+  if (!channel) return res.status(404).json({ error: 'Channel not found' });
+  console.log(channel);
+  const videos = await videoSchema.aggregate([
+    { $match: { imdbid: String(channel_id) } },
+    {
+      $project: {
+        videos_id: 1,
+        genre: null,
+        country: null,
+        channel_name: channel.channel_name,
+        channel_id: channel.channel_id,
+        channel_img: channel.img,
+        channelImage: channel.img,
+        title: 1,
+        view: "$total_view",
+        description: 1,
+        slug: {
+          $concat: ["-", { $toString: "$videos_id" }]
+        },
+        is_paid: { $toString: "$is_paid" },
+        is_tvseries: { $toString: "$is_tvseries" },
+        release: {
+          $cond: {
+            if: "$cre",
+            then: {
+              $concat: [
+                {
+                  $toString: {
+                    $floor: {
+                      $divide: [
+                        { $subtract: [new Date(), "$cre"] },
+                        1000 * 60 * 60 * 24 * 30
+                      ]
+                    }
+                  }
+                },
+                " month(s) ago "
+              ]
+            },
+            else: ""
+          }
+        },
+        runtime: 1,
+        video_quality: 1,
+        thumbnail_url: {
+          $concat: [
+            "https://multiplexplay.com/office/uploads/video_thumb/",
+            { $toString: "$videos_id" },
+            ".jpg"
+          ]
+        },
+        poster_url: {
+          $concat: [
+            "https://multiplexplay.com/office/uploads/poster_image/",
+            { $toString: "$videos_id" },
+            ".jpg"
+          ]
+        }
+      }
+    }
+  ]);
+  console.log(videos);
+  const totalViews = await videoSchema.aggregate([
+    { $match: { imdbid: String(channel_id) } },
+    { $group: { _id: null, total: { $sum: "$total_view" } } }
+  ]);
+
+  const isSubscribed = await Subscription.findOne({
+    user_id: String(userId),
+    c_id: channel_id
+  });
+
+  const subscriberCount = await Subscription.countDocuments({
+    c_id: channel_id
+  });
+
+  res.send({
+    channel_name: channel.channel_name,
+    channel_id: String(channel.channel_id),
+    channel_img: channel.img,
+    subcribe: isSubscribed ? 1 : 0,
+    view: String(totalViews[0]?.total || 0),
+    count: String(subscriberCount),
+    related_movie: videos
+  });
+}
 
 const createChannelController = async (req, res) => {
   try {
@@ -96,6 +195,7 @@ const statusChannelController = async (req, res) => {
 
 module.exports = {
   getChannelListController,
+  getChannelInfoController,
   createChannelController,
   updateChannelController,
   deleteChannelController,

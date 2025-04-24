@@ -5,7 +5,7 @@ class FavoriteService {
   async getFavorites(user_id) {
     try {
       const favorites = await Favorite.aggregate([
-        { $match: { user_id: user_id  } }, // Match favorites for the user
+        { $match: { user_id: user_id } },
 
         // Lookup Video Details
         {
@@ -27,8 +27,8 @@ class FavoriteService {
             as: "genre"
           }
         },
-        
-        // Lookup Country
+
+        // Lookup Countries
         {
           $lookup: {
             from: "countries",
@@ -38,7 +38,7 @@ class FavoriteService {
           }
         },
 
-        // Lookup Director
+        // Lookup Directors
         {
           $lookup: {
             from: "directors",
@@ -48,7 +48,7 @@ class FavoriteService {
           }
         },
 
-        // Lookup Writer
+        // Lookup Writers
         {
           $lookup: {
             from: "writers",
@@ -58,7 +58,7 @@ class FavoriteService {
           }
         },
 
-        // Lookup Cast (if required)
+        // Lookup Cast
         {
           $lookup: {
             from: "cast",
@@ -68,50 +68,31 @@ class FavoriteService {
           }
         },
 
-        // Reshape the output & Ensure Empty Arrays Instead of Null
+        // Lookup Videos file info
+        {
+          $lookup: {
+            from: "video_files",
+            localField: "video.videos_id",
+            foreignField: "videos_id",
+            as: "videos"
+          }
+        },
+
+        // Final Project
         {
           $project: {
-            _id: 1,
-            wish_list_id: 1,
-            wish_list_type: 1,
-            user_id: 1,
-            videos_id: 1,
-            episodes_id: 1,
-            create_at: 1,
-            status: 1,
-            video: {
-              _id: "$video._id",
-              videos_id: "$video.videos_id",
-              imdbid: "$video.imdbid",
-              title: "$video.title",
-              seo_title: "$video.seo_title",
-              slug: "$video.slug",
-              description: "$video.description",
-              stars: "$video.stars",
-              rating: "$video.rating",
-              release: "$video.release",
-              video_type: "$video.video_type",
-              runtime: "$video.runtime",
-              video_quality: "$video.video_quality",
-              is_paid: "$video.is_paid",
-              publication: "$video.publication",
-              lid: "$video.lid",
-              trailer: "$video.trailer",
-              trailler_youtube_source: "$video.trailler_youtube_source",
-              enable_download: "$video.enable_download",
-              focus_keyword: "$video.focus_keyword",
-              meta_description: "$video.meta_description",
-              tags: "$video.tags",
-              imdb_rating: "$video.imdb_rating",
-              is_tvseries: "$video.is_tvseries",
-              total_rating: "$video.total_rating",
-              today_view: "$video.today_view",
-              weekly_view: "$video.weekly_view",
-              monthly_view: "$video.monthly_view",
-              total_view: "$video.total_view",
-              last_ep_added: "$video.last_ep_added",
-              cre: "$video.cre"
-            },
+            _id: 0,
+            videos_id: "$video.videos_id",
+            title: "$video.title",
+            description: "$video.description",
+            slug: "$video.slug",
+            release: "$video.release",
+            runtime: "$video.runtime",
+            video_quality: "$video.video_quality",
+            is_tvseries: "$video.is_tvseries",
+            thumbnail_url: "$video.thumbnail_url",
+            poster_url: "$video.poster_url",
+            videos: { $ifNull: ["$videos", []] },
             genre: { $ifNull: ["$genre", []] },
             country: { $ifNull: ["$country", []] },
             director: { $ifNull: ["$director", []] },
@@ -126,6 +107,7 @@ class FavoriteService {
       console.error("Error fetching favorites:", error.message);
       throw error;
     }
+
   }
 
   async addFavorite(wish_list_id, wish_list_type, user_id, videos_id, episodes_id) {
