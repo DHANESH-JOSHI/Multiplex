@@ -181,8 +181,10 @@ const getChannelById = async (channelId) => {
 
 module.exports = {
   getChannelList,
+  getChannelInfoService,
   createChannel,
   updateChannel,
   deleteChannel,
-  getChannelById
+  getChannelById,
+
 };
