@@ -26,99 +26,89 @@ const getChannelListController = async (req, res) => {
 };
 
 const getChannelInfoController = async (req, res) => {
+  try {
+    const { channel_id, uid } = req.query;
 
-  const { cid, user_id } = req.query;
-  let channel_id = cid;
-  let userId = user_id;
-  // const channel_id = parseInt(cid);
-  const channel = await Channel.findOne({ channel_id });
-  console.log(channel);
-  if (!channel) return res.status(404).json({ error: 'Channel not found' });
-  console.log(channel);
-  const videos = await videoSchema.aggregate([
-    { $match: { imdbid: String(channel_id) } },
-    {
-      $project: {
-        videos_id: 1,
-        genre: null,
-        country: null,
-        channel_name: channel.channel_name,
-        channel_id: channel.channel_id,
-        channel_img: channel.img,
-        channelImage: channel.img,
-        title: 1,
-        view: "$total_view",
-        description: 1,
-        slug: {
-          $concat: ["-", { $toString: "$videos_id" }]
-        },
-        is_paid: { $toString: "$is_paid" },
-        is_tvseries: { $toString: "$is_tvseries" },
-        release: {
-          $cond: {
-            if: "$cre",
-            then: {
-              $concat: [
-                {
-                  $toString: {
-                    $floor: {
-                      $divide: [
-                        { $subtract: [new Date(), "$cre"] },
-                        1000 * 60 * 60 * 24 * 30
-                      ]
-                    }
-                  }
-                },
-                " month(s) ago "
-              ]
-            },
-            else: ""
-          }
-        },
-        runtime: 1,
-        video_quality: 1,
-        thumbnail_url: {
-          $concat: [
-            "https://multiplexplay.com/office/uploads/video_thumb/",
-            { $toString: "$videos_id" },
-            ".jpg"
-          ]
-        },
-        poster_url: {
-          $concat: [
-            "https://multiplexplay.com/office/uploads/poster_image/",
-            { $toString: "$videos_id" },
-            ".jpg"
-          ]
-        }
+    // 🛡️ Step 1: Validate and Parse channel_id
+    const parsedChannelId = parseInt(channel_id);
+    const parsedUserId = parseInt(uid);
+    
+    if (isNaN(parsedChannelId)) {
+      return res.status(400).json({ error: "Invalid channel_id. Must be a number." });
+    }
+
+    // 🛡️ Step 2: Fetch channel details
+    const channel = await Channel.findOne({ channel_id: parsedChannelId });
+
+    if (!channel) {
+      return res.status(404).json({ error: "Channel not found." });
+    }
+
+    let stt = 0; // Subscription status
+
+    // 🛡️ Step 3: Check subscription if user_id is provided
+    if (parsedUserId > 0) {
+      const subscription = await Subscription.find({ c_id: parsedChannelId, user_id: parsedUserId });
+      if (subscription.length > 0) {
+        stt = 1; // User is subscribed
       }
     }
-  ]);
-  console.log(videos);
-  const totalViews = await videoSchema.aggregate([
-    { $match: { imdbid: String(channel_id) } },
-    { $group: { _id: null, total: { $sum: "$total_view" } } }
-  ]);
 
-  const isSubscribed = await Subscription.findOne({
-    user_id: String(userId),
-    c_id: channel_id
-  });
+    // 🛡️ Step 4: Get total views for the channel's videos
+    const totalViews = await videoSchema.aggregate([
+      { $match: { imdbid: parsedChannelId } },
+      { $group: { _id: null, total_view: { $sum: "$total_view" } } }
+    ]);
 
-  const subscriberCount = await Subscription.countDocuments({
-    c_id: channel_id
-  });
+    const totalViewCount = totalViews.length > 0 ? totalViews[0].total_view : 0;
 
-  res.send({
-    channel_name: channel.channel_name,
-    channel_id: String(channel.channel_id),
-    channel_img: channel.img,
-    subcribe: isSubscribed ? 1 : 0,
-    view: String(totalViews[0]?.total || 0),
-    count: String(subscriberCount),
-    related_movie: videos
-  });
-}
+    // 🛡️ Step 5: Fetch the count of subscribers
+    const subscriberCount = await Subscription.countDocuments({ c_id: parsedChannelId });
+
+    // 🛡️ Step 6: Fetch related videos
+    const relatedMovies = await videoSchema.aggregate([
+      { $match: { imdbid: parsedChannelId, is_tvseries: { $ne: 1 }, publication: 1 } },
+      { $limit: 10 }, // Adjust based on your needs
+    ]);
+
+    // 🛡️ Step 7: Prepare the response
+    const response = {
+      channel_name: channel.channel_name,
+      channel_id: String(channel.channel_id),
+      channel_img: channel.img || 'https://multiplexplay.com/office/uploads/default_image/poster.jpg',
+      subcribe: stt,
+      view: String(totalViewCount),
+      count: String(subscriberCount),
+      related_movie: relatedMovies.map(videoSchema => ({
+        videos_id: String(videoSchema.videos_id),
+        genre: videoSchema.genre || null,
+        country: videoSchema.country || null,
+        channel_name: channel.channel_name,
+        channel_id: String(channel.channel_id),
+        channel_img: channel.img,
+        title: videoSchema.title,
+        view: String(videoSchema.total_view || 0),
+        description: videoSchema.description || "",
+        slug: `-${videoSchema.videos_id}`,
+        is_paid: String(videoSchema.is_paid),
+        is_tvseries: String(videoSchema.is_tvseries),
+        release: videoSchema.release || "2000",
+        runtime: String(videoSchema.runtime),
+        video_quality: videoSchema.video_quality,
+        thumbnail_url: videoSchema.thumbnail_url,
+        poster_url: videoSchema.poster_url
+      }))
+    };
+
+    // 🛡️ Step 8: Send the response
+    res.status(200).json(response);
+
+  } catch (error) {
+    console.error("getChannelInfoController Error:", error);
+    res.status(500).json({ error: "Something went wrong on the server." });
+  }
+};
+
 
 const createChannelController = async (req, res) => {
   try {
