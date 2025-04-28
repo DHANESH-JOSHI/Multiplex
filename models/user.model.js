@@ -1,7 +1,9 @@
 const mongoose = require('mongoose');
+const mongooseSequence = require("mongoose-sequence")(mongoose); // Pass mongoose here
+
 
 const userSchema = new mongoose.Schema({
-  user_id: { type: Number, required: true },
+  user_id: { type: Number, required: true, unique: true },
   name: String,
   slug: { type: String, required: true },
   username: String,
@@ -20,7 +22,12 @@ const userSchema = new mongoose.Schema({
   phone: String,
   dob: Date,
   firebase_auth_uid: String,
-  otp: { type: Number, required: true, default: 1234 },
+  otp: {
+    type: String,
+    required: [false, 'OTP is required'], // Or set to `false` if optional
+    default: null  // This ensures OTP can be null if not set
+  },
+  otpExpire: { type: Date },
   vstatus: { type: Number, required: true, default: 1 },
   deviceid: String,
   fcm: String,
@@ -29,5 +36,10 @@ const userSchema = new mongoose.Schema({
   google_id: String,
   profile_picture: String
 }, {collection: "user" });
+
+
+userSchema.plugin(mongooseSequence, {
+  inc_field: "user_id", 
+});
 
 module.exports = mongoose.model('User', userSchema);

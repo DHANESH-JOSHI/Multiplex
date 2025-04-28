@@ -23,7 +23,8 @@ router.use("/movies", movieRoutes);
 router.use("/webseries", webseriesRoutes);
 router.use("/favorite", favoriteRoutes);
 router.use("/genres", genreRoutes);
-router.use("/user", userLoginRoutes); // User Login
+
+router.use("/reguser", userLoginRoutes); // User Login
 router.use("/home_content_for_android", homeContentRoutes);
 router.use("/channel", channelRoutes);
 router.use("/all_package", planRoutes);

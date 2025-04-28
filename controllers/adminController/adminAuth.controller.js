@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const userSchema = require('../../models/user.model');
 const channelSchema = require('../../models/channel.model');
+const crypto = require('crypto');
+const sendOtp = require('../../config/sendOtp');
 
 const md5 = require('md5');
 require('dotenv').config();
@@ -98,4 +100,34 @@ exports.registration = async (req, res) => {
 };
 
 
+function generateOtp() {
+    const otp = crypto.randomInt(100000, 1000000); // 6-digit OTP
+    return otp.toString();
+}
+
+// Send OTP (Register or Login)
+exports.sendOtp = async (req, res) => {
+    const { email, mobile } = req.body;
+
+    if (!email || !mobile) {
+        return res.status(400).json({ message: "Email and Mobile are required" });
+    }
+
+    const otp = generateOtp();
+    const otpExpire = new Date(Date.now() + 5 * 60 * 1000); // OTP valid for 5 min
+
+    let user = await User.findOne({ mobile });
+
+    if (user) {
+        user.otp = otp;
+        user.otpExpire = otpExpire;
+        await user.save();
+    } else {
+        user = await User.create({ email, mobile, otp, otpExpire });
+    }
+
+    await sendOtp(mobile, otp); // <-- Send OTP on Mobile
+
+    res.status(200).json({ message: "OTP sent successfully" });
+};
 

@@ -7,6 +7,7 @@ const Video = require('../../models/videos.model.js');
 const getHomeContent = async () => {
   // 1. Slider data
   const sliderData = await Slider.find({ }).sort({ order: 1 }).lean();
+
   const slider = {
     slider_type: "image",
     slide: sliderData.map(item => ({

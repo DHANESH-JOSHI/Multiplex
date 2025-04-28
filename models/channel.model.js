@@ -1,11 +1,16 @@
 const mongoose = require('mongoose');
+const mongooseSequence = require("mongoose-sequence")(mongoose);
 
 const channelSchema = new mongoose.Schema({
   channel_id: { type: Number, required: true },
   channel_name: { type: String, required: true },
   // Relationship: channel.user references a User document
   // user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  user_id: { type: Number, required: true },
+  user_id: {
+    type: Number,
+    ref: "User",  // You still associate it with the User model
+    required: true,
+  },
   deactivate_reason: String,
   last_login: Date,
   join_date: Date,
@@ -25,6 +30,11 @@ const channelSchema = new mongoose.Schema({
 }, {
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
   collection: 'channel'
+});
+
+
+channelSchema.plugin(mongooseSequence, {
+  inc_field: "channel_id",
 });
 
 module.exports = mongoose.model('channel', channelSchema);

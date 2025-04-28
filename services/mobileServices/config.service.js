@@ -1,7 +1,7 @@
 const Config = require('../../models/config.model');
 const Genre = require('../../models/genre.model');
 const Country = require('../../models/country.model');
-// const LiveTvCategory = require('../../models/live_tv_category.model');
+const LiveTvCategory = require('../../models/channel.model');
 const Currency = require('../../models/currency.model');
 
 // Helper to convert string "true"/"false" to boolean, if applicable.
@@ -394,7 +394,7 @@ exports.getFullConfig = async () => {
         "url": "https://multiplexplay.com/office/country/india.html",
         "image_url": "https://multiplexplay.com/office/uploads/default_image/country.png"
     },];
-    // const tv_category = await LiveTvCategory.find({}).lean();
+    const tv_category = await LiveTvCategory.find({}).lean();
 
     return {
         app_config,
@@ -402,7 +402,7 @@ exports.getFullConfig = async () => {
         payment_config,
         apk_version_info,
         genre,
-        country
-        // tv_category
+        country,
+        tv_category
     };
 };
