@@ -1,4 +1,3 @@
-// models/season.model.js
 const mongoose = require('mongoose');
 
 const seasonSchema = new mongoose.Schema({
