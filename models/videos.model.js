@@ -29,11 +29,11 @@ const videoSchema = new mongoose.Schema({
 
   director: [{
     type: Number,
-    ref: "Director"
-  }], // Reference to Director Model
+    ref: "director"
+  }], 
   writer: [{
     type: Number,
-    ref: "Writer"
+    ref: "writer"
   }], // Reference to Writer Model
 
   rating: {

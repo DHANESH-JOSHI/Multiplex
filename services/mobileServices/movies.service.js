@@ -8,7 +8,8 @@ const bunnyService = require('./bunnyCDN.service');
 const getAllMovies = async () => {
   try {
     // Get movies from database
-    const movies = await Video.find({ is_tvseries: 0 }).populate('director writer country genre');
+    const movies = await Video.find({ is_tvseries: 0 });
+    // .populate('director writer country genre');
 
     // Try to get additional info from Bunny CDN for each movie
     const enhancedMovies = await Promise.all(movies.map(async (movie) => {
@@ -41,7 +42,8 @@ const getAllMovies = async () => {
 const getMovieById = async (id) => {
   try {
     // Get movie from database
-    const movie = await Video.findOne({ videos_id: id, is_tvseries: 0 }).populate('director writer country genre');
+    const movie = await Video.findOne({ videos_id: id, is_tvseries: 0 });
+    // .populate('director writer country genre');
 
     if (!movie) {
       throw new Error('Movie not found');

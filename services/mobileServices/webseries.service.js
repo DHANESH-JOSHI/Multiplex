@@ -10,8 +10,8 @@ const bunnyService = require('./bunnyCDN.service');
 const getAllWebseries = async () => {
   try {
     // Get web series from database
-    const webseries = await Video.find({ is_tvseries: 1 }).populate('director writer country genre');
-    
+    const webseries = await Video.find({ is_tvseries: 1 });
+    //.populate('director writer country genre')
     // Try to get additional info from Bunny CDN for each web series
     const enhancedWebseries = await Promise.all(webseries.map(async (series) => {
       try {
@@ -43,14 +43,15 @@ const getAllWebseries = async () => {
 const getWebseriesById = async (id) => {
   try {
     // Get web series from database
-    const webseries = await Video.findOne({ videos_id: id, is_tvseries: 1 }).populate('director writer country genre');
+    const webseries = await Video.findOne({ videos_id: id, is_tvseries: 1 });
+    //.populate('director writer country genre')
     
     if (!webseries) {
       throw new Error('Web series not found');
     }
     
     // Get seasons for this web series
-    const seasons = await Season.find({ video: webseries._id }).sort({ order: 1 });
+    const seasons = await Season.find({ video: webseries.videos_id }).sort({ order: 1 });
     
     // Get episodes for each season
     const seasonsWithEpisodes = await Promise.all(seasons.map(async (season) => {
