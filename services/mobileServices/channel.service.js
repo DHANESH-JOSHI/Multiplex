@@ -153,17 +153,17 @@ const getChannelInfoService = async (channel_id, uid) => {
 
 const getSingleMovieDetailsByIdc = async (id, uid) => {
   try {
-    // Step 1: Fetch the video by ID
+    // Step 1: Fetch video details
     const video = await Video.findById(id);
     if (!video) return {};
 
-    // Step 2: Fetch the channel info using imdbid (channel_id)
+    // Step 2: Fetch channel details
     const channel = await Channel.findOne({ channel_id: video.imdbid });
 
-    // Step 3: Check if user is subscribed
+    // Step 3: Check subscription
     let subscribed = 0;
     if (uid) {
-      const sub = await subscribeSchema.findOne({ c_id: video.imdbid, user_id: uid });
+      const sub = await Subscription.findOne({ c_id: video.imdbid, user_id: uid });
       if (sub) subscribed = 1;
     }
 
