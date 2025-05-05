@@ -1,12 +1,15 @@
 const express = require("express");
 const router = express.Router();
-const { getAllMovies, getMovieById, createMovie, updateMovie, deleteMovie } = require("../../controllers/mobileControllers/movies.controller");
+const MovieController = require("../../controllers/adminController/movie.controller");
 const { cacheMiddleware } = require("../../middleware/nodeCache");
+const  {upload} = require("../../middleware/multer");
 
-router.get("/", cacheMiddleware(3600) , getAllMovies);
-router.get("/:id", cacheMiddleware(3600), getMovieById);
-router.post("/", createMovie);
-router.put("/:id", updateMovie);
-router.delete("/:id", deleteMovie);
+
+// Routes
+router.get("/", cacheMiddleware(3600), MovieController.getAllMovies);
+router.get("/:id", cacheMiddleware(3600), MovieController.getMovieById);
+router.post("/", upload.single('file'), MovieController.addMovie);
+router.put("/:id", MovieController.updateMovie);
+router.delete("/:id", MovieController.deleteMovie);
 
 module.exports = router;

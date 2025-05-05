@@ -1,62 +1,132 @@
-const Episode = require("../../models/episodes.model");
+const WebSeriesService = require("../../services/adminServices/webSeries.service");
 
-// Create a new web series episode with error handling
-exports.addWebseries = async (req, res) => {
+class WebSeriesController {
+  // Add a new WebSeries with Seasons and Episodes
+  async addWebSeries(req, res) {
     try {
-        let data = req.body;
-        await video_file.create({ data });
-        //bunny folder API for webseries
-        res.send(response);
-    } catch (error) {
-        res.status(500).json({ message: "Error adding web series episode", error: error.message });
-    }
-};
+      const { title, description, genre, release_year } = req.body;
+      // Create base webseries data
+      const webSeriesData = {
+        title,
+        description,
+        genre,
+        release_year
+      };
 
-// Get all web series episodes
-exports.getAllWebseries = async (req, res) => {
-    try {
-        const episodes = await Episode.find().populate("video season");
-        res.status(200).json({ message: "Web series episodes retrieved successfully", data: episodes });
-    } catch (error) {
-        res.status(500).json({ message: "Error fetching web series episodes", error: error.message });
-    }
-};
+      if (req.file) {
+        webSeriesData.image_url = req.file.path;
+      }
 
-// Get a single episode by ID
-exports.getWebseriesById = async (req, res) => {
-    try {
-        const episode = await Episode.findById(req.params.id).populate("video season");
-        if (!episode) {
-            return res.status(404).json({ message: "Episode not found" });
-        }
-        res.status(200).json({ message: "Episode retrieved successfully", data: episode });
+      // Create webseries only
+      const webSeries = await WebSeriesService.createWebSeries(webSeriesData);
+      res.status(201).json(webSeries);
     } catch (error) {
-        res.status(500).json({ message: "Error fetching episode", error: error.message });
+      res.status(400).json({ message: error.message });
     }
-};
+  }
 
-// Update an episode by ID
-exports.updateWebseries = async (req, res) => {
+  async addSeason(req, res) {
     try {
-        const updatedEpisode = await Episode.findByIdAndUpdate(req.params.id, req.body, { new: true });
-        if (!updatedEpisode) {
-            return res.status(404).json({ message: "Episode not found" });
-        }
-        res.status(200).json({ message: "Episode updated successfully", data: updatedEpisode });
+      const { webseries_id, season_number,title } = req.body;
+        console.log(req.body);
+      // Create season
+      const seasonData = {
+        title,
+        season_number,
+        webseries_id
+      };
+      const createdSeason = await WebSeriesService.createSeason(seasonData, webseries_id);
+      res.status(201).json(createdSeason);
     } catch (error) {
-        res.status(500).json({ message: "Error updating episode", error: error.message });
+      res.status(400).json({ message: error.message });
     }
-};
+  }
 
-// Delete an episode by ID
-exports.deleteWebseries = async (req, res) => {
+  async addEpisode(req, res) {
     try {
-        const deletedEpisode = await Episode.findByIdAndDelete(req.params.id);
-        if (!deletedEpisode) {
-            return res.status(404).json({ message: "Episode not found" });
-        }
-        res.status(200).json({ message: "Episode deleted successfully" });
+      const { season_id, title, episode_number, duration, creatorId } = req.body;
+      const file = req.file?.path ||  null;
+      const episodeData = {
+        title,
+        episode_number,
+        duration,
+        season_id,
+        creatorId
+      };
+      const createdEpisode = await WebSeriesService.createEpisode(episodeData, file , season_id, creatorId);
+      res.status(201).json(createdEpisode);
     } catch (error) {
-        res.status(500).json({ message: "Error deleting episode", error: error.message });
+      res.status(400).json({ message: error.message });
     }
-};
+  }
+  // Get all WebSeries
+    async getAllWebSeries(req, res) {
+      try {
+        const result = await WebSeriesService.getAllWebSeries();
+        res.status(200).json(result);
+      } catch (error) {
+        res.status(400).json({ message: error.message });
+      }
+    }
+  
+    // Get WebSeries by ID
+    async getWebSeriesById(req, res) {
+      try {
+        const { id } = req.params;
+        const field = req.query.field;
+        const result = await WebSeriesService.getWebSeriesById(id, field);
+        res.status(200).json(result);
+      } catch (error) {
+        res.status(400).json({ message: error.message });
+      }
+    }
+  
+    // Get all seasons of a WebSeries
+    async getWebSeriesSeasons(req, res) {
+      try {
+        const { webSeriesId } = req.params;
+        const field = req.query.field;
+        const result = await WebSeriesService.getWebSeriesSeasons(field, webSeriesId);
+        res.status(200).json(result);
+      } catch (error) {
+        res.status(400).json({ message: error.message });
+      }
+    }
+  
+    // Get episodes of a specific season
+    async getSeasonEpisodes(req, res) {
+      try {
+        const { seasonId } = req.params;
+        const result = await WebSeriesService.getSeasonEpisodes(seasonId);
+        res.status(200).json(result);
+      } catch (error) {
+        res.status(400).json({ message: error.message });
+      }
+    }
+  
+    // Update WebSeries
+    async updateWebSeries(req, res) {
+      try {
+        const { id } = req.params;
+        const updateData = req.body;
+        const result = await WebSeriesService.updateWebSeries(id, updateData);
+        res.status(200).json(result);
+      } catch (error) {
+        res.status(400).json({ message: error.message });
+      }
+    }
+  
+    // Delete WebSeries
+    async deleteWebSeries(req, res) {
+      try {
+        const { id } = req.params;
+        const result = await WebSeriesService.deleteWebSeries(id);
+        res.status(200).json(result);
+      } catch (error) {
+        res.status(400).json({ message: error.message });
+      }
+    }
+  
+}
+
+module.exports = new WebSeriesController();

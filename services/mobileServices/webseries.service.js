@@ -1,7 +1,7 @@
 const Video = require('../../models/videos.model');
 const Episode = require('../../models/episodes.model');
 const Season = require('../../models/seasons.model');
-const bunnyService = require('./bunnyCDN.service');
+const CloudService = require('../../config/cloudFlareCDN');
 
 /**
  * Fetch all web series
@@ -12,24 +12,7 @@ const getAllWebseries = async () => {
     // Get web series from database
     const webseries = await Video.find({ is_tvseries: 1 });
     //.populate('director writer country genre')
-    // Try to get additional info from Bunny CDN for each web series
-    const enhancedWebseries = await Promise.all(webseries.map(async (series) => {
-      try {
-        // Try to get file details from Bunny CDN
-        const bunnyData = await bunnyService.getFileDetails(['webseries'], series.videos_id.toString());
-        return {
-          ...series.toObject(),
-          bunny_url: bunnyData.HttpUrl || null,
-          file_size: bunnyData.Length || null,
-          last_changed: bunnyData.LastChanged || null
-        };
-      } catch (error) {
-        // If Bunny CDN data not available, return original series
-        return series.toObject();
-      }
-    }));
-    
-    return enhancedWebseries;
+
   } catch (error) {
     throw new Error(`Error fetching web series: ${error.message}`);
   }

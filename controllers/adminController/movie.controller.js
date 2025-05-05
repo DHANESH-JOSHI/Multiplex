@@ -5,8 +5,16 @@ class MovieController {
     // Add a new movie
     async addMovie(req, res) {
         try {
-            const result = await MovieService.addMovie(req.body);
-            res.status(201).json(result);
+            const { title, genre } = req.body;
+            const file = req.file?.path ||  null;
+            
+            if (!file) return res.status(400).json({ message: 'File is required' });
+            try {
+              const movie = await MovieService.addMovie({ title, genre, file });
+              res.json({ success: true, movie });
+            } catch (err) {
+              res.status(400).json({ message: err.message });
+            }
         } catch (error) {
             res.status(400).json({ message: error.message });
         }
@@ -25,12 +33,24 @@ class MovieController {
     //  Get movie by ID
     async getMovieById(req, res) {
         try {
-            const result = await MovieService.getMovieById(req.params.id);
+            const movieId = req.params.id;
+            const fieldAliases = {
+                video_id: "videos_id",
+                vid: "videos_id",
+            };
+            
+            const rawField = req.query.fieldKey;
+            const fieldName = fieldAliases[rawField] || rawField || "_id";
+            const result = await MovieService.getMovieById(movieId, fieldName); 
             res.status(200).json(result);
         } catch (error) {
-            res.status(404).json({ message: error.message });
+            const statusCode = error.message.includes("not found") ? 404 : 500;
+            res.status(statusCode).json({ message: error.message });
         }
     }
+    
+    
+    
 
     // Update movie
     async updateMovie(req, res) {

@@ -7,7 +7,7 @@ const channelSchema = new mongoose.Schema({
   // Relationship: channel.user references a User document
   // user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   user_id: {
-    type: Number,
+    type: mongoose.Schema.Types.ObjectId,
     ref: "User",  // You still associate it with the User model
     required: true,
   },

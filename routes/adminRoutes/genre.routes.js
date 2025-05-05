@@ -5,6 +5,7 @@ const GenreController = require("../../controllers/adminController/genre.control
 router.post("/add", GenreController.addGenre);     // Add Genre
 router.get("/all", GenreController.getAllGenres);  // Get All Genres
 router.get("/:id", GenreController.getGenreById);  // Get Genre by ID
+router.get("/content/:id", GenreController.getContentByGenreId);  // Get Genre by ID
 router.put("/:id", GenreController.updateGenre);   // Update Genre
 router.delete("/:id", GenreController.deleteGenre);// Delete Genre
 

@@ -32,7 +32,22 @@ class GenreController {
         } catch (error) {
             res.status(404).json({ message: error.message });
         }
-    }  
+    }
+
+    async getContentByGenreId(req, res) {
+
+        try {
+            const id = req.params.id; 
+            const idField = req.query.newKey;
+            const result = await GenreService.ContentByGenreId(idField, id); 
+            res.status(200).json(result);
+        } catch (error) {
+            res.status(404).json({ message: error.message });
+        }
+    }
+
+
+
 
     // Update Genre
     async updateGenre(req, res) {

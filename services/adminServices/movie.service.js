@@ -1,5 +1,5 @@
 const Movie = require("../../models/videos.model");
-const BunnyCDNService = require("../../services/adminServices/bunnyCDN.service");
+const CloudCDNService = require("../../config/cloudFlareCDN");
 const CRUDService = require("../../services/crud.service");
 
 class MovieService {
@@ -11,31 +11,30 @@ class MovieService {
      * @param {Buffer} param0.file - Video file buffer.
      * @returns {Promise<Object>} - Created movie data.
      */
-    async addMovie({ videos_id, title, file }) {
-        // Check if movie already exists
-        const existingMovie = await CRUDService.getById(Movie, videos_id).catch(() => null);
-        if (existingMovie) {
-            throw new Error("Movie with this videos_id already exists");
-        }
-
-        // Upload video to BunnyCDN
-        const uploadResponse = await BunnyCDNService.uploadVideo("movies", videos_id, file);
-        if (!uploadResponse.success) {
-            throw new Error("Failed to upload video to BunnyCDN");
-        }
-
-        // Fetch movie data from BunnyCDN
-        const movieData = await BunnyCDNService.getFileDetails(["movies"], videos_id);
-        if (!movieData) {
-            throw new Error("Movie data not found on BunnyCDN");
-        }
-
-        // Create new movie entry
-        return await CRUDService.create(Movie, {
-            ...movieData, videos_id, title
-
+    async addMovie({ id , title, genre, file }) {
+        // Step 1: Upload video to Cloudflare
+        const uploadResult = await CloudCDNService.uploadVideo(title,file, {
+          creator: id,
+          meta: { title },
         });
-    }
+      
+        if (!uploadResult || !uploadResult.success) {
+          throw new Error("Failed to upload video to Cloudflare Stream");
+        }
+      
+        const { uid, playback } = uploadResult;
+        let videos_id = parseInt(uid);
+
+        const genreArray = Array.isArray(genre) ? genre : [genre];
+
+        // Step 3: Create Movie entry
+        return await CRUDService.create(Movie, {
+          videoContent_id: videos_id,
+          title,
+          genre: genreArray,
+          video_url: playback.hls, 
+        });
+      }
 
     /**
      * Get all movies.
@@ -50,8 +49,8 @@ class MovieService {
      * @param {string|number} movieId - ID of the movie.
      * @returns {Promise<Object>} - Movie details.
      */
-    async getMovieById(movieId) {
-        return await CRUDService.getById(Movie, movieId);
+    async getMovieById(movieId, fieldName = "_id") {
+        return await CRUDService.getById(Movie, fieldName, movieId);
     }
 
     /**

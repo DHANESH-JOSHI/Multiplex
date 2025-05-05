@@ -1,4 +1,5 @@
 const Genre = require("../../models/genre.model");
+const Movie = require("../../models/videos.model");
 const CRUDService = require("../../services/crud.service");
 const path = require("path");
 const fs = require("fs");
@@ -60,6 +61,18 @@ class GenreService {
             if (!id) throw new Error("Genre ID is required.");
             console.log(idField);
             const genre = await CRUDService.getById(Genre, idField, id);
+            if (!genre.data) throw new Error("Genre not found.");
+            return genre;
+
+        } catch (error) {
+            throw new Error(`${error}`);
+        }
+    }
+
+    async ContentByGenreId(idField, id) {
+        try {
+            if (!id) throw new Error("Genre ID is required.");
+            const genre = await CRUDService.getById(Movie, idField, id);
             if (!genre.data) throw new Error("Genre not found.");
             return genre;
 

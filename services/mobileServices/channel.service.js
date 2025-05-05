@@ -5,6 +5,7 @@ const Subscription = require('../../models/subcribe.model');
 
 const dayjs = require('dayjs');
 const relativeTime = require('dayjs/plugin/relativeTime');
+const { subscribe } = require('../../routes/indexRoutes');
 dayjs.extend(relativeTime);
 
 const getChannelList = (limit, platform) => {
@@ -72,7 +73,7 @@ const getChannelList = (limit, platform) => {
 
 const getChannelInfoService = async (channel_id, uid) => {
   try {
-    // 🛡️ Step 1: Validate and Parse channel_id
+    //  Step 1: Validate and Parse channel_id
     const parsedChannelId = parseInt(channel_id);
     const parsedUserId = parseInt(uid);
 
@@ -80,7 +81,7 @@ const getChannelInfoService = async (channel_id, uid) => {
       throw new Error("Invalid channel_id. Must be a number.");
     }
 
-    // 🛡️ Step 2: Fetch channel details
+    //  Step 2: Fetch channel details
     const channel = await Channel.findOne({ channel_id: parsedChannelId });
 
     if (!channel) {
@@ -89,7 +90,7 @@ const getChannelInfoService = async (channel_id, uid) => {
 
     let stt = 0; // Subscription status
 
-    // 🛡️ Step 3: Check subscription if user_id is provided
+    //  Step 3: Check subscription if user_id is provided
     if (parsedUserId > 0) {
       const subscription = await Subscription.find({ c_id: parsedChannelId, user_id: parsedUserId });
       if (subscription.length > 0) {
@@ -97,7 +98,7 @@ const getChannelInfoService = async (channel_id, uid) => {
       }
     }
 
-    // 🛡️ Step 4: Get total views for the channel's videos
+    //  Step 4: Get total views for the channel's videos
     const totalViews = await videoSchema.aggregate([
       { $match: { imdbid: parsedChannelId } },
       { $group: { _id: null, total_view: { $sum: "$total_view" } } }
@@ -105,16 +106,16 @@ const getChannelInfoService = async (channel_id, uid) => {
 
     const totalViewCount = totalViews.length > 0 ? totalViews[0].total_view : 0;
 
-    // 🛡️ Step 5: Fetch the count of subscribers
+    //  Step 5: Fetch the count of subscribers
     const subscriberCount = await Subscription.countDocuments({ c_id: parsedChannelId });
 
-    // 🛡️ Step 6: Fetch related videos
+    //  Step 6: Fetch related videos
     const relatedMovies = await videoSchema.aggregate([
       { $match: { imdbid: parsedChannelId, is_tvseries: { $ne: 1 }, publication: 1 } },
       { $limit: 10 }, // Adjust based on your needs
     ]);
 
-    // 🛡️ Step 7: Prepare the response
+    //  Step 7: Prepare the response
     const response = {
       channel_name: channel.channel_name,
       channel_id: String(channel.channel_id),
@@ -151,89 +152,75 @@ const getChannelInfoService = async (channel_id, uid) => {
 };
 
 const getSingleMovieDetailsByIdc = async (id, uid) => {
-  const videoObjectId = id;
+  try {
+    // Step 1: Fetch the video by ID
+    const video = await Video.findById(id);
+    if (!video) return {};
 
-  // Aggregation pipeline
-  const video = await Video.aggregate([
-    { $match: { _id: videoObjectId } },
-    {
-      $lookup: {
-        from: 'channels',
-        localField: 'imdbid',
-        foreignField: 'channel_id',
-        as: 'channel_info'
-      }
-    },
-    {
-      $addFields: {
-        channel: { $arrayElemAt: ['$channel_info', 0] }
-      }
-    },
-    {
-      $project: {
-        channel_info: 0
-      }
+    // Step 2: Fetch the channel info using imdbid (channel_id)
+    const channel = await Channel.findOne({ channel_id: video.imdbid });
+
+    // Step 3: Check if user is subscribed
+    let subscribed = 0;
+    if (uid) {
+      const sub = await subscribeSchema.findOne({ c_id: video.imdbid, user_id: uid });
+      if (sub) subscribed = 1;
     }
-  ]);
 
-  if (!video[0]) return {};
+    // Step 4: Update view counts
+    await Video.updateOne(
+      { _id: id },
+      {
+        $inc: {
+          today_view: 1,
+          weekly_view: 1,
+          monthly_view: 1,
+          total_view: 1
+        }
+      }
+    );
 
-  const movie = video[0];
+    // Step 5: Prepare and return movie details
+    return {
+      videos_id: video._id,
+      title: video.title,
+      description: video.description,
+      admin: video.imdbid ? 0 : 1,
+      subcribe: subscribed,
+      slug: video.slug,
+      release: video.release,
+      runtime: video.runtime,
+      video_quality: video.video_quality,
+      channel_name: channel?.channel_name || '',
+      channel_id: channel?.channel_id || '',
+      channel_img: channel?.img || '',
+      is_tvseries: '0',
+      is_paid: video.is_paid,
+      enable_download: video.enable_download,
+      download_links: video.enable_download ? (video.download_links || []) : [],
+      thumbnail_url: video.thumbnail_url || '',
+      poster_url: video.poster_url || '',
+      videos: video.videos || [],
+      genre: video.genre || [],
+      country: video.country || [],
+      director: video.director || [],
+      writer: video.writer || [],
+      cast: video.cast || [],
+      cast_and_crew: [
+        ...(video.director || []),
+        ...(video.writer || []),
+        ...(video.cast || [])
+      ],
+      trailler_youtube_source: video.trailler_youtube_source || '',
+      related_movie: [] // Optional: Add related movies logic
+    };
 
-  // Subscription check
-  let subscribed = 0;
-  if (uid) {
-    const sub = await Subscribe.findOne({ c_id: movie.imdbid, user_id: uid });
-    if (sub) subscribed = 1;
+  } catch (error) {
+    console.error("Error in getSingleMovieDetailsByIdc:", error.message);
+    throw new Error("Something went wrong while fetching movie details.");
   }
+};
 
-  // Update view counts
-  await Video.updateOne(
-    { _id: id },
-    {
-      $inc: {
-        today_view: 1,
-        weekly_view: 1,
-        monthly_view: 1,
-        total_view: 1
-      }
-    }
-  );
-
-  return {
-    videos_id: video._id,
-    title: video.title,
-    description: video.description,
-    admin: video.imdbid ? 0 : 1,
-    subcribe: subscribed,
-    slug: video.slug,
-    release: video.release,
-    runtime: video.runtime,
-    video_quality: video.video_quality,
-    channel_name: video.channel?.channel_name,
-    channel_id: video.channel?.channel_id,
-    channel_img: video.channel?.img,
-    is_tvseries: '0',
-    is_paid: video.is_paid,
-    enable_download: video.enable_download,
-    download_links: video.enable_download ? video.download_links || [] : [],
-    thumbnail_url: video.thumbnail_url || '',
-    poster_url: video.poster_url || '',
-    videos: video.videos || [],
-    genre: video.genre || [],
-    country: video.country || [],
-    director: video.director || [],
-    writer: video.writer || [],
-    cast: video.cast || [],
-    cast_and_crew: [
-      ...(video.director || []),
-      ...(video.writer || []),
-      ...(video.cast || [])
-    ],
-    trailler_youtube_source: video.trailler_youtube_source,
-    related_movie: [] // Can add another aggregate call
-  };
-}
 // Create new channel
 const createChannel = async (channelData) => {
   const channel = new Channel(channelData);

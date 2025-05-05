@@ -1,12 +1,13 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const seasonSchema = new mongoose.Schema({
-  seasons_id: { type: Number, required: true },
-  // Relationship: videos_id → Video
-  video: { type: mongoose.Schema.Types.ObjectId, ref: 'Video' },
-  seasons_name: String,
-  publish: { type: Number, default: 1 },
-  order: { type: Number, default: 0 }
+  title: { type: String, required: true },
+  description: { type: String },
+  webSeries: { type: mongoose.Schema.Types.ObjectId, ref: "WebSeries" },
+  episodesId: [{ type: mongoose.Schema.Types.ObjectId, ref: "Episode" }],
+}, {
+  timestamps: true,
+  collection: "seasons"
 });
 
-module.exports = mongoose.model('Season', seasonSchema);
+module.exports = mongoose.model("Season", seasonSchema);

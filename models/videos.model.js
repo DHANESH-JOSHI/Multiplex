@@ -5,7 +5,6 @@ const mongooseSequence = require("mongoose-sequence")(mongoose);
 const videoSchema = new mongoose.Schema({
   videos_id: {
     type: Number,
-    required: true,
     unique: true
   },
 
@@ -44,16 +43,16 @@ const videoSchema = new mongoose.Schema({
     type: String
   },
   country: [{
-    type: Number,
-    ref: "Country"
-  }], // Reference to Country Model
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "country"
+  }],
   genre: [{
-    type: Number,
+    type: mongoose.Schema.Types.ObjectId,
     ref: "Genre"
   }], // Reference to Genre Model
   language: [{
-    type: Number,
-    ref: "LanguagesIso"
+    type: String,
+
   }],
 
   video_type: String,
@@ -64,6 +63,18 @@ const videoSchema = new mongoose.Schema({
     type: String,
     default: "HD"
   },
+  
+  video_url: {
+    type: String,
+    default: "no Video"
+  },
+
+  videoContent_id: {
+    type: String,
+    required: true,
+    default: 0
+  },
+  
 
   is_paid: {
     type: Number,

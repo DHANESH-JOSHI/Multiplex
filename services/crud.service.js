@@ -12,7 +12,7 @@ class CRUDService {
             await newDocument.validate(); // Schema validations
             await newDocument.save();
 
-            return { message: "Record created successfully", data: newDocument };
+            return { suscess: true, message: "Record created successfully", data: newDocument };
         } catch (error) {
             throw new Error("Error creating record: " + error.message);
         }
@@ -21,29 +21,50 @@ class CRUDService {
     // Get all documents with dynamic sorting & pagination
     async getAll(model, filter = {}, options = {}) {
         try {
-            let { limit = 10, sortBy = "createdAt", sortOrder = "desc", cursorField = "_id", cursor = null } = options;
-
+            let {
+                limit = 10,
+                sortBy = "createdAt",
+                sortOrder = "desc",
+                cursorField = "_id",
+                cursor = null,
+                populate = null // ✅ Accept populate option
+            } = options;
+    
             // Validate Sorting Field
             if (!sortBy || typeof sortBy !== "string") {
                 throw new Error("Invalid sorting field");
             }
-
+    
             // Validate Sorting Order
             sortOrder = sortOrder.toLowerCase() === "asc" ? 1 : -1;
-
+    
             // Sliding Window Pagination Logic
             let query = filter;
             if (cursor) {
                 query[cursorField] = { [sortOrder === 1 ? "$gt" : "$lt"]: cursor };
             }
-
-            const records = await model.find(query)
-                .sort({ [sortBy]: sortOrder }) // Dynamic Sorting
+    
+            // 🔧 Build the query
+            let dbQuery = model.find(query)
+                .sort({ [sortBy]: sortOrder })
                 .limit(parseInt(limit));
-
+    
+            // ✅ Apply populate if provided
+            if (populate) {
+                if (Array.isArray(populate)) {
+                    populate.forEach(p => {
+                        dbQuery = dbQuery.populate(p);
+                    });
+                } else {
+                    dbQuery = dbQuery.populate(populate);
+                }
+            }
+    
+            const records = await dbQuery;
+    
             // Next Cursor for Pagination
             const nextCursor = records.length > 0 ? records[records.length - 1][cursorField] : null;
-
+    
             return {
                 message: "Records fetched successfully",
                 data: records,
@@ -55,22 +76,31 @@ class CRUDService {
     }
 
     // Get a single document by ID
-    async getById(model, idField, id) {
+    async getById(model, idField, id, populateOptions) {
         try {
-            let query = mongoose.Types.ObjectId.isValid(id)
+            const query = mongoose.Types.ObjectId.isValid(id)
                 ? { [idField]: id }
                 : { [idField]: parseInt(id) };
-
-            const record = await model.findOne(query);
+    
+            let dbQuery = model.findOne(query);
+    
+            // ✅ Only apply populate if it exists and is valid
+            if (populateOptions && typeof populateOptions === "object") {
+                dbQuery = dbQuery.populate(populateOptions);
+            }
+    
+            const record = await dbQuery;
+    
             if (!record) {
                 throw new Error("Record not found.");
             }
-
+    
             return { message: "Record fetched successfully", data: record };
         } catch (error) {
             throw new Error("Error fetching record: " + error.message);
         }
     }
+    
 
     // Update a document by ID
     async update(model, idField, id, updateData) {

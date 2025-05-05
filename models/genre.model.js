@@ -2,7 +2,6 @@ const mongoose = require('mongoose');
 const mongooseSequence = require("mongoose-sequence")(mongoose);
 
 const genreSchema = new mongoose.Schema({
-  genre_id: { type: Number, required: true },
   name: { type: String, required: true },
   description: { type: String, required: true },
   slug: { type: String, required: true, unique: true },

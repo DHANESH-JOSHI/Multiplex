@@ -6,7 +6,7 @@ const router = express.Router();
 const countryRoutes = require('./mobileRoutes/country.routes');
 const configRoutes = require("./mobileRoutes/config.routes");
 const movieRoutes = require("./mobileRoutes/movies.routes");
-const webseriesRoutes = require("./mobileRoutes/webseries.routes");
+const webseriesRoutes = require("../routes/adminRoutes/webseries.routes");
 const favoriteRoutes = require("./mobileRoutes/favorite.routes");
 const genreRoutes = require("./adminRoutes/genre.routes");
 const userLoginRoutes = require("./mobileRoutes/userLogin.routes");
@@ -23,7 +23,6 @@ router.use("/movies", movieRoutes);
 router.use("/webseries", webseriesRoutes);
 router.use("/favorite", favoriteRoutes);
 router.use("/genres", genreRoutes);
-
 router.use("/reguser", userLoginRoutes); // User Login
 router.use("/home_content_for_android", homeContentRoutes);
 router.use("/channel", channelRoutes);
@@ -33,7 +32,6 @@ router.use("/slider", sliderRoutes);
 
 //Import Admin Routes modules
 const adminLoginRoutes = require("./adminRoutes/adminAuth.routes");
-const addMovieRoutes = require("./adminRoutes/movies.routes");
 const addWebseriesRoutes = require("./adminRoutes/webseries.routes");
 const addPlanRoutes = require("./adminRoutes/plan.routes");
 const addBannerRoutes = require("./adminRoutes/banner.routes");
@@ -41,7 +39,6 @@ const addPaymentrRoutes = require("./adminRoutes/payment.routes");
 
 //Import Admin Routes
 router.use("/adminauth", adminLoginRoutes); // Admin Login
-router.use("/adminmovies", addMovieRoutes); // CURD of Movies
 router.use("/adminwebseries", addWebseriesRoutes); //CRUD of Webseries
 router.use("/adminplans", addPlanRoutes); //CURD of Plans
 router.use("/adminbanner", addBannerRoutes); //CURD of Banner

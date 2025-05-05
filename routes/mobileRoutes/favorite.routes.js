@@ -3,7 +3,7 @@ const router = express.Router();
 const { getFavorites, addFavorite, verifyFavorite, removeFavorite } = require("../../controllers/mobileControllers/favorite.controller");
 
 router.get("/", getFavorites);
-router.post("/add", addFavorite);
+router.post("/", addFavorite);
 router.get("/verify", verifyFavorite);
 router.delete("/remove", removeFavorite);
 
