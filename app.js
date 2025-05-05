@@ -40,7 +40,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // Routes
-app.use("/nodeapi/rest-api/v130", indexRoutes);
+app.use("/rest-api/v130", indexRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
