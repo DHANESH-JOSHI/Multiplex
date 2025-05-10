@@ -33,6 +33,15 @@ class MovieService {
           title,
           genre: genreArray,
           video_url: playback.hls, 
+          release,
+          is_paid, 
+          is_movie: true,
+          publication,
+          trailer,
+          Thumbnail,
+          Poster,
+          enable_download,
+
         });
       }
 
@@ -59,8 +68,8 @@ class MovieService {
      * @param {Object} movieData - Updated movie details.
      * @returns {Promise<Object>} - Updated movie data.
      */
-    async updateMovie(movieId, movieData) {
-        return await CRUDService.update(Movie, movieId, movieData);
+    async updateMovie(fieldName = "_id", movieId, movieData) {
+        return await CRUDService.update(Movie, fieldName, movieId, movieData);
     }
 
     /**
@@ -72,8 +81,7 @@ class MovieService {
         // Delete movie record from database
         const deletedMovie = await CRUDService.delete(Movie, movieId);
         if (deletedMovie) {
-            // Delete associated file from BunnyCDN if movie exists
-            await BunnyCDNService.deleteFile(["movies"], deletedMovie.data.videos_id);
+            await CloudCDNService.deleteVideo(deletedMovie.data.videoContent_id);
         }
         return deletedMovie;
     }

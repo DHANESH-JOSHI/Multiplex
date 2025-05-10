@@ -23,57 +23,111 @@ class CRUDService {
         try {
             let {
                 limit = 10,
-                sortBy = "createdAt",
-                sortOrder = "desc",
-                cursorField = "_id",
+                sortBy = "_id",
+                sortOrder = "asc",
                 cursor = null,
-                populate = null // ✅ Accept populate option
+                populate = null,
+                direction = "next",
+                goTo = null,
+                page = 1 // Add page option for regular pagination
             } = options;
     
-            // Validate Sorting Field
+            const cursorField = sortBy;
+    
             if (!sortBy || typeof sortBy !== "string") {
                 throw new Error("Invalid sorting field");
             }
     
-            // Validate Sorting Order
-            sortOrder = sortOrder.toLowerCase() === "asc" ? 1 : -1;
+            const baseSortOrder = sortOrder.toLowerCase() === "asc" ? 1 : -1;
+            let effectiveSortOrder = baseSortOrder;
+            let query = { ...filter };
     
-            // Sliding Window Pagination Logic
-            let query = filter;
-            if (cursor) {
-                query[cursorField] = { [sortOrder === 1 ? "$gt" : "$lt"]: cursor };
+            if (goTo === "first") {
+                // First page — no cursor filter needed
+            } else if (goTo === "last") {
+                // Reverse sort to get last page
+                effectiveSortOrder = baseSortOrder * -1;
+            } else if (cursor) {
+                if (direction === "next") {
+                    query[cursorField] = {
+                        [baseSortOrder === 1 ? "$gt" : "$lt"]: cursor
+                    };
+                } else if (direction === "previous") {
+                    query[cursorField] = {
+                        [baseSortOrder === 1 ? "$lt" : "$gt"]: cursor
+                    };
+                    effectiveSortOrder = baseSortOrder * -1;
+                }
+            } else if (page && page > 1) {
+                // Paginate by page if cursor is not used
+                const skip = (page - 1) * limit;
+                query = { ...filter };
             }
     
-            // 🔧 Build the query
             let dbQuery = model.find(query)
-                .sort({ [sortBy]: sortOrder })
+                .sort({ [cursorField]: effectiveSortOrder })
                 .limit(parseInt(limit));
     
-            // ✅ Apply populate if provided
             if (populate) {
                 if (Array.isArray(populate)) {
-                    populate.forEach(p => {
-                        dbQuery = dbQuery.populate(p);
-                    });
+                    populate.forEach(p => dbQuery = dbQuery.populate(p));
                 } else {
                     dbQuery = dbQuery.populate(populate);
                 }
             }
     
-            const records = await dbQuery;
+            let records = await dbQuery;
     
-            // Next Cursor for Pagination
-            const nextCursor = records.length > 0 ? records[records.length - 1][cursorField] : null;
+            // Reverse only for "previous" and "goTo: last" to maintain display order
+            if (direction === "previous" || goTo === "last") {
+                records = records.reverse();
+            }
+    
+            const totalCount = await model.countDocuments(filter);
+            const pageCount = Math.ceil(totalCount / limit);
+    
+            if (records.length === 0) {
+                return {
+                    message: "No records found.",
+                    data: [],
+                    totalCount,
+                    pageCount,
+                    currentPage: page,
+                    nextCursor: null,
+                    prevCursor: null
+                };
+            }
+    
+            // Set cursors from the first and last record
+            const nextCursor = records.length > 0 ? records[records.length - 1]._id : null;
+            const prevCursor = records.length > 0 ? records[0]._id : null;
+    
+            let currentPage = page;
+            if (cursor) {
+                let cursorQuery = { ...filter };
+                const comparisonOperator = baseSortOrder === 1 ? "$lt" : "$gt";
+                cursorQuery[cursorField] = { [comparisonOperator]: cursor };
+                const recordsBefore = await model.countDocuments(cursorQuery);
+                currentPage = Math.floor(recordsBefore / limit) + 1;
+            } else if (goTo === "last") {
+                currentPage = pageCount;
+            }
     
             return {
                 message: "Records fetched successfully",
                 data: records,
-                nextCursor
+                totalCount,
+                pageCount,
+                currentPage,
+                nextCursor,
+                prevCursor
             };
         } catch (error) {
             throw new Error("Error fetching records: " + error.message);
         }
     }
+    
+
 
     // Get a single document by ID
     async getById(model, idField, id, populateOptions) {

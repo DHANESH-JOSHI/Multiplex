@@ -42,12 +42,9 @@ class GenreService {
     }
 
     // Get All Genres
-    async getAllGenres() {
+    async getAllGenres(options = {}) {
         try {
-            const genres = await CRUDService.getAll(Genre);
-            if (!genres.data.length) {
-                throw new Error("No genres found.");
-            }
+            const genres = await CRUDService.getAll(Genre, {}, options);
             return genres;
         } catch (error) {
             throw new Error(`Failed to fetch genres: ${error.message}`);

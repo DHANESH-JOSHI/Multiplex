@@ -14,7 +14,20 @@ class GenreController {
     // Get All Genres
     async getAllGenres(req, res) {
         try {
-            const result = await GenreService.getAllGenres();
+
+            const { limit = 10, cursor = null, sortBy = "createdAt", sortOrder = "desc", direction = "next" } = req.query;
+
+            // Build options for pagination
+            const options = {
+                limit: parseInt(limit),
+                cursor: cursor,
+                sortBy: sortBy,
+                sortOrder: sortOrder,
+                direction: direction
+            };
+
+            const result = await GenreService.getAllGenres(options);
+
             res.status(200).json(result);
         } catch (error) {
             res.status(500).json({ message: error.message });

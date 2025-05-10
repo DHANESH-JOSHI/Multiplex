@@ -82,20 +82,22 @@ const videoSchema = new mongoose.Schema({
     default: 0
   },
 
+  is_movie: {
+    type: Boolean,
+  },
+
   publication: Number,
 
   lid: Number,
 
   trailer: {
-    type: Number,
-    default: 0
+    type: String,
   },
   
   trailler_youtube_source: String,
 
   enable_download: {
-    type: Number,
-    default: 1
+    type: Boolean,
   },
 
   focus_keyword: String,

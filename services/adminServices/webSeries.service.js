@@ -191,8 +191,8 @@ class WebSeriesService {
             const episodes = await CRUDService.find(Episode, { season: season._id });
             if (episodes.success) {
               for (let episode of episodes.data) {
-                // Delete video from CloudCDN
-                await CloudCDNService.deleteVideo(episode.video_id);
+                // Delete video from CloudFlare
+                await CloudflareStreamService.deleteVideo(episode.videoContent_id);
                 // Delete episode record
                 await CRUDService.delete(Episode, episode._id);
               }
@@ -212,7 +212,6 @@ class WebSeriesService {
         throw new Error("Error deleting WebSeries: " + error.message);
       }
     }
-  
 }
 
 module.exports = new WebSeriesService();
