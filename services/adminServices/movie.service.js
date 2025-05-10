@@ -38,7 +38,7 @@ class MovieService {
           is_movie: true,
           publication,
           trailer,
-          Thumbnail,
+          Thumbnail_url,
           Poster,
           enable_download,
 
