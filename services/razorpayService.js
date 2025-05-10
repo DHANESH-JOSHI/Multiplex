@@ -27,7 +27,7 @@ const createRazorpayOrder = async (amount, currencyCode) => {
 
     // Create Razorpay order
     const options = {
-      amount: Math.round(convertedAmount * 100), // Razorpay expects amount in paise
+      amount: convertedAmount, // Razorpay expects amount in paise
       currency: currency.iso_code,  // Currency from the database (e.g., INR, USD)
       receipt: `receipt_${Date.now()}`,
       payment_capture: 1 // Auto capture payment

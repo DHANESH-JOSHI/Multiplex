@@ -9,19 +9,38 @@ exports.addSubscription = async (req, res) => {
 
         // 1. Create Razorpay Order
         const razorpayOrder = await createRazorpayOrder(ammount, currencyCode);
-
+        console.log(razorpayOrder);
         // 2. Save subscription with order ID
+        const currentTimestamp = Date.now();
+        const validityPeriod = 30 * 24 * 60 * 60 * 1000; // 30 days
+        const timestamp_from = currentTimestamp;
+        const timestamp_to = currentTimestamp + validityPeriod;
+
         const newSubscription = new SubscriptionSchema({
             plan_id,
             user_id,
             channel_id,
-            ammount,
-            currencyCode,
-            country,
+
             price_amount,
             paid_amount,
-            razorpay_order_id: razorpayOrder.id // Add this field in your schema if not already
+
+            timestamp_from,
+            timestamp_to,
+
+            payment_method: "Razorpay", // or get dynamically if needed
+            payment_info: JSON.stringify(razorpayOrder), // Save full Razorpay order
+            payment_timestamp: currentTimestamp,
+
+            receipt: razorpayOrder.receipt, // ✅ from Razorpay response
+            razorpay_order_id: razorpayOrder.id, // ✅ from Razorpay response
+
+            currency: razorpayOrder.currency,
+            amount: razorpayOrder.amount,
+            amount_due: razorpayOrder.amount_due,
+            amount_paid: razorpayOrder.amount_paid,
+            created_at: razorpayOrder.created_at
         });
+
 
         const savedSubscription = await newSubscription.save();
 
