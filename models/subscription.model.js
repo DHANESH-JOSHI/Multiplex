@@ -1,8 +1,9 @@
 const mongoose = require('mongoose');
 
 const subscriptionSchema = new mongoose.Schema({
-  user_id: { type: String, required: true },
-  plan_id: { type: Number, required: true },
+  user_id: { type: mongoose.Schema.Types.ObjectId, required: true },
+  plan_id: { type: mongoose.Schema.Types.ObjectId, required: true },
+  channel_id: { type: mongoose.Schema.Types.ObjectId, required: true },
   price_amount: { type: Number, required: false },
   paid_amount: { type: Number, required: false },
   timestamp_from: { type: Number, required: true },

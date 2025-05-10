@@ -13,12 +13,13 @@ const instance = new razorpay({
 const createRazorpayOrder = async (amount, currencyCode) => {
   try {
     // Get the exchange rate for the provided currency
+    console.log(currencyCode);
     const currency = await currencySchema.findOne({ iso_code: currencyCode });
     
     console.log(currency);
 
     if (!currency) {
-      throw new Error('Currency not supported');
+      throw new Error('Currency not supported');  
     }
 
     // Convert the amount to the desired currency
@@ -27,7 +28,7 @@ const createRazorpayOrder = async (amount, currencyCode) => {
     // Create Razorpay order
     const options = {
       amount: Math.round(convertedAmount * 100), // Razorpay expects amount in paise
-      currency: currency.currency,  // Currency from the database (e.g., INR, USD)
+      currency: currency.iso_code,  // Currency from the database (e.g., INR, USD)
       receipt: `receipt_${Date.now()}`,
       payment_capture: 1 // Auto capture payment
     };

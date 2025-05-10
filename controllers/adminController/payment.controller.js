@@ -5,7 +5,7 @@ const SubscriptionSchema = require('../../models/subscription.model');
 // Create Razorpay order and save subscription
 exports.addSubscription = async (req, res) => {
     try {
-        const { plan_id, user_id, ammount, currencyCode, country, price_amount, paid_amount } = req.body;
+        const { plan_id, user_id, ammount, currencyCode, channel_id, country, price_amount, paid_amount } = req.body;
 
         // 1. Create Razorpay Order
         const razorpayOrder = await createRazorpayOrder(ammount, currencyCode);
@@ -14,6 +14,7 @@ exports.addSubscription = async (req, res) => {
         const newSubscription = new SubscriptionSchema({
             plan_id,
             user_id,
+            channel_id,
             ammount,
             currencyCode,
             country,

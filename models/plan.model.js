@@ -2,7 +2,6 @@ const { ref } = require('joi');
 const mongoose = require('mongoose');
 
 const planSchema = new mongoose.Schema({
-  plan_id: { type: Number, required: true, unique: true },
   name: { type: String, required: true },
   country: { type: String, required: true , ref: "isocode"}, // e.g., 'IN', 'US'
   day: { type: Number, default: 0 }, // Duration in days
