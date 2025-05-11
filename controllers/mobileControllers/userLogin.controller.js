@@ -52,9 +52,9 @@ exports.login = async (req, res) => {
 
             user = await User.create({
                 user_id: newUserId,
-                name: extractedName,    // Set the extracted name
-                slug: extractedName,
-                username: extractedName,
+                name: newUserId,    // Set the extracted name
+                slug: newUserId,
+                username: newUserId,
                 email,
                 is_password_set: 0,
                 password: "e10adc3949ba59abbe56e057f20f883e",  // Example hash for default password
@@ -68,7 +68,6 @@ exports.login = async (req, res) => {
                 deactivate_reason: "",
                 status: 1,
                 phone: mobile,
-                dob: null,
                 firebase_auth_uid: "",
                 otp: otp,
                 otpExpire: otpExpire,

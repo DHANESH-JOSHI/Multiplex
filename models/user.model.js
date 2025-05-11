@@ -5,7 +5,7 @@ const mongooseSequence = require("mongoose-sequence")(mongoose); // Pass mongoos
 const userSchema = new mongoose.Schema({
   user_id: { type: Number, required: true, unique: true },
   name: String,
-  slug: { type: String, required: true },
+  slug: { type: String, required: false },
   username: String,
   email: { type: String, required: true },
   is_password_set: { type: Number, required: true, default: 0 },
@@ -20,7 +20,6 @@ const userSchema = new mongoose.Schema({
   deactivate_reason: String,
   status: { type: Number, required: true, default: 1 },
   phone: String,
-  dob: Date,
   firebase_auth_uid: String,
   otp: {
     type: String,
