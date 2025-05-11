@@ -123,6 +123,16 @@ const videoSchema = new mongoose.Schema({
     default: 1
   },
 
+  thumbnail_url: {
+    type: String,
+    default: "https://multiplexplay.com/img/logo1.png"
+  },
+
+  poster_url: {
+    type: String,
+    default: "https://multiplexplay.com/img/logo1.png"
+  },
+
   today_view: {
     type: Number,
     default: 0
