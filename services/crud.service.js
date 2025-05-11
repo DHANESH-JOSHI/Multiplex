@@ -130,7 +130,7 @@ class CRUDService {
     async getAllPages(model, filter = {}, options = {}) {
     try {
         let {
-            limit = 10,
+            limit = 12,
             sortBy = "_id",
             sortOrder = "asc",
             page = 1,
