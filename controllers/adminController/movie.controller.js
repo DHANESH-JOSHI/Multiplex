@@ -34,7 +34,7 @@ class MovieController {
     //  Get movie by ID
     async getMovieById(req, res) {
         try {
-            const movieId = req.params.vId;
+            const movieId = req.query.vId;
             const fieldAliases = {
                 video_id: "videos_id",
                 vid: "videos_id",
