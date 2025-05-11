@@ -45,7 +45,7 @@ const getHomeContent = async () => {
   // 4. All genres
   const allGenres = await Genre.find({ }).lean();
   const all_genre = allGenres.map(g => ({
-    genre_id: g.genre_id,
+    genre_id: g._id,
     name: g.name,
     description: g.description,
     slug: g.slug,

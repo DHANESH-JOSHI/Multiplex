@@ -23,12 +23,13 @@ class MovieController {
     // Get all movies
     async getAllMovies(req, res) {
         try {
-            const result = await MovieService.getAllMovies();
+            const result = await MovieService.getAllMovies(req.query);
             res.status(200).json(result);
         } catch (error) {
             res.status(500).json({ message: error.message });
         }
     }
+
 
     //  Get movie by ID
     async getMovieById(req, res) {

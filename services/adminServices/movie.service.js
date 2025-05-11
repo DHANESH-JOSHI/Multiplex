@@ -30,6 +30,7 @@ class MovieService {
         // Step 3: Create Movie entry
         return await CRUDService.create(Movie, {
           videoContent_id: videos_id,
+          channel_id: channel_id,
           title,
           genre: genreArray,
           video_url: playback.hls, 
@@ -41,7 +42,6 @@ class MovieService {
           Thumbnail_url,
           Poster,
           enable_download,
-
         });
       }
 
@@ -49,9 +49,10 @@ class MovieService {
      * Get all movies.
      * @returns {Promise<Array>} - List of movies.
      */
-    async getAllMovies() {
-        return await CRUDService.getAll(Movie);
+    async getAllMovies(queryParams) {
+        return await CRUDService.getAllPages(Movie, {}, queryParams);
     }
+
 
     /**
      * Get a single movie by its ID.

@@ -126,6 +126,56 @@ class CRUDService {
             throw new Error("Error fetching records: " + error.message);
         }
     }
+
+    async getAllPages(model, filter = {}, options = {}) {
+    try {
+        let {
+            limit = 10,
+            sortBy = "_id",
+            sortOrder = "asc",
+            page = 1,
+            populate = null
+        } = options;
+
+        if (!sortBy || typeof sortBy !== "string") {
+            throw new Error("Invalid sorting field");
+        }
+
+        const sortDirection = sortOrder.toLowerCase() === "asc" ? 1 : -1;
+        const skip = (page - 1) * limit;
+
+        let dbQuery = model.find(filter)
+            .sort({ [sortBy]: sortDirection })
+            .skip(skip)
+            .limit(parseInt(limit));
+
+        if (populate) {
+            if (Array.isArray(populate)) {
+                populate.forEach(p => dbQuery = dbQuery.populate(p));
+            } else {
+                dbQuery = dbQuery.populate(populate);
+            }
+        }
+
+        const records = await dbQuery;
+        const totalCount = await model.countDocuments(filter);
+        const pageCount = Math.ceil(totalCount / limit);
+
+        return {
+            message: "Records fetched successfully",
+            data: records,
+            totalCount,
+            pageCount,
+            currentPage: page,
+            hasNextPage: page < pageCount,
+            hasPreviousPage: page > 1,
+        };
+
+    } catch (error) {
+        throw new Error("Error fetching records: " + error.message);
+    }
+}
+
     
 
 
