@@ -14,6 +14,7 @@ const homeContentRoutes = require("./mobileRoutes/homeContent.routes");
 const channelRoutes = require("./adminRoutes/channel.routes");
 const planRoutes = require("./adminRoutes/plan.routes");
 const sliderRoutes = require("./adminRoutes/slider.routes");
+const statusRoutes = require("./adminRoutes/status.routes");
 
 // Mobile Routes
 // router.use("/comment", commentRoutes);
@@ -28,6 +29,8 @@ router.use("/home_content_for_android", homeContentRoutes);
 router.use("/channel", channelRoutes);
 router.use("/all_package", planRoutes);
 router.use("/slider", sliderRoutes);
+
+router.use("/status", statusRoutes);
 
 
 //Import Admin Routes modules
