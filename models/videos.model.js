@@ -7,6 +7,7 @@ const videoSchema = new mongoose.Schema({
     type: Number,
     unique: true
   },
+  
   channel_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "channel",
