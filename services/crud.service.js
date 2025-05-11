@@ -194,6 +194,7 @@ class CRUDService {
             }
     
             const record = await dbQuery;
+             
     
             if (!record) {
                 throw new Error("Record not found.");

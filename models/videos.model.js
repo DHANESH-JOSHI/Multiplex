@@ -97,7 +97,8 @@ const videoSchema = new mongoose.Schema({
   trailler_youtube_source: String,
 
   enable_download: {
-    type: Boolean,
+    type: Number,
+    Default: 1
   },
 
   focus_keyword: String,
