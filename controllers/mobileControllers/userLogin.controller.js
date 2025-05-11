@@ -25,7 +25,7 @@ exports.login = async (req, res) => {
         const { email, phone } = req.body;
         const mobile = phone;
 
-        if (mobile) {
+        if (!mobile) {
             return res.status(400).json({ message: "Mobile is required" });
         }
 
