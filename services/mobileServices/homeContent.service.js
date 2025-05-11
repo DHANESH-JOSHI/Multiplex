@@ -6,22 +6,22 @@ const Video = require('../../models/videos.model.js');
 
 const getHomeContent = async () => {
   // 1. Slider data
-  const sliderData = await Slider.find({ }).sort({ order: 1 }).lean();
+  // const sliderData = await Slider.find({ }).sort({ order: 1 }).lean();
 
-  const slider = {
-    slider_type: "image",
-    slide: sliderData.map(item => ({
-      id: item.slider_id,
-      title: item.title,
-      description: item.description,
-      image_link: item.image_link,
-      slug: item.slug,
-      action_type: item.action_type,
-      action_btn_text: item.action_btn_text,
-      action_id: item.action_id,
-      action_url: item.action_url
-    }))
-  };
+  // const slider = {
+  //   slider_type: "image",
+  //   slide: sliderData.map(item => ({
+  //     id: item.slider_id,
+  //     title: item.title,
+  //     description: item.description,
+  //     image_link: item.image_link,
+  //     slug: item.slug,
+  //     action_type: item.action_type,
+  //     action_btn_text: item.action_btn_text,
+  //     action_id: item.action_id,
+  //     action_url: item.action_url
+  //   }))
+  // };
 
   // 2. Popular stars
   const popularStars = await Star.find({  }).sort({ view: -1 }).limit(1).lean();
@@ -32,15 +32,15 @@ const getHomeContent = async () => {
   }));
 
   // 3. All countries
-  const allCountries = await Country.find({ }).lean();
-  const all_country = allCountries.map(c => ({
-    country_id: c.country_id,
-    name: c.name,
-    description: c.description,
-    slug: c.slug,
-    url: `https://multiplexplay.com/office/country/${c.slug}.html`,
-    image_url: "https://multiplexplay.com/office/uploads/default_image/country.png"
-  }));
+  // const allCountries = await Country.find({ }).lean();
+  // const all_country = allCountries.map(c => ({
+  //   country_id: c.country_id,
+  //   name: c.name,
+  //   description: c.description,
+  //   slug: c.slug,
+  //   url: `https://multiplexplay.com/office/country/${c.slug}.html`,
+  //   image_url: "https://multiplexplay.com/office/uploads/default_image/country.png"
+  // }));
 
   // 4. All genres
   const allGenres = await Genre.find({ }).lean();
