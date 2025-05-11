@@ -17,15 +17,25 @@ class MovieService {
           creator: id,
           meta: { title },
         });
-      
+        
         if (!uploadResult || !uploadResult.success) {
           throw new Error("Failed to upload video to Cloudflare Stream");
         }
-      
+
         const { uid, playback } = uploadResult;
         let videos_id = parseInt(uid);
-
         const genreArray = Array.isArray(genre) ? genre : [genre];
+
+        // Step 2: Generate download link if enabled
+        let download_url = null;
+        if (enable_download) {
+          const downloadResult = await CloudCDNService.createDownload(uid);
+          if (downloadResult.success) {
+            download_url = downloadResult.downloadUrl;
+          } else {
+            console.warn("Download link generation failed:", downloadResult.error);
+          }
+        }
 
         // Step 3: Create Movie entry
         return await CRUDService.create(Movie, {
@@ -34,9 +44,9 @@ class MovieService {
           title,
           genre: genreArray,
           video_url: playback.hls,
-          download_url: playback.hls,
+          download_url,
           release,
-          is_paid, 
+          is_paid,
           is_movie: true,
           publication,
           trailer,

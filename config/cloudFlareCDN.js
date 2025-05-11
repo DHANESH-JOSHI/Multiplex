@@ -80,6 +80,77 @@ const CloudflareStreamService = {
         return { success: false, error: err.message || err };
       }
     },
+
+
+    //Download_url
+    createDownload: async (uid) => {
+    try {
+      const response = await fetch(
+        `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream/${uid}/downloads`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${CLOUDFLARE_API_TOKEN}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({}),
+        }
+      );
+      const data = await response.json();
+      if (data.success) {
+        return { success: true, result: data.result };
+      } else {
+        return { success: false, error: data.errors };
+      }
+    } catch (err) {
+      return { success: false, error: err.message || err };
+    }
+  },
+
+  getDownload: async (uid) => {
+    try {
+      const response = await fetch(
+        `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream/${uid}/downloads`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${CLOUDFLARE_API_TOKEN}`,
+          },
+        }
+      );
+      const data = await response.json();
+      if (data.success) {
+        return { success: true, result: data.result };
+      } else {
+        return { success: false, error: data.errors };
+      }
+    } catch (err) {
+      return { success: false, error: err.message || err };
+    }
+  },
+
+  deleteDownload: async (uid) => {
+    try {
+      const response = await fetch(
+        `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream/${uid}/downloads`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${CLOUDFLARE_API_TOKEN}`,
+          },
+        }
+      );
+      const data = await response.json();
+      if (data.success) {
+        return { success: true, result: data.result };
+      } else {
+        return { success: false, error: data.errors };
+      }
+    } catch (err) {
+      return { success: false, error: err.message || err };
+    }
+  },
+
 };
 
 

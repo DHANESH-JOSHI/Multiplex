@@ -7,6 +7,11 @@ const videoSchema = new mongoose.Schema({
     type: Number,
     unique: true
   },
+  channel_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "channel",
+    required: true
+  },
 
   imdbid: Number,
 
@@ -97,8 +102,12 @@ const videoSchema = new mongoose.Schema({
   trailler_youtube_source: String,
 
   enable_download: {
-    type: Number,
+    type: String,
     Default: 1
+  },
+
+  download_link: {
+    type: String,
   },
 
   focus_keyword: String,
