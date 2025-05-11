@@ -14,7 +14,7 @@ const channelSchema = new mongoose.Schema({
   deactivate_reason: String,
   last_login: Date,
   join_date: Date,
-  status: { type: String, enum: ['pending', 'approve', 'rejected', 'block'], required: true },
+  status: { type: String, enum: ['pending', 'approve', 'rejected', 'block'], required: true, default: "pending" },
   doc3: String,
   doc2: String,
   doc1: String,
