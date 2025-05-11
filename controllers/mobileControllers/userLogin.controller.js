@@ -25,8 +25,8 @@ exports.login = async (req, res) => {
         const { email, phone } = req.body;
         const mobile = phone;
 
-        if (!email || !mobile) {
-            return res.status(400).json({ message: "Email and Mobile are required" });
+        if (mobile) {
+            return res.status(400).json({ message: "Mobile is required" });
         }
 
         // Extract name from email before the '@' symbol
@@ -82,7 +82,7 @@ exports.login = async (req, res) => {
         }
 
         // Send OTP to the mobile number
-        // await sendOtp(mobile, otp);
+        await sendOtp(mobile, otp);
 
         // Send response with the user data and OTP message
         res.status(200).json({

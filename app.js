@@ -21,6 +21,7 @@ const limiter = rateLimit({
   max: 100 // limit each IP to 100 requests per windowMs
 });
 app.use(limiter);
+app.set('trust proxy', 1);
 
 // Connect to MongoDB
 connectDB();

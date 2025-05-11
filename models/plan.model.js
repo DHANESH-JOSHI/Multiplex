@@ -1,13 +1,12 @@
-const { ref } = require('joi');
 const mongoose = require('mongoose');
 
 const planSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  country: { type: String, required: true , ref: "isocode"}, // e.g., 'IN', 'US'
-  day: { type: Number, default: 0 }, // Duration in days
-  screens: { type: Number,default: 0 },
-  price: { type: Number, required: true }, // Store price as string
-  status: { type: Number, required: true } // 1 = active, 0 = inactive
-}, { collection: "plans", timestamps: true });
+  country: { type: String, required: true },  // ISO IN, USA, UAE
+  day: { type: Number, default: 0 },
+  screens: { type: Number, default: 0 },
+  price: { type: Number, required: true },
+  status: { type: Number, required: true }
+}, { collection: "plan", timestamps: true });
 
 module.exports = mongoose.model('Plan', planSchema);
