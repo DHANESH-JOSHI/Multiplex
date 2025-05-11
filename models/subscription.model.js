@@ -3,8 +3,8 @@ const mongoose = require('mongoose');
 
 const paymentInfoSchema = new mongoose.Schema({
   razorpay_order_id: { type: String, required: true },
-  razorpay_payment_id: { type: String, required: true },
-  razorpay_signature: { type: String, required: true },
+  razorpay_payment_id: { type: String, required: false, default: "" },
+  razorpay_signature: { type: String, required: false, default: "" },
   amount: { type: Number, required: true },
   currency: { type: String, default: 'INR' },
   status: { type: String, default: 'success' }
@@ -26,7 +26,7 @@ const subscriptionSchema = new mongoose.Schema({
   payment_info: { type: [paymentInfoSchema], required: true },
 
   recurring: { type: Number, required: true, default: 1 },
-  status: { type: Number, required: true, default: 0 },
+  status: { type: String, default: null },
   ispayment: { type: Number, default: 0 },
 
   receipt: { type: String, required: true },

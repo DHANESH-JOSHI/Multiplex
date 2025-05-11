@@ -90,7 +90,14 @@ exports.addSubscription = async (req, res) => {
             timestamp_from,
             timestamp_to,
             payment_method: "Razorpay", // Static or dynamic as per your use case
-            payment_info: JSON.stringify(razorpayOrder), // Save full Razorpay order details
+            payment_info: [{
+                razorpay_order_id: razorpayOrder.id,
+                razorpay_payment_id: "",
+                razorpay_signature: "",
+                amount: razorpayOrder.amount,
+                currency: razorpayOrder.currency,
+                status: "created"
+            }],
             payment_timestamp: currentTimestamp,
             receipt: razorpayOrder.receipt, // From Razorpay response
             razorpay_order_id: razorpayOrder.id, // From Razorpay response
