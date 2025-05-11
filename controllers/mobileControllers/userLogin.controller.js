@@ -148,7 +148,8 @@ exports.verifyOtp = async (req, res) => {
 
     res.status(200).json({
         message: "Login successful",
-        userId: user._id
+        userId: user._id,
+        status: "success"
     });
 };
 
