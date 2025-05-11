@@ -87,7 +87,7 @@ exports.login = async (req, res) => {
         res.status(200).json({
             message: "OTP sent successfully",
             user: {
-                user_id: user.user_id,
+                user_id: user._id,
                 name: user.name,
                 username: user.username,
                 email: user.email,
@@ -113,20 +113,17 @@ exports.login = async (req, res) => {
 
 
 exports.verifyOtp = async (req, res) => {
-    const { mobile, otp } = req.body;
 
-    if (!mobile || !otp) {
-        return res.status(400).json({ message: "Mobile and OTP are required" });
+    const { user_id, otp, deviceid, fcm, versioncode } = req.body;
+
+    if (!user_id || !otp) {
+        return res.status(400).json({ message: "User ID and OTP are required" });
     }
 
-    const mobileNumber = mobile.toString(); // Ensure mobile is a string
-    const otpString = otp.toString(); // Ensure OTP is a string
+    const otpString = otp.toString(); // Ensure OTP is a string    
+    // Find user by user_id
+    const user = await User.findOne({ _id: user_id });
 
-    console.log("Mobile:", mobileNumber, "OTP:", otpString);
-
-    // Query the database with the correct field names
-    const user = await User.findOne({ phone: mobileNumber });
-    console.log(user.otp);
     if (!user) {
         return res.status(400).json({ message: "User not found" });
     }
@@ -141,13 +138,20 @@ exports.verifyOtp = async (req, res) => {
         return res.status(400).json({ message: "OTP expired" });
     }
 
-    // Clear OTP and OTP expiration time
+    // Update user info
     user.otp = null;
     user.otpExpire = null;
+    user.deviceId = deviceid || null;
+    user.fcmToken = fcm || null;
+
     await user.save();
 
-    res.status(200).json({ message: "Login successful", userId: user.user_id });
+    res.status(200).json({
+        message: "Login successful",
+        userId: user._id
+    });
 };
+
 /**
  * Validate the email format using a simple regex.
  * @param {string} email
