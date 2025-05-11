@@ -11,12 +11,47 @@ exports.addSubscription = async (req, res) => {
             ammount, 
             currencyCode, 
             channel_id, 
-            video_id,    // Added video_id
+            video_id,
             country, 
             price_amount, 
             paid_amount, 
             custom_duration
         } = req.body;
+
+        const now = Date.now();
+
+        // 0. Check if user already has an active subscription
+        if (plan_id) {
+            const activePlan = await SubscriptionSchema.findOne({
+                user_id,
+                plan_id,
+                channel_id,
+                status: 1,
+                timestamp_to: { $gt: now }
+            });
+
+            if (activePlan) {
+                return res.status(400).json({
+                    message: "User already has an active subscription for this plan",
+                    subscription: activePlan
+                });
+            }
+        } else if (video_id) {
+            const activeVideo = await SubscriptionSchema.findOne({
+                user_id,
+                video_id,
+                channel_id,
+                status: 1,
+                timestamp_to: { $gt: now }
+            });
+
+            if (activeVideo) {
+                return res.status(400).json({
+                    message: "User already has an active subscription for this video",
+                    subscription: activeVideo
+                });
+            }
+        }
 
         // 1. Create Razorpay Order
         const razorpayOrder = await createRazorpayOrder(ammount, currencyCode);
@@ -27,38 +62,20 @@ exports.addSubscription = async (req, res) => {
 
         // 2. Validity Period calculation
         if (!plan_id) {
-            // Single Video — 45 days validity
             if (!video_id) {
                 return res.status(400).json({ message: "Missing video_id for single video purchase" });
             }
 
-            // Check if the user already has an active subscription for the same video
-            const existingSingleVideo = await SubscriptionSchema.findOne({
-                user_id,
-                channel_id,
-                video_id,
-                status: 1, // Active status
-                timestamp_to: { $gt: Date.now() } // Valid until future
-            });
-
-            if (existingSingleVideo) {
-                return res.status(400).json({
-                    message: "User already purchased this video",
-                    subscription: existingSingleVideo
-                });
-            }
-
-            validityPeriod = 45 * 24 * 60 * 60 * 1000; // Single video validity — 45 days
+            validityPeriod = 45 * 24 * 60 * 60 * 1000; // 45 days
         } else {
-            
             const plan = await planSchema.findById(plan_id);
 
             if (!plan) {
                 return res.status(400).json({ message: "Invalid plan_id" });
             }
-            
-            if (plan.type === "custom" && plan.day || custom_duration) {
-                validityPeriod = plan.day || custom_duration * 24 * 60 * 60 * 1000;
+
+            if ((plan.type === "custom" && plan.day) || custom_duration) {
+                validityPeriod = (plan.day || custom_duration) * 24 * 60 * 60 * 1000;
             } else {
                 switch (plan.type) {
                     case "monthly":
@@ -71,7 +88,7 @@ exports.addSubscription = async (req, res) => {
                         validityPeriod = 365 * 24 * 60 * 60 * 1000;
                         break;
                     default:
-                        validityPeriod = 30 * 24 * 60 * 60 * 1000; // Fallback (monthly)
+                        validityPeriod = 30 * 24 * 60 * 60 * 1000;
                 }
             }
         }
@@ -84,12 +101,12 @@ exports.addSubscription = async (req, res) => {
             plan_id: plan_id || null,
             user_id,
             channel_id,
-            video_id, // Save the video_id
+            video_id,
             price_amount,
             paid_amount,
             timestamp_from,
             timestamp_to,
-            payment_method: "Razorpay", // Static or dynamic as per your use case
+            payment_method: "Razorpay",
             payment_info: [{
                 razorpay_order_id: razorpayOrder.id,
                 razorpay_payment_id: "",
@@ -99,14 +116,14 @@ exports.addSubscription = async (req, res) => {
                 status: "created"
             }],
             payment_timestamp: currentTimestamp,
-            receipt: razorpayOrder.receipt, // From Razorpay response
-            razorpay_order_id: razorpayOrder.id, // From Razorpay response
+            receipt: razorpayOrder.receipt,
+            razorpay_order_id: razorpayOrder.id,
             currency: razorpayOrder.currency,
             amount: razorpayOrder.amount,
             amount_due: razorpayOrder.amount_due,
             amount_paid: razorpayOrder.amount_paid,
             created_at: razorpayOrder.created_at,
-            status: "active" // Subscription status
+            status: 1
         });
 
         const savedSubscription = await newSubscription.save();
@@ -124,6 +141,43 @@ exports.addSubscription = async (req, res) => {
         res.status(500).json({ message: "Failed to create subscription with payment", error: error.message });
     }
 };
+
+exports.updatePayment = async (req, res) => {
+  try {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      return res.status(400).json({ message: "Missing payment parameters" });
+    }
+
+    const now = Date.now();
+    const updated = await SubscriptionSchema.findOneAndUpdate(
+      { "payment_info.0.razorpay_order_id": razorpay_order_id },
+      {
+        $set: {
+          "payment_info.0.razorpay_payment_id": razorpay_payment_id,
+          "payment_info.0.razorpay_signature": razorpay_signature,
+          "payment_info.0.status": "paid",
+          ispayment: 1
+        }
+      },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ message: "Subscription not found for this order_id" });
+    }
+
+    return res.status(200).json({
+      message: "Payment info updated, subscription active",
+      data: updated
+    });
+
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Error updating payment", error: err.message });
+  }
+};
+
 
 
 // Get all subscriptions

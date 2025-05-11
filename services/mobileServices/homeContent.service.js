@@ -117,9 +117,6 @@ const getHomeContent = async () => {
   );
 
   return {
-    slider,
-    popular_stars,
-    all_country,
     all_genre,
     featured_tv_channel,
     latest_movies,
