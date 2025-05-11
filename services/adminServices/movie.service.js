@@ -33,14 +33,15 @@ class MovieService {
           channel_id: channel_id,
           title,
           genre: genreArray,
-          video_url: playback.hls, 
+          video_url: playback.hls,
+          download_url: playback.hls,
           release,
           is_paid, 
           is_movie: true,
           publication,
           trailer,
-          Thumbnail_url,
-          Poster,
+          thumbnail_url,
+          poster_url,
           enable_download,
         });
       }
