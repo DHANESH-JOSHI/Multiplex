@@ -50,7 +50,7 @@ class GenreController {
     async getContentByGenreId(req, res) {
 
         try {
-            const id = req.params.id; 
+            const id = req.query.id;
             const idField = req.query.newKey;
             const result = await GenreService.ContentByGenreId(idField, id); 
             res.status(200).json(result);
