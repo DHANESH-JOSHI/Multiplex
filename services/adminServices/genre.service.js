@@ -80,7 +80,11 @@ class GenreService {
             throw new Error("No movies found for this genre.");
         }
 
-        return movies;
+        return {
+            message: "Success",
+            success: "true",
+            data: movies,
+        }
 
         } catch (error) {
             throw new Error(`${error}`);
