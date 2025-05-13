@@ -54,9 +54,9 @@ class GenreService {
     // Get Genre by ID
     async getGenreById(idField, id) {
         try {
-            console.log(idField, id);
+            // console.log(idField, id);
             if (!id) throw new Error("Genre ID is required.");
-            console.log(idField);
+            // console.log(idField);
             const genre = await CRUDService.getById(Genre, idField, id);
             if (!genre.data) throw new Error("Genre not found.");
             return genre;
@@ -69,9 +69,8 @@ class GenreService {
     async ContentByGenreId(idField, id) {
         try {
             if (!id) throw new Error("Genre ID is required.");
-            console.log(idField, id);
             const genre = await CRUDService.getById(Movie, idField, id);
-            console.log(genre);
+
             if (!genre.data) throw new Error("Genre not found.");
             return genre;
 

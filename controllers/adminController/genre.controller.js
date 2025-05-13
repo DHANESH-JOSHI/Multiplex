@@ -48,7 +48,6 @@ class GenreController {
     }
 
     async getContentByGenreId(req, res) {
-
         try {
             const id = req.query.id;
             const idField = req.query.newKey;
