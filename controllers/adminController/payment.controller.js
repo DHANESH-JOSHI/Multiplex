@@ -193,15 +193,41 @@ exports.getAllSubscriptions = async (req, res) => {
 // Get single subscription by ID
 exports.getSubscriptionById = async (req, res) => {
     try {
-        const subscription = await SubscriptionSchema.findById(req.params.id);
+        console.log(req.query.user_id);
+
+        const subscription = await SubscriptionSchema.findOne({ user_id: req.query.user_id })
+            .populate({
+                path: 'channel_id',
+                select: 'channel_name _id mobilenumber email img'
+            })
+            .populate({
+                path: 'plan_id',
+                select: 'name price'
+            })
+            .lean(); // Convert to plain JS object
+
         if (!subscription) {
             return res.status(404).json({ message: "Subscription not found" });
         }
-        res.status(200).json({ message: "Subscription fetched successfully", data: subscription });
+
+        // Get current timestamp in milliseconds
+        const currentTime = Date.now();
+
+        // Add dynamic status: is_active = true if timestamp_to > current time
+        subscription.is_active = subscription.timestamp_to > currentTime;
+
+        res.status(200).json({
+            message: "Subscription fetched successfully",
+            data: subscription
+        });
     } catch (error) {
-        res.status(500).json({ message: "Error fetching subscription", error: error.message });
+        res.status(500).json({
+            message: "Error fetching subscription",
+            error: error.message
+        });
     }
 };
+
 
 // Update subscription by ID
 exports.updateSubscription = async (req, res) => {

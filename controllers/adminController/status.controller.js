@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const Channel = require('../../models/channel.model'); // capital 'Channel' as per convention
+const Channel = require('../../models/channel.model');
 require('dotenv').config();
 
 exports.getStatus = async (req, res) => {
@@ -16,7 +16,7 @@ exports.getStatus = async (req, res) => {
 // PUT: Update a channel's status by ID
 exports.updatestatus = async (req, res) => {
     try {
-        const { id } = req.params; // use /api/channel/:channelId
+        const { id } = req.params;
         const { status } = req.body;
 
         if (!id || !status) {

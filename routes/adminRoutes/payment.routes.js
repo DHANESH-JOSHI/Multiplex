@@ -5,7 +5,7 @@ const { addSubscription, updatePayment, getAllSubscriptions, getSubscriptionById
 router.post("/", addSubscription);
 router.post("/receipt", updatePayment)
 router.get("/", getAllSubscriptions);
-router.get("/:id", getSubscriptionById);
+router.get("/check_user_subscription", getSubscriptionById);
 router.put("/:id", updateSubscription);
 router.delete("/:id", deleteSubscription);
 

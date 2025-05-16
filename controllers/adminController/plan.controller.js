@@ -49,7 +49,7 @@ exports.getPlanById = async (req, res) => {
 
 exports.getPlansByCountry = async (req, res) => {
     try {
-        const country = req.params.country; // "IN", "US", etc.
+        const country = req.query.country; // "IN", "US", etc.
 
         const plans = await PlanSchema.find({ country: country });
 

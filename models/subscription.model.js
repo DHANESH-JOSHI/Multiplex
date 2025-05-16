@@ -12,7 +12,7 @@ const paymentInfoSchema = new mongoose.Schema({
 const subscriptionSchema = new mongoose.Schema({
   user_id:            { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
   plan_id:            { type: mongoose.Schema.Types.ObjectId, ref: 'Plan', default: null },
-  channel_id:         { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'Channel' },
+  channel_id:         { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'channel' },
   video_id:           { type: mongoose.Schema.Types.ObjectId, ref: 'Video', default: null },
 
   price_amount:       { type: Number },
