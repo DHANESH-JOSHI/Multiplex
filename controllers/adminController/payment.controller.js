@@ -209,7 +209,11 @@ exports.getSubscriptionById = async (req, res) => {
             .lean(); // Convert to plain JS object
 
         if (!subscription) {
-            return res.status(404).json({ message: "Subscription not found" });
+            return res.status(200).json({ 
+                message: "Subscription not found",
+                data: []
+
+             });
         }
 
         res.status(200).json({
