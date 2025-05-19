@@ -87,13 +87,15 @@ const getHomeContent = async () => {
   }));
 
   // 8. Featured Genre and Movie – for each genre, fetch a list of videos matching that genre
-  const features_genre_and_movie = await Promise.all(
+ const features_genre_and_movie = await Promise.all(
   all_genre.map(async g => {
-
-    const videos = await Video.find({ genre: { $in: [g.genre_id] } }) // Match genre array containing this genre
+    const videos = await Video.find({ genre: { $in: [g.genre_id] } }) // Make sure this matches your DB
       .sort({ cre: -1 })
       .limit(10)
       .lean();
+
+    // ✅ Skip if no videos found
+    if (!videos || videos.length === 0) return null;
 
     return {
       genre_id: g._id,
@@ -115,13 +117,17 @@ const getHomeContent = async () => {
   })
 );
 
+// ✅ Remove null entries (i.e., genres with no videos)
+const filtered_features = features_genre_and_movie.filter(Boolean);
+
+
 
   return {
     all_genre,
     featured_tv_channel,
     latest_movies,
     latest_tvseries,
-    features_genre_and_movie
+    features_genre_and_movie: filtered_features
   };
 };
 
