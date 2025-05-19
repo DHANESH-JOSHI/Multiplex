@@ -55,7 +55,7 @@ exports.addSubscription = async (req, res) => {
 
         // 1. Create Razorpay Order
         const razorpayOrder = await createRazorpayOrder(ammount, currencyCode);
-        console.log(razorpayOrder);
+        // console.log(razorpayOrder);
 
         const currentTimestamp = Date.now();
         let validityPeriod;
@@ -218,7 +218,7 @@ exports.getSubscriptionById = async (req, res) => {
 
         res.status(200).json({
             message: "Subscription fetched successfully",
-            data: subscription
+            data: [subscription]
         });
     } catch (error) {
         res.status(500).json({
