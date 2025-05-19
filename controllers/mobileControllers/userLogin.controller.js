@@ -81,8 +81,8 @@ exports.login = async (req, res) => {
         }
 
         // Send OTP to the mobile number
-        // await sendOtp(mobile, otp);
-        console.log(otp);
+        await sendOtp(mobile, otp);
+        // console.log(otp);
         // Send response with the user data and OTP message
         res.status(200).json({
             message: "OTP sent successfully",

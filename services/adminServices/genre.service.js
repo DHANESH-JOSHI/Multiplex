@@ -73,7 +73,6 @@ class GenreService {
 
             // if (!genre.data) throw new Error("Genre not found.");
             // return genre;
-
          const movies = await Movie.find({ [idField]: id });
 
         if (!movies || movies.length === 0) {
