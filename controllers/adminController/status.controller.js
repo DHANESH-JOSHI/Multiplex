@@ -16,8 +16,7 @@ exports.getStatus = async (req, res) => {
 // PUT: Update a channel's status by ID
 exports.updatestatus = async (req, res) => {
     try {
-        const { id } = req.params;
-        const { status } = req.body;
+        const { id, status } = req.body;
 
         if (!id || !status) {
             return res.status(400).json({ success: false, message: 'channelId and status are required' });

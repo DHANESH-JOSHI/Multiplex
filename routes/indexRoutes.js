@@ -33,7 +33,7 @@ router.use("/all_package", planRoutes);
 router.use("/slider", sliderRoutes);
 
 router.use("/status", statusRoutes);
-router.use("/payment", addPaymentrRoutes);                              // CURD of payment
+router.use("/payment", addPaymentrRoutes);  // CURD of payment
 
 
 //Import Admin Routes modules

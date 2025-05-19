@@ -24,7 +24,7 @@ exports.login = async (req, res) => {
     try {
         const { email, phone } = req.body;
         const mobile = phone;
-
+            
         if (!mobile) {
             return res.status(400).json({ message: "Mobile is required" });
         }
@@ -81,8 +81,8 @@ exports.login = async (req, res) => {
         }
 
         // Send OTP to the mobile number
-        await sendOtp(mobile, otp);
-
+        // await sendOtp(mobile, otp);
+        console.log(otp);
         // Send response with the user data and OTP message
         res.status(200).json({
             message: "OTP sent successfully",
@@ -145,7 +145,7 @@ exports.verifyOtp = async (req, res) => {
     user.fcmToken = fcm || null;
 
     await user.save();
-
+    console.log(user);
     res.status(200).json({
         message: "Login successful",
         userId: user._id,

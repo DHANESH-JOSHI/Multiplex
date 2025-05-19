@@ -1,6 +1,6 @@
 const Subscription = require('../../models/subscription.model.js');
 
-exports.checkUserSubscriptionStatus = async (userId) => {
+async function getSubscriptionStatus(userId) {
   // Find the latest subscription for the user (adjust the query as needed)
   const subscription = await Subscription.findOne({ user: userId })
     .sort({ created_at: -1 })
@@ -9,7 +9,7 @@ exports.checkUserSubscriptionStatus = async (userId) => {
   // If no subscription is found, return inactive/default response
   if (!subscription) {
     return {
-      status: 'inactive',
+      plan_status: 'inactive',
       package_title: 'Free',
       expire_date: '06-03-2125'
     };
@@ -20,7 +20,7 @@ exports.checkUserSubscriptionStatus = async (userId) => {
   
   // Check if the subscription is active
   if (subscription.timestamp_to > nowInSeconds && subscription.status === 1) {
-    // Format the expiration date (assuming timestamp_to is in seconds)
+    
     const expireDate = new Date(subscription.timestamp_to * 1000);
     const formattedExpireDate = expireDate.toISOString().split('T')[0];
     
@@ -40,4 +40,6 @@ exports.checkUserSubscriptionStatus = async (userId) => {
       expire_date: '06-03-2125'
     };
   }
-};
+}
+
+module.exports = { getSubscriptionStatus };

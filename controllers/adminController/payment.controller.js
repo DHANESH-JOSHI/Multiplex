@@ -144,7 +144,7 @@ exports.addSubscription = async (req, res) => {
 
 exports.updatePayment = async (req, res) => {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, status } = req.body;
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       return res.status(400).json({ message: "Missing payment parameters" });
     }
@@ -157,7 +157,9 @@ exports.updatePayment = async (req, res) => {
           "payment_info.0.razorpay_payment_id": razorpay_payment_id,
           "payment_info.0.razorpay_signature": razorpay_signature,
           "payment_info.0.status": "paid",
-          ispayment: 1
+          ispayment: 1,
+          is_active: 1,
+          status: 1,
         }
       },
       { new: true }
@@ -198,7 +200,7 @@ exports.getSubscriptionById = async (req, res) => {
         const subscription = await SubscriptionSchema.findOne({ user_id: req.query.user_id })
             .populate({
                 path: 'channel_id',
-                select: 'channel_name _id mobilenumber email img'
+                select: 'channel_name _id phone email img'
             })
             .populate({
                 path: 'plan_id',
@@ -209,12 +211,6 @@ exports.getSubscriptionById = async (req, res) => {
         if (!subscription) {
             return res.status(404).json({ message: "Subscription not found" });
         }
-
-        // Get current timestamp in milliseconds
-        const currentTime = Date.now();
-
-        // Add dynamic status: is_active = true if timestamp_to > current time
-        subscription.is_active = subscription.timestamp_to > currentTime;
 
         res.status(200).json({
             message: "Subscription fetched successfully",

@@ -4,7 +4,7 @@ const PlanSchema = require("../../models/plan.model");
 // Add a new plan
 exports.addPlan = async (req, res) => {
     try {
-        const { plan_id, name, day, screens, price, status, country } = req.body;
+        const { plan_id, name, day, screens, currency, price, status, country } = req.body;
 
         if (!plan_id || !name || !price || status === undefined) {
             return res.status(400).json({ message: "plan_id, name, price and status are required" });

@@ -27,6 +27,7 @@ const subscriptionSchema = new mongoose.Schema({
   recurring:          { type: Number, default: 1 },
   status:             { type: Number, default: 1 },      // 1 = active, 0 = expired
   ispayment:          { type: Number, default: 0 },
+  is_active:          { type: Boolean, default: true },
 
   receipt:            { type: String, required: true },
   razorpay_order_id:  { type: String },

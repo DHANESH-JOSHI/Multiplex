@@ -88,33 +88,33 @@ const getHomeContent = async () => {
 
   // 8. Featured Genre and Movie – for each genre, fetch a list of videos matching that genre
   const features_genre_and_movie = await Promise.all(
-    all_genre.map(async g => {
-      const videos = await Video.find({ })
-        .sort({ cre: -1 })
-        .limit(10)
-        .lean();
-      return {
-        genre_id: g.genre_id,
-        name: g.name,
-        description: g.description,
-        slug: g.slug,
-        url: `https://multiplexplay.com/office/genre/${g.slug}.html`,
-        videos: videos.map(v => ({
-          videos_id: v.videos_id,
-          title: v.title,
-          description: v.description,
-          slug: v.slug,
-          release: v.release ? v.release.toString() : "",
-          is_tvseries: v.is_tvseries ? v.is_tvseries.toString() : "0",
-          is_paid: v.is_paid.toString(),
-          runtime: v.runtime,
-          video_quality: v.video_quality,
-          thumbnail_url: v.thumbnail_url || "https://multiplexplay.com/office/uploads/default_image/thumbnail.jpg",
-          poster_url: v.poster_url || "https://multiplexplay.com/office/uploads/default_image/poster.jpg"
-        }))
-      };
-    })
-  );
+  all_genre.map(async g => {
+
+    const videos = await Video.find({ genre: { $in: [g.genre_id] } }) // Match genre array containing this genre
+      .sort({ cre: -1 })
+      .limit(10)
+      .lean();
+
+    return {
+      genre_id: g._id,
+      name: g.name,
+      description: g.description,
+      slug: g.slug,
+      url: `https://multiplexplay.com/office/genre/${g.slug}.html`,
+      videos: videos.map(v => ({
+        videos_id: v.videos_id,
+        title: v.title,
+        release: v.release ? v.release.toString() : "",
+        is_tvseries: v.is_tvseries ? v.is_tvseries.toString() : "0",
+        is_paid: v.is_paid.toString(),
+        video_quality: v.video_quality,
+        thumbnail_url: v.thumbnail_url || "https://multiplexplay.com/office/uploads/default_image/thumbnail.jpg",
+        poster_url: v.poster_url || "https://multiplexplay.com/office/uploads/default_image/poster.jpg"
+      }))
+    };
+  })
+);
+
 
   return {
     all_genre,
