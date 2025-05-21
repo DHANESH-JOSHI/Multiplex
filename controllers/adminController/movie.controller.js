@@ -5,13 +5,43 @@ class MovieController {
     // Add a new movie
     async addMovie(req, res) {
         try {
-            const { title, genre } = req.body;
+            // const { title, genre } = req.body;
+            const {
+                title,
+                genre,
+                channel_id,
+                release,
+                price,
+                is_paid,
+                publication,
+                trailer,
+                thumbnail_url,
+                poster_url,
+                enable_download
+            } = req.body;
+
             const file = req.file?.path || null;
 
             if (!file) return res.status(400).json({ message: 'File is required' });
             try {
-                const movie = await MovieService.addMovie({ title, genre, file });
-                res.json({ success: true, movie });
+
+            // const movie = await MovieService.addMovie({ title, genre, file });
+            const movie = await MovieService.addMovie({
+                title,
+                genre,
+                file,
+                channel_id,
+                release,
+                price,
+                is_paid,
+                publication,
+                trailer,
+                thumbnail_url,
+                poster_url,
+                enable_download
+            });
+
+            res.json({ success: true, movie });
             } catch (err) {
                 res.status(400).json({ message: err.message });
             }

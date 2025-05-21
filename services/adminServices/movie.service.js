@@ -46,6 +46,7 @@ class MovieService {
           video_url: playback.hls,
           download_url,
           release,
+          price,
           is_paid,
           is_movie: true,
           publication,
