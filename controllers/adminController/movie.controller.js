@@ -53,6 +53,7 @@ class MovieController {
     // Get all movies
     async getAllMovies(req, res) {
         try {
+            const movieId = req.query.country;
             const result = await MovieService.getAllMovies(req.query);
             res.status(200).json(result);
         } catch (error) {
@@ -65,6 +66,7 @@ class MovieController {
     async getMovieById(req, res) {
         try {
             const movieId = req.query.vId;
+            
             const fieldAliases = {
                 video_id: "videos_id",
                 vid: "videos_id",
@@ -79,6 +81,24 @@ class MovieController {
             res.status(statusCode).json({ message: error.message });
         }
     }
+
+    // async getMovieByCountry(req, res) {
+    //     try {
+    //         const movieId = req.query.vId;
+    //         const fieldAliases = {
+    //             video_id: "videos_id",
+    //             vid: "videos_id",
+    //         };
+
+    //         const rawField = req.query.fieldKey;
+    //         const fieldName = fieldAliases[rawField] || rawField || "_id";
+    //         const result = await MovieService.getMovieById(movieId, fieldName);
+    //         res.status(200).json(result);
+    //     } catch (error) {
+    //         const statusCode = error.message.includes("not found") ? 404 : 500;
+    //         res.status(statusCode).json({ message: error.message });
+    //     }
+    // }
 
 
 

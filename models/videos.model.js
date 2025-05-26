@@ -15,7 +15,9 @@ const videoSchema = new mongoose.Schema({
   },
 
   uploaded_by: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true
   },
 
   imdbid: Number,
@@ -57,6 +59,8 @@ const videoSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Genre"
   }], // Reference to Genre Model
+
+
   language: [{
     type: String,
 
@@ -97,6 +101,11 @@ const videoSchema = new mongoose.Schema({
     type: Boolean,
   },
 
+  price: {
+    type: Number,
+    default: 0
+  },
+
   publication: Number,
 
   lid: Number,
@@ -104,7 +113,7 @@ const videoSchema = new mongoose.Schema({
   trailer: {
     type: String,
   },
-  
+
   trailler_youtube_source: String,
 
   enable_download: {
