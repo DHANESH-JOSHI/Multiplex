@@ -102,6 +102,17 @@ const CloudflareStreamService = {
       }
     },
 
+    /**
+     * Wait until a stream is ready to be viewed.
+     *
+     * Periodically check the status of the stream until it is ready or the timeout
+     * is reached.
+     *
+     * @param {string} uid - The stream ID.
+     * @param {number} [timeout=120000] - The maximum time to wait for the stream to be ready.
+     * @param {number} [interval=5000] - The time to wait between checks.
+     * @return {Promise<boolean>} true if the stream is ready, false if the timeout is reached.
+     */
     waitUntilReady: async (uid, timeout = 120000, interval = 5000) => {
       const start = Date.now();
       while (Date.now() - start < timeout) {
@@ -117,30 +128,34 @@ const CloudflareStreamService = {
 
     //Download_url
     createDownload: async (uid) => {
-    try {
-      console.log(uid);
-      const response = await fetch(
-        `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream/${uid}/downloads`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${CLOUDFLARE_API_TOKEN}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({}),
+      try {
+        const response = await fetch(
+          `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream/${uid}/downloads`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${CLOUDFLARE_API_TOKEN}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({}),
+          }
+        );
+
+        const data = await response.json();
+        if (data.success) {
+          const downloadUrl = data.result?.default?.url;
+          return {
+            success: true,
+            downloadUrl,
+          };
+        } else {
+          return { success: false, error: data.errors };
         }
-      );
-      const data = await response.json();
-      console.log(data);
-      if (data.success) {
-        return { success: true, result: data.result };
-      } else {
-        return { success: false, error: data.errors };
+      } catch (err) {
+        return { success: false, error: err.message || err };
       }
-    } catch (err) {
-      return { success: false, error: err.message || err };
-    }
-  },
+    },
+
 
   getDownload: async (uid) => {
     try {

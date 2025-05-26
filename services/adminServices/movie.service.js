@@ -56,9 +56,33 @@ class MovieService {
           poster_url,
           enable_download,
         });
-
       }
 
+    //Only Video Upload 
+    async uploadOnlyVideo({ id, title, file }) {
+        const uploadResult = await CloudCDNService.uploadVideo(title, file, {
+          creator: id,
+          meta: { title },
+        });
+
+        if (!uploadResult || !uploadResult.success) {
+          throw new Error("Failed to upload video to Cloudflare Stream");
+        }
+
+        const { uid, playback } = uploadResult;
+
+        console.log("Video uploaded successfully!");
+        console.log("Video UID:", uid);
+        console.log("Playback URL:", playback.hls);
+
+        return {
+          uid,
+          playbackUrl: playback.hls,
+        };
+      }
+    }
+
+    
     /**
      * Get all movies.
      * @returns {Promise<Array>} - List of movies.
