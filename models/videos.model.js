@@ -7,11 +7,15 @@ const videoSchema = new mongoose.Schema({
     type: Number,
     unique: true
   },
-  
+
   channel_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "channel",
     required: true
+  },
+
+  uploaded_by: {
+    type: String,
   },
 
   imdbid: Number,
@@ -48,10 +52,7 @@ const videoSchema = new mongoose.Schema({
   release: {
     type: String
   },
-  country: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "country"
-  }],
+
   genre: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: "Genre"
@@ -59,6 +60,10 @@ const videoSchema = new mongoose.Schema({
   language: [{
     type: String,
 
+  }],
+
+  country: [{
+    type: String,
   }],
 
   video_type: String,

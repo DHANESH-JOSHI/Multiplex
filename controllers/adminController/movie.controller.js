@@ -19,12 +19,12 @@ class MovieController {
                 poster_url,
                 enable_download
             } = req.body;
-
+            console.log(req.body);
             const file = req.file?.path || null;
 
             if (!file) return res.status(400).json({ message: 'File is required' });
-            try {
 
+            try {
             // const movie = await MovieService.addMovie({ title, genre, file });
             const movie = await MovieService.addMovie({
                 title,

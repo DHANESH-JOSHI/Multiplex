@@ -11,7 +11,8 @@ class MovieService {
      * @param {Buffer} param0.file - Video file buffer.
      * @returns {Promise<Object>} - Created movie data.
      */
-    async addMovie({ id , title, genre, file }) {
+
+    async addMovie({ id , title, genre, file, channel_id,release,price,is_paid,publication,trailer,thumbnail_url,poster_url,enable_download }) {
         // Step 1: Upload video to Cloudflare
         const uploadResult = await CloudCDNService.uploadVideo(title,file, {
           creator: id,
@@ -28,14 +29,14 @@ class MovieService {
 
         // Step 2: Generate download link if enabled
         let download_url = null;
-        if (enable_download) {
-          const downloadResult = await CloudCDNService.createDownload(uid);
-          if (downloadResult.success) {
+        const downloadResult = await CloudCDNService.createDownload(uid);
+        if (downloadResult.success) {
             download_url = downloadResult.downloadUrl;
           } else {
             console.warn("Download link generation failed:", downloadResult.error);
           }
-        }
+          console.log(download_url);
+
 
         // Step 3: Create Movie entry
         return await CRUDService.create(Movie, {
@@ -55,6 +56,7 @@ class MovieService {
           poster_url,
           enable_download,
         });
+
       }
 
     /**
