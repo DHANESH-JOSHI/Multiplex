@@ -12,77 +12,85 @@ class MovieService {
      * @returns {Promise<Object>} - Created movie data.
      */
 
-    async addMovie({ id , title, genre, file, channel_id,release,price,is_paid,publication,trailer,thumbnail_url,poster_url,enable_download }) {
-        // Step 1: Upload video to Cloudflare
-        const uploadResult = await CloudCDNService.uploadVideo(title,file, {
-          creator: id,
-          meta: { title },
-        });
-        
-        if (!uploadResult || !uploadResult.success) {
-          throw new Error("Failed to upload video to Cloudflare Stream");
-        }
+    async addMovie({ id, title, genre, file, channel_id, release, price, is_paid, publication, trailer, thumbnail_url, poster_url, enable_download }) {
+        let video_url = 'null';
+        let download_url = 'null';
+        let videos_id = null;
 
-        const { uid, playback } = uploadResult;
-        let videos_id = parseInt(uid);
         const genreArray = Array.isArray(genre) ? genre : [genre];
 
-        // Step 2: Generate download link if enabled
-        let download_url = null;
-        const downloadResult = await CloudCDNService.createDownload(uid);
-        if (downloadResult.success) {
-            download_url = downloadResult.downloadUrl;
-          } else {
-            console.warn("Download link generation failed:", downloadResult.error);
-          }
-          console.log(download_url);
+        // Step 1: Upload video to Cloudflare (if file is provided)
+        if (file) {
+            const uploadResult = await CloudCDNService.uploadVideo(title, file, {
+                creator: id,
+                meta: { title },
+            });
 
+            if (!uploadResult || !uploadResult.success) {
+                throw new Error("Failed to upload video to Cloudflare Stream");
+            }
+
+            const { uid, playback } = uploadResult;
+            videos_id = parseInt(uid);
+            video_url = playback.hls;
+
+            // Step 2: Generate download link if enabled
+            if (enable_download) {
+                const downloadResult = await CloudCDNService.createDownload(uid);
+                if (downloadResult.success) {
+                    download_url = downloadResult.downloadUrl;
+                } else {
+                    console.warn("Download link generation failed:", downloadResult.error);
+                }
+            }
+        }
 
         // Step 3: Create Movie entry
         return await CRUDService.create(Movie, {
-          videoContent_id: videos_id,
-          channel_id: channel_id,
-          title,
-          genre: genreArray,
-          video_url: playback.hls,
-          download_url,
-          release,
-          price,
-          is_paid,
-          is_movie: true,
-          publication,
-          trailer,
-          thumbnail_url,
-          poster_url,
-          enable_download,
+            videoContent_id: videos_id,
+            channel_id: channel_id,
+            title,
+            genre: genreArray,
+            video_url,
+            download_url,
+            release,
+            price,
+            is_paid,
+            is_movie: true,
+            publication,
+            trailer,
+            thumbnail_url,
+            poster_url,
+            enable_download,
         });
-      }
+    }
 
-    //Only Video Upload 
-    async uploadOnlyVideo({ id, title, file }) {
+    async uploadVideoOnly(title, file, creatorId) {
+        if (!file) {
+            throw new Error("No video file provided.");
+        }
+
         const uploadResult = await CloudCDNService.uploadVideo(title, file, {
-          creator: id,
-          meta: { title },
+            creator: creatorId,
+            meta: { title },
         });
 
         if (!uploadResult || !uploadResult.success) {
-          throw new Error("Failed to upload video to Cloudflare Stream");
+            throw new Error("Video upload to Cloudflare Stream failed.");
         }
 
         const { uid, playback } = uploadResult;
-
-        console.log("Video uploaded successfully!");
-        console.log("Video UID:", uid);
-        console.log("Playback URL:", playback.hls);
-
         return {
-          uid,
-          playbackUrl: playback.hls,
+            success: true,
+            videoContent_id: parseInt(uid),
+            video_url: playback.hls
         };
-      }
     }
 
-    
+
+
+
+    //Only Video Upload
     /**
      * Get all movies.
      * @returns {Promise<Array>} - List of movies.

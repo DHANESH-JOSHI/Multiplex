@@ -5,16 +5,17 @@ const planSchema = require('../../models/plan.model');
 // Create Razorpay order and save subscription
 exports.addSubscription = async (req, res) => {
     try {
-        const { 
-            plan_id, 
-            user_id, 
-            ammount, 
-            currencyCode, 
-            channel_id, 
+
+        const {
+            plan_id,
+            user_id,
+            ammount,
+            currencyCode,
+            channel_id,
             video_id,
-            country, 
-            price_amount, 
-            paid_amount, 
+            country,
+            price_amount,
+            paid_amount,
             custom_duration
         } = req.body;
 
@@ -31,7 +32,7 @@ exports.addSubscription = async (req, res) => {
             });
 
             if (activePlan) {
-                return res.status(400).json({
+                return res.status(200).json({
                     message: "User already has an active subscription for this plan",
                     subscription: activePlan
                 });
@@ -46,7 +47,7 @@ exports.addSubscription = async (req, res) => {
             });
 
             if (activeVideo) {
-                return res.status(400).json({
+                return res.status(200).json({
                     message: "User already has an active subscription for this video",
                     subscription: activeVideo
                 });

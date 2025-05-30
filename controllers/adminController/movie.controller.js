@@ -50,10 +50,23 @@ class MovieController {
         }
     }
 
+    async uploadOnly (req, res){
+        try {
+            const { title, creatorId } = req.body;
+            const file = req.file?.path || null;
+
+            const result = await MovieService.uploadVideoOnly(title, file, creatorId);
+            return res.status(200).json(result);
+        } catch (error) {
+            return res.status(500).json({ error: error.message });
+        }
+    }
+
+
     // Get all movies
     async getAllMovies(req, res) {
         try {
-            const movieId = req.query.country;
+            
             const result = await MovieService.getAllMovies(req.query);
             res.status(200).json(result);
         } catch (error) {
@@ -66,7 +79,7 @@ class MovieController {
     async getMovieById(req, res) {
         try {
             const movieId = req.query.vId;
-            
+
             const fieldAliases = {
                 video_id: "videos_id",
                 vid: "videos_id",

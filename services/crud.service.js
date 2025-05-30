@@ -128,55 +128,55 @@ class CRUDService {
     }
 
     async getAllPages(model, filter = {}, options = {}) {
-    try {
-        let {
-            limit = 12,
-            sortBy = "_id",
-            sortOrder = "asc",
-            page = 1,
-            populate = null
-        } = options;
+        try {
+            let {
+                limit = 12,
+                sortBy = "_id",
+                sortOrder = "asc",
+                page = 1,
+                populate = null
+            } = options;
 
-        if (!sortBy || typeof sortBy !== "string") {
-            throw new Error("Invalid sorting field");
-        }
-
-        const sortDirection = sortOrder.toLowerCase() === "asc" ? 1 : -1;
-        const skip = (page - 1) * limit;
-
-        let dbQuery = model.find(filter)
-            .sort({ [sortBy]: sortDirection })
-            .skip(skip)
-            .limit(parseInt(limit));
-
-        if (populate) {
-            if (Array.isArray(populate)) {
-                populate.forEach(p => dbQuery = dbQuery.populate(p));
-            } else {
-                dbQuery = dbQuery.populate(populate);
+            if (!sortBy || typeof sortBy !== "string") {
+                throw new Error("Invalid sorting field");
             }
+
+            const sortDirection = sortOrder.toLowerCase() === "asc" ? 1 : -1;
+            const skip = (page - 1) * limit;
+
+            let dbQuery = model.find(filter)
+                .sort({ [sortBy]: sortDirection })
+                .skip(skip)
+                .limit(parseInt(limit));
+
+            if (populate) {
+                if (Array.isArray(populate)) {
+                    populate.forEach(p => dbQuery = dbQuery.populate(p));
+                } else {
+                    dbQuery = dbQuery.populate(populate);
+                }
+            }
+
+            const records = await dbQuery;
+            const totalCount = await model.countDocuments(filter);
+            const pageCount = Math.ceil(totalCount / limit);
+
+            return {
+                message: "Records fetched successfully",
+                data: records,
+                totalCount,
+                pageCount,
+                currentPage: page,
+                hasNextPage: page < pageCount,
+                hasPreviousPage: page > 1,
+            };
+
+        } catch (error) {
+            throw new Error("Error fetching records: " + error.message);
         }
-
-        const records = await dbQuery;
-        const totalCount = await model.countDocuments(filter);
-        const pageCount = Math.ceil(totalCount / limit);
-
-        return {
-            message: "Records fetched successfully",
-            data: records,
-            totalCount,
-            pageCount,
-            currentPage: page,
-            hasNextPage: page < pageCount,
-            hasPreviousPage: page > 1,
-        };
-
-    } catch (error) {
-        throw new Error("Error fetching records: " + error.message);
     }
-}
 
-    
+
 
 
     // Get a single document by ID
@@ -185,27 +185,27 @@ class CRUDService {
             const query = mongoose.Types.ObjectId.isValid(id)
                 ? { [idField]: id }
                 : { [idField]: parseInt(id) };
-    
+
             let dbQuery = model.findOne(query);
-    
+
             // ✅ Only apply populate if it exists and is valid
             if (populateOptions && typeof populateOptions === "object") {
                 dbQuery = dbQuery.populate(populateOptions);
             }
-    
+
             const record = await dbQuery;
-             
-    
+
+
             if (!record) {
                 throw new Error("Record not found.");
             }
-    
+
             return { message: "Record fetched successfully", data: record };
         } catch (error) {
             throw new Error("Error fetching record: " + error.message);
         }
     }
-    
+
 
     // Update a document by ID
     async update(model, idField, id, updateData) {
