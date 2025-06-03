@@ -99,6 +99,10 @@ class MovieService {
         return await CRUDService.getAllPages(Movie, {}, queryParams);
     }
 
+    async getAllMoviesByCountry(queryParams) {
+        return await CRUDService.getAllPages(Movie, {}, queryParams);
+    }
+
 
     /**
      * Get a single movie by its ID.

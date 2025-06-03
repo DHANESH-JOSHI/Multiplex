@@ -3,6 +3,7 @@ const Star = require('../../models/star.model.js');
 const Country = require('../../models/country.model.js');
 const Genre = require('../../models/genre.model.js');
 const Video = require('../../models/videos.model.js');
+const webseriesModel = require('../../models/webseries.model.js');
 
 const getHomeContent = async () => {
   // 1. Slider data
@@ -89,21 +90,19 @@ const getHomeContent = async () => {
   // 8. Featured Genre and Movie – for each genre, fetch a list of videos matching that genre
  const features_genre_and_movie = await Promise.all(
   all_genre.map(async g => {
-    const videos = await Video.find({ genre: { $in: [g.genre_id] } }) // Make sure this matches your DB
+    const videos = await Video.find({ genre: { $in: [g.genre_id] } })
       .sort({ cre: -1 })
       .limit(10)
       .lean();
 
-    // ✅ Skip if no videos found
-    if (!videos || videos.length === 0) return null;
+    const webseriess = await webseriesModel.find({ genre: { $in: [g.genre_id] } })
+      .sort({ cre: -1 })
+      .limit(10)
+      .lean();
 
-    return {
-      genre_id: g._id,
-      name: g.name,
-      description: g.description,
-      slug: g.slug,
-      url: `https://multiplexplay.com/office/genre/${g.slug}.html`,
-      videos: videos.map(v => ({
+    // ✅ Merge both arrays
+    const mergedVideos = [
+      ...(videos || []).map(v => ({
         videos_id: v.videos_id,
         title: v.title,
         release: v.release ? v.release.toString() : "",
@@ -112,12 +111,34 @@ const getHomeContent = async () => {
         video_quality: v.video_quality,
         thumbnail_url: v.thumbnail_url || "https://multiplexplay.com/office/uploads/default_image/thumbnail.jpg",
         poster_url: v.poster_url || "https://multiplexplay.com/office/uploads/default_image/poster.jpg"
+      })),
+      ...(webseriess || []).map(w => ({
+        videos_id: w._id.toString(), // Use _id as videos_id if needed
+        title: w.title,
+        release: w.release ? w.release.toString() : "",
+        is_tvseries: "1", // Assuming all webseries are TV series
+        is_paid: w.is_paid?.toString() || "0",
+        video_quality: w.video_quality || "HD", // Default/fallback
+        thumbnail_url: w.thumbnail_url || "https://multiplexplay.com/office/uploads/default_image/thumbnail.jpg",
+        poster_url: w.poster_url || "https://multiplexplay.com/office/uploads/default_image/poster.jpg"
       }))
+    ];
+
+    // ✅ Skip if merged list is empty
+    if (mergedVideos.length === 0) return null;
+
+    return {
+      genre_id: g._id,
+      name: g.name,
+      description: g.description,
+      slug: g.slug,
+      url: `https://multiplexplay.com/office/genre/${g.slug}.html`,
+      videos: mergedVideos
     };
   })
 );
 
-// ✅ Remove null entries (i.e., genres with no videos)
+
 const filtered_features = features_genre_and_movie.filter(Boolean);
 
 

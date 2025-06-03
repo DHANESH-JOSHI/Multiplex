@@ -26,14 +26,14 @@ router.use("/movies", movieRoutes);
 router.use("/webseries", webseriesRoutes);
 router.use("/favorite", favoriteRoutes);
 router.use("/genres", genreRoutes);
-router.use("/reguser", userLoginRoutes); // User Login
+router.use("/reguser", userLoginRoutes);
 router.use("/home_content_for_android", homeContentRoutes);
 router.use("/channel", channelRoutes);
 router.use("/all_package", planRoutes);
 router.use("/slider", sliderRoutes);
 
 router.use("/status", statusRoutes);
-router.use("/payment", addPaymentrRoutes);  // CURD of payment
+router.use("/payment", addPaymentrRoutes);
 
 
 //Import Admin Routes modules
