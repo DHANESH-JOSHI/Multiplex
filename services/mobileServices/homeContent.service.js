@@ -100,7 +100,7 @@ const getHomeContent = async () => {
       .limit(10)
       .lean();
 
-    // ✅ Merge both arrays
+    // Merge both arrays
     const mergedVideos = [
       ...(videos || []).map(v => ({
         videos_id: v.videos_id,
