@@ -5,7 +5,7 @@ const Genre = require('../../models/genre.model.js');
 const Video = require('../../models/videos.model.js');
 const webseriesModel = require('../../models/webseries.model.js');
 
-const getHomeContent = async () => {
+const getHomeContent = async (country) => {
   // 1. Slider data
   // const sliderData = await Slider.find({ }).sort({ order: 1 }).lean();
 
@@ -73,7 +73,7 @@ const getHomeContent = async () => {
   }));
 
   // 7. Latest TV series (where is_tvseries is 1)
-  const latestTvseries = await Video.find({  }).sort({ cre: -1 }).limit(10).lean();
+  const latestTvseries = await Video.find({  }).sort({ cre: -1 }).lean();
   const latest_tvseries = latestTvseries.map(v => ({
     videos_id: v.videos_id,
     title: v.title,
@@ -92,12 +92,10 @@ const getHomeContent = async () => {
   all_genre.map(async g => {
     const videos = await Video.find({ genre: { $in: [g.genre_id] } })
       .sort({ cre: -1 })
-      .limit(10)
       .lean();
 
     const webseriess = await webseriesModel.find({ genre: { $in: [g.genre_id] } })
       .sort({ cre: -1 })
-      .limit(10)
       .lean();
 
     // Merge both arrays

@@ -31,7 +31,6 @@ router.use("/home_content_for_android", homeContentRoutes);
 router.use("/channel", channelRoutes);
 router.use("/all_package", planRoutes);
 router.use("/slider", sliderRoutes);
-
 router.use("/status", statusRoutes);
 router.use("/payment", addPaymentrRoutes);
 

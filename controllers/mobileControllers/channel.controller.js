@@ -5,7 +5,7 @@ const getChannelListController = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit, 10) || 0;
     let channel;
-    channel = await getChannelList(limit);
+    channel = await getChannelList();
     console.log(channel);
     res.json(channel);
   } catch (error) {

@@ -7,10 +7,12 @@ const { addSubscription,
         updateSubscription,
         deleteSubscription,
         checkVideoSubscription,
-        grantManualSubscription
+        grantManualSubscription,
+        addSingleVideoPurchase
          } = require("../../controllers/adminController/payment.controller");
 
 router.post("/", addSubscription);
+router.post("/single", addSingleVideoPurchase);
 router.post("/manual", grantManualSubscription);
 router.post("/receipt", updatePayment)
 router.get("/", getAllSubscriptions);

@@ -70,6 +70,29 @@ const videoSchema = new mongoose.Schema({
     type: String,
   }],
 
+  price: {
+    type: Number,
+    default: 0
+  },
+
+  use_global_price: {
+    type: Boolean,
+    default: true
+  },
+
+  pricing: [{
+    country: {
+      type: String,
+      required: true
+    },
+    price: {
+      type: Number,
+      required: true
+    }
+  }],
+
+
+
   video_type: String,
 
   runtime: String,
@@ -101,10 +124,7 @@ const videoSchema = new mongoose.Schema({
     type: Boolean,
   },
 
-  price: {
-    type: Number,
-    default: 0
-  },
+  
 
   publication: Number,
 

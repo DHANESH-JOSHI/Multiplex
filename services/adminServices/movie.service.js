@@ -3,139 +3,133 @@ const CloudCDNService = require("../../config/cloudFlareCDN");
 const CRUDService = require("../../services/crud.service");
 
 class MovieService {
-    /**
-     * Add a new movie entry and upload video to BunnyCDN.
-     * @param {Object} param0 - Movie details.
-     * @param {string} param0.videos_id - Unique ID of the movie.
-     * @param {string} param0.title - Title of the movie.
-     * @param {Buffer} param0.file - Video file buffer.
-     * @returns {Promise<Object>} - Created movie data.
-     */
+  /* ──────────────────────────────────────────
+   * 1️⃣  CREATE  (file upload + DB insert)
+   * ──────────────────────────────────────────*/
+  async addMovie({
+    title,
+    genre,
+    file,
+    channel_id,
+    release,
+    price = "0",          // global price (fallback)
+    is_paid = 0,
+    publication,
+    trailer,
+    thumbnail_url,
+    poster_url,
+    enable_download = false,
+    pricing = [],       // [{ country, price }, ...]
+    use_global_price = true
+  }) {
+    let video_url = null;
+    let download_url = null;
+    let videoContent_id = null;
 
-    async addMovie({ id, title, genre, file, channel_id, release, price, is_paid, publication, trailer, thumbnail_url, poster_url, enable_download }) {
-        let video_url = 'null';
-        let download_url = 'null';
-        let videos_id = null;
+    const genreArray = Array.isArray(genre) ? genre : [genre];
 
-        const genreArray = Array.isArray(genre) ? genre : [genre];
+    /* ① Upload to Cloudflare Stream (if file given) */
+    if (file) {
+      const uploadResult = await CloudCDNService.uploadVideo(title, file, {
+        creator: channel_id,          // store who uploaded
+        meta: { title }
+      });
 
-        // Step 1: Upload video to Cloudflare (if file is provided)
-        if (file) {
-            const uploadResult = await CloudCDNService.uploadVideo(title, file, {
-                creator: id,
-                meta: { title },
-            });
+      if (!uploadResult?.success) {
+        throw new Error("Failed to upload video to Cloudflare Stream");
+      }
 
-            if (!uploadResult || !uploadResult.success) {
-                throw new Error("Failed to upload video to Cloudflare Stream");
-            }
+      const { uid, playback } = uploadResult;
+      videoContent_id = parseInt(uid);
+      video_url = playback.hls;
 
-            const { uid, playback } = uploadResult;
-            videos_id = parseInt(uid);
-            video_url = playback.hls;
-
-            // Step 2: Generate download link if enabled
-            if (enable_download) {
-                const downloadResult = await CloudCDNService.createDownload(uid);
-                if (downloadResult.success) {
-                    download_url = downloadResult.downloadUrl;
-                } else {
-                    console.warn("Download link generation failed:", downloadResult.error);
-                }
-            }
-        }
-
-        // Step 3: Create Movie entry
-        return await CRUDService.create(Movie, {
-            videoContent_id: videos_id,
-            channel_id: channel_id,
-            title,
-            genre: genreArray,
-            video_url,
-            download_url,
-            release,
-            price,
-            is_paid,
-            is_movie: true,
-            publication,
-            trailer,
-            thumbnail_url,
-            poster_url,
-            enable_download,
-        });
+      /* ② Generate download link (optional) */
+      if (enable_download) {
+        const dl = await CloudCDNService.createDownload(uid);
+        if (dl?.success) download_url = dl.downloadUrl;
+        else console.warn("Download link generation failed:", dl?.error);
+      }
     }
 
-    async uploadVideoOnly(title, file, creatorId) {
-        if (!file) {
-            throw new Error("No video file provided.");
-        }
+    /* ③ Insert record in MongoDB */
+    return CRUDService.create(Movie, {
+      videoContent_id,       // may be null if no file yet
+      channel_id,
+      title,
+      genre: genreArray,
+      video_url,
+      download_url,
+      release,
+      price: Number(price) || 0,
+      pricing,               // country-wise array
+      use_global_price,
+      is_paid,
+      is_movie: true,
+      publication,
+      trailer,
+      thumbnail_url,
+      poster_url,
+      enable_download
+    });
+  }
 
-        const uploadResult = await CloudCDNService.uploadVideo(title, file, {
-            creator: creatorId,
-            meta: { title },
-        });
+  /* ──────────────────────────────────────────
+   * 2️⃣  PURE UPLOAD  (re-used by controller helper)
+   * ──────────────────────────────────────────*/
+  async uploadVideoOnly(title, file, creatorId) {
+    if (!file) throw new Error("No video file provided.");
 
-        if (!uploadResult || !uploadResult.success) {
-            throw new Error("Video upload to Cloudflare Stream failed.");
-        }
+    const uploadResult = await CloudCDNService.uploadVideo(title, file, {
+      creator: creatorId,
+      meta: { title }
+    });
 
-        const { uid, playback } = uploadResult;
-        return {
-            success: true,
-            videoContent_id: parseInt(uid),
-            video_url: playback.hls
-        };
+    if (!uploadResult?.success) {
+      throw new Error("Video upload to Cloudflare Stream failed.");
     }
 
+    const { uid, playback } = uploadResult;
+    return {
+      success: true,
+      videoContent_id: parseInt(uid),
+      video_url: playback.hls
+    };
+  }
 
+  /* ──────────────────────────────────────────
+   * 3️⃣  READ OPERATIONS
+   * ──────────────────────────────────────────*/
+  async getAllMovies(queryParams) {
+    return CRUDService.getAllPages(Movie, {}, queryParams);
+  }
 
+  async getAllMoviesByCountry(queryParams) {
+    return CRUDService.getAllPages(Movie, {}, queryParams);
+  }
 
-    //Only Video Upload
-    /**
-     * Get all movies.
-     * @returns {Promise<Array>} - List of movies.
-     */
-    async getAllMovies(queryParams) {
-        return await CRUDService.getAllPages(Movie, {}, queryParams);
+  async getMovieById(movieId, fieldName = "_id") {
+    return CRUDService.getById(Movie, fieldName, movieId);
+  }
+
+  /* ──────────────────────────────────────────
+   * 4️⃣  UPDATE  (uses _id by default)
+   * ──────────────────────────────────────────*/
+  async updateMovie(movieId, movieData, fieldName = "_id") {
+    return CRUDService.update(Movie, fieldName, movieId, movieData);
+  }
+
+  /* ──────────────────────────────────────────
+   * 5️⃣  DELETE  (also deletes from CDN)
+   * ──────────────────────────────────────────*/
+  async deleteMovie(movieId) {
+    // Delete DB record first
+    const deleted = await CRUDService.delete(Movie, movieId);
+    // If the video existed on CDN, remove it there too
+    if (deleted?.data?.videoContent_id) {
+      await CloudCDNService.deleteVideo(deleted.data.videoContent_id);
     }
-
-    async getAllMoviesByCountry(queryParams) {
-        return await CRUDService.getAllPages(Movie, {}, queryParams);
-    }
-
-
-    /**
-     * Get a single movie by its ID.
-     * @param {string|number} movieId - ID of the movie.
-     * @returns {Promise<Object>} - Movie details.
-     */
-    async getMovieById(movieId, fieldName = "_id") {
-        return await CRUDService.getById(Movie, fieldName, movieId);
-    }
-
-    /**
-     * Update movie details.
-     * @param {string|number} movieId - ID of the movie to update.
-     * @param {Object} movieData - Updated movie details.
-     * @returns {Promise<Object>} - Updated movie data.
-     */
-    async updateMovie(fieldName = "_id", movieId, movieData) {
-        return await CRUDService.update(Movie, fieldName, movieId, movieData);
-    }
-
-    /**
-     * Delete a movie by its ID and remove associated file from BunnyCDN.
-     * @param {string|number} movieId - ID of the movie to delete.
-     * @returns {Promise<Object>} - Deletion confirmation.
-     */
-    async deleteMovie(movieId) {
-        // Delete movie record from database
-        const deletedMovie = await CRUDService.delete(Movie, movieId);
-        if (deletedMovie) {
-            await CloudCDNService.deleteVideo(deletedMovie.data.videoContent_id);
-        }
-        return deletedMovie;
-    }
+    return deleted;
+  }
 }
 
 module.exports = new MovieService();

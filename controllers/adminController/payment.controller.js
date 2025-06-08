@@ -154,6 +154,109 @@ exports.addSubscription = async (req, res) => {
     }
 };
 
+exports.addSingleVideoPurchase = async (req, res) => {
+  try {
+    const {
+      user_id,
+      channel_id,
+      video_id,
+      country = "",
+      currencyCode = "INR",
+      price_amount = 0,        // Displayed price
+      paid_amount = 0,         // Final amount (after discounts)
+      custom_duration          // Optional: duration in days
+    } = req.body;
+
+    // 1. Basic validation
+    if (!user_id || !channel_id || !video_id) {
+      return res.status(400).json({ message: "user_id, channel_id, and video_id are required" });
+    }
+
+    // 2. Check if user already has an active subscription for this video
+    const now = Date.now();
+    const existing = await SubscriptionSchema.findOne({
+      user_id,
+      video_id,
+      channel_id,
+      status: 1,
+      timestamp_to: { $gt: now }
+    });
+    if (existing) {
+      return res.status(200).json({
+        message: "User already has an active subscription for this video",
+        subscription: existing
+      });
+    }
+
+    // 3. Create Razorpay Order (only if paid_amount > 0)
+    let razorpayOrder = null;
+    if (paid_amount > 0) {
+      razorpayOrder = await createRazorpayOrder(paid_amount, currencyCode); 
+    }
+
+    // 4. Determine validity duration (default: 48 hours, or custom)
+    const validityMs = custom_duration
+      ? custom_duration * 24 * 60 * 60 * 1000
+      : 48 * 60 * 60 * 1000;
+
+    const timestamp_from = now;
+    const timestamp_to = now + validityMs;
+
+    // 5. Save subscription
+    const subDoc = new SubscriptionSchema({
+      user_id,
+      channel_id,
+      video_id,
+      plan_id: null,
+      price_amount,
+      paid_amount,
+      timestamp_from,
+      timestamp_to,
+      payment_method: paid_amount > 0 ? "Razorpay" : "FREE",
+      payment_info: paid_amount > 0
+        ? [{
+            razorpay_order_id: razorpayOrder.id,
+            razorpay_payment_id: "",
+            razorpay_signature: "",
+            amount: razorpayOrder.amount,
+            currency: razorpayOrder.currency,
+            status: "created"
+          }]
+        : [],
+      payment_timestamp: now,
+      receipt: razorpayOrder?.receipt || "",
+      razorpay_order_id: razorpayOrder?.id || "",
+      currency: razorpayOrder?.currency || currencyCode,
+      amount: razorpayOrder?.amount || 0,
+      amount_due: razorpayOrder?.amount_due || 0,
+      amount_paid: razorpayOrder?.amount_paid || 0,
+      created_at: razorpayOrder?.created_at || now,
+      status: 1
+    });
+
+    const saved = await subDoc.save();
+
+    // 6. Return success response
+    res.status(201).json({
+      message: paid_amount > 0
+        ? "Razorpay order created and video subscription saved successfully"
+        : "Free video access activated successfully",
+      data: {
+        subscription: saved,
+        razorpayOrder
+      }
+    });
+
+  } catch (err) {
+    console.error("addSingleVideoPurchase:", err);
+    res.status(500).json({
+      message: "Error while creating single video subscription",
+      error: err.message
+    });
+  }
+};
+
+
 // Manually grant a subscription (no Razorpay)
 exports.grantManualSubscription = async (req, res) => {
     try {

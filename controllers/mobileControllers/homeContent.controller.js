@@ -2,7 +2,8 @@ const HomeContentService = require('../../services/mobileServices/homeContent.se
 
 const getHomeContentForAndroid = async (req, res) => {
   try {
-    const data = await HomeContentService.getHomeContent();
+     let country = req.query.country;
+    const data = await HomeContentService.getHomeContent(country);
     res.json(data);
   } catch (err) {
     console.error('Error in HomeContentController:', err);
