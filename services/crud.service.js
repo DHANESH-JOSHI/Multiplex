@@ -22,7 +22,7 @@ class CRUDService {
     async getAll(model, filter = {}, options = {}) {
         try {
             let {
-                limit = 10,
+                limit = 100,
                 sortBy = "_id",
                 sortOrder = "asc",
                 cursor = null,
