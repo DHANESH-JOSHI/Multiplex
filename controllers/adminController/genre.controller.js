@@ -15,7 +15,7 @@ class GenreController {
     async getAllGenres(req, res) {
         try {
 
-            const { limit = 10, cursor = null, sortBy = "createdAt", sortOrder = "desc", direction = "next" } = req.query;
+            const { limit = 100, cursor = null, sortBy = "createdAt", sortOrder = "desc", direction = "next" } = req.query;
 
             // Build options for pagination
             const options = {
