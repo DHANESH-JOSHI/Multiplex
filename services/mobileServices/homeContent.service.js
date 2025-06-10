@@ -62,6 +62,7 @@ const getHomeContent = async (country) => {
   const latestMovies = await Video.find({ }).sort({ cre: -1 }).lean();
   const latest_movies = latestMovies.map(v => ({
     videos_id: v._id,
+    channel_id: v.channel_id,
     title: v.title,
     description: v.description,
     slug: v.slug,
