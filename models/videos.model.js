@@ -83,11 +83,13 @@ const videoSchema = new mongoose.Schema({
   pricing: [{
     country: {
       type: String,
-      required: true
+      required: true,
+      default: "Null"
     },
     price: {
       type: Number,
-      required: true
+      required: true,
+      default: 0
     }
   }],
 

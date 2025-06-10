@@ -4,8 +4,13 @@ const Country = require('../../models/country.model.js');
 const Genre = require('../../models/genre.model.js');
 const Video = require('../../models/videos.model.js');
 const webseriesModel = require('../../models/webseries.model.js');
+const episodesModel = require('../../models/episodes.model.js');
 
 const getHomeContent = async (country) => {
+
+  const fallbackThumb = "https://multiplexplay.com/office/uploads/default_image/thumbnail.jpg";
+  const fallbackPoster = "https://multiplexplay.com/office/uploads/default_image/poster.jpg";
+
   // 1. Slider data
   // const sliderData = await Slider.find({ }).sort({ order: 1 }).lean();
 
@@ -60,21 +65,61 @@ const getHomeContent = async (country) => {
 
   // 6. Latest movies (where is_tvseries is 0)
   const latestMovies = await Video.find({ }).sort({ cre: -1 }).lean();
-  const latest_movies = latestMovies.map(v => ({
+  const latestWebseries = await webseriesModel.find({ }).sort({ cre: -1 }).lean();
+
+  const allVideos = [...latestMovies, ...latestWebseries];
+
+  const latest_movies = allVideos.map((v, index) => {
+  if (!v._id || !v.title) {
+    console.warn(`Content at index ${index} is missing ID or title`, v);
+  }
+
+  return {
     videos_id: v._id,
+    numeric_videos_id: v.videos_id ?? "",
     channel_id: v.channel_id,
     title: v.title,
-    description: v.description,
-    slug: v.slug,
+    description: v.description ?? "",
+    slug: v.slug ?? "",
     release: v.release ? v.release.toString() : "",
-    is_paid: v.is_paid.toString(),
-    runtime: v.runtime,
-    price: v.price,
-    pricing: v.pricing,
-    video_quality: v.video_quality,
-    thumbnail_url: v.thumbnail_url || "https://multiplexplay.com/office/uploads/default_image/thumbnail.jpg",
-    poster_url: v.poster_url || "https://multiplexplay.com/office/uploads/default_image/poster.jpg"
-  }));
+    is_paid: (v.is_paid ?? 0).toString(),
+    price: v.price ?? 0,
+    pricing: v.pricing ?? [{ country: "null" }],
+    use_global_price: v.use_global_price ?? true,
+    runtime: v.runtime ?? 0,
+    video_quality: v.video_quality ?? "HD",
+    video_url: v.video_url ?? "",
+    trailer: v.trailer ?? "",
+    download_link: v.download_link ?? "",
+    enable_download: v.enable_download ?? "0",
+    is_tvseries: v.is_tvseries ?? 0,
+    videoContent_id: v.videoContent_id ?? "",
+    stars: v.stars ?? "",
+    director: v.director ?? [],
+    writer: v.writer ?? [],
+    rating: v.rating ?? "0",
+    country: v.country ?? [],
+    genre: v.genre ?? [],
+    language: v.language ?? [],
+    total_rating: v.total_rating ?? 0,
+    today_view: v.today_view ?? 0,
+    weekly_view: v.weekly_view ?? 0,
+    monthly_view: v.monthly_view ?? 0,
+    total_view: v.total_view ?? 0,
+    last_ep_added: v.last_ep_added ?? "",
+    created_at: v.cre ?? "",
+    thumbnail_url: v.thumbnail_url || fallbackThumb,
+    poster_url: v.poster_url || fallbackPoster,
+    __v: v.__v ?? 0,
+  };
+});
+
+
+
+
+
+
+
 
   // 7. Latest TV series (where is_tvseries is 1)
   const latestTvseries = await Video.find({  }).sort({ cre: -1 }).lean();
@@ -130,7 +175,7 @@ const getHomeContent = async (country) => {
     if (mergedVideos.length === 0) return null;
 
     return {
-      genre_id: g._id,
+      genre_id: g.genre_id,
       name: g.name,
       description: g.description,
       slug: g.slug,
