@@ -69,6 +69,8 @@ const getHomeContent = async (country) => {
     release: v.release ? v.release.toString() : "",
     is_paid: v.is_paid.toString(),
     runtime: v.runtime,
+    price: v.price,
+    pricing: v.pricing,
     video_quality: v.video_quality,
     thumbnail_url: v.thumbnail_url || "https://multiplexplay.com/office/uploads/default_image/thumbnail.jpg",
     poster_url: v.poster_url || "https://multiplexplay.com/office/uploads/default_image/poster.jpg"
