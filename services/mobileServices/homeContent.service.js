@@ -56,11 +56,12 @@ const getHomeContent = async (country) => {
 
   // 5. Featured TV channels (if available)
   const featured_tv_channel = []; // For now, leave empty or implement as needed
+  // const movies = 
 
   // 6. Latest movies (where is_tvseries is 0)
-  const latestMovies = await Video.find({ }).sort({ cre: -1 }).limit(10).lean();
+  const latestMovies = await Video.find({ }).sort({ cre: -1 }).lean();
   const latest_movies = latestMovies.map(v => ({
-    videos_id: v.videos_id,
+    videos_id: v._id,
     title: v.title,
     description: v.description,
     slug: v.slug,
