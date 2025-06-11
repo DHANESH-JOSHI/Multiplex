@@ -63,7 +63,7 @@ const getHomeContent = async (country) => {
   // 5. Featured TV channels (if available)
   const featured_tv_channel = await channelModel.find({ }).sort({ cre: -1 }).lean() || [] ; // For now, leave empty or implement as needed
   // const movies = 
-
+//country: { $in: country }
   // 6. Latest movies (where is_tvseries is 0)
   const latestMovies = await Video.find({ }).sort({ cre: -1 }).lean();
   const latestWebseries = await webseriesModel.find({ }).sort({ cre: -1 }).lean();
@@ -85,7 +85,7 @@ const getHomeContent = async (country) => {
     release: v.release ? v.release.toString() : "",
     is_paid: (v.is_paid ?? 0).toString(),
     price: v.price ?? 0,
-    pricing: v.pricing ?? [{ country: "null" }],
+    pricing: v.pricing ?? [ { "country": "null", "price": 0 },],
     use_global_price: v.use_global_price ?? true,
     runtime: v.runtime ?? 0,
     video_quality: v.video_quality ?? "HD",

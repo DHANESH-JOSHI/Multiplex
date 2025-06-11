@@ -50,14 +50,13 @@ exports.getPlanById = async (req, res) => {
 exports.getPlansByCountry = async (req, res) => {
     try {
         const country = req.query.country; // "IN", "US", etc.
-
         const plans = await PlanSchema.find({ country: country });
 
         if (!plans || plans.length === 0) {
             return res.status(404).json({ message: "No plans found for this country" });
         }
 
-        res.status(200).json({ message: "Plans retrieved successfully", data: plans });
+        res.status(200).json({ message: "Plans retrieved successfully", data: plans }); 
     } catch (error) {
         res.status(500).json({ message: "Error fetching plans", error: error.message });
     }

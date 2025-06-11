@@ -10,6 +10,7 @@ const app = express();
 
 // Importing v130 Routes
 const indexRoutes = require("./routes/indexRoutes");
+// const countryMiddleware = require("../middleware/countryMiddleware");
 
 // Clear console before starting
 console.clear();
@@ -40,6 +41,8 @@ app.use(session({
 
 app.use(passport.initialize());
 app.use(passport.session());
+
+// app.use(countryMiddleware);
 
 // Routes
 app.use("/nodeapi/rest-api/v130", indexRoutes);

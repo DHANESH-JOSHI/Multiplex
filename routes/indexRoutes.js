@@ -1,7 +1,6 @@
 const express = require("express");
 const router = express.Router();
 
-
 const countryRoutes = require('./mobileRoutes/country.routes');
 const configRoutes = require("./mobileRoutes/config.routes");
 const movieRoutes = require("./mobileRoutes/movies.routes");
