@@ -93,7 +93,7 @@ const getHomeContent = async (country) => {
     trailer: v.trailer ?? "",
     download_link: v.download_link ?? "",
     enable_download: v.enable_download ?? "0",
-    is_tvseries: v.is_tvseries ?? 0,
+    is_tvseries: v.is_tvseries ?? 1,
     videoContent_id: v.videoContent_id ?? "",
     stars: v.stars ?? "",
     director: v.director ?? [],
