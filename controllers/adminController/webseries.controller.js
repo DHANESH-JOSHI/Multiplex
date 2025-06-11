@@ -83,9 +83,9 @@ class WebSeriesController {
     // Get all seasons of a WebSeries
     async getWebSeriesSeasons(req, res) {
       try {
-        const { webSeriesId } = req.params;
-        const field = req.query.field;
-        const result = await WebSeriesService.getWebSeriesSeasons(field, webSeriesId);
+          const { webSeriesId: id, field } = req.query;   // rename webSeriesId → id
+
+        const result = await WebSeriesService.getWebSeriesSeasons(field, id);
         res.status(200).json(result);
       } catch (error) {
         res.status(400).json({ message: error.message });

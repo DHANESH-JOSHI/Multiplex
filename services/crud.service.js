@@ -195,7 +195,6 @@ class CRUDService {
 
             const record = await dbQuery;
 
-
             if (!record) {
                 throw new Error("Record not found.");
             }
@@ -205,6 +204,22 @@ class CRUDService {
             throw new Error("Error fetching record: " + error.message);
         }
     }
+
+    async getManyByField(model, field, value, populateOptions) {
+        const query = { [field]: value };
+
+        let dbQuery = model.find(query);
+        if (populateOptions && typeof populateOptions === "object") {
+            dbQuery = dbQuery.populate(populateOptions);
+        }
+
+        const records = await dbQuery;
+        if (!records.length) {
+            throw new Error("No records found.");
+        }
+        return { message: "Records fetched successfully", data: records };
+    }
+
 
 
     // Update a document by ID

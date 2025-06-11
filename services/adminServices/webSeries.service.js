@@ -118,12 +118,12 @@ class WebSeriesService {
 
     async getWebSeriesSeasons(field, id) {
 
-      try {
-              const SeasonData = await CRUDService.getById(Season, field, id,);
+    try {
+        const SeasonData = await CRUDService.getById(Season, field, id);
         return SeasonData;
 
       } catch (error) {
-        throw new Error("Error fetching WebSeries: " + error.message);
+        throw new Error("" + error.message);
       }
     }
   
