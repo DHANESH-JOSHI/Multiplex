@@ -72,8 +72,7 @@ class WebSeriesController {
     // Get WebSeries by ID
     async getWebSeriesById(req, res) {
       try {
-        const { id } = req.params;
-        const field = req.query.field;
+        const { id, field } = req.query; 
         const result = await WebSeriesService.getWebSeriesById(id, field);
         res.status(200).json(result);
       } catch (error) {

@@ -19,7 +19,7 @@ router.post("/", upload.single('file'), addWebSeries);
 router.post("/season", addSeason);
 router.post("/episode", upload.single('file'), addEpisode);
 router.get("/", getAllWebSeries);
-router.get("/:id", getWebSeriesById);
+router.get("/details", getWebSeriesById);
 router.get("/:webSeriesId/seasons", getWebSeriesSeasons);
 router.get("/seasons/:seasonId/episodes", getSeasonEpisodes);
 router.put("/:id", upload.single('file'), updateWebSeries);

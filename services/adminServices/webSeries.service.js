@@ -110,7 +110,6 @@ class WebSeriesService {
                   },
                 }
               );
-        
         return webSeries;
       } catch (error) {
         throw new Error("Error fetching WebSeries: " + error.message);
