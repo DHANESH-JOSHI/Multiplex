@@ -5,6 +5,7 @@ const Genre = require('../../models/genre.model.js');
 const Video = require('../../models/videos.model.js');
 const webseriesModel = require('../../models/webseries.model.js');
 const episodesModel = require('../../models/episodes.model.js');
+const channelModel = require('../../models/channel.model.js');
 
 const getHomeContent = async (country) => {
 
@@ -60,7 +61,7 @@ const getHomeContent = async (country) => {
   }));
 
   // 5. Featured TV channels (if available)
-  const featured_tv_channel = []; // For now, leave empty or implement as needed
+  const featured_tv_channel = await channelModel.find({ }).sort({ cre: -1 }).lean() || [] ; // For now, leave empty or implement as needed
   // const movies = 
 
   // 6. Latest movies (where is_tvseries is 0)
