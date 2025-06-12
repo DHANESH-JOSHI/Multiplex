@@ -155,7 +155,7 @@ const getHomeContent = async (country) => {
         title: v.title,
         release: v.release ? v.release.toString() : "",
         is_tvseries: v.is_tvseries ? v.is_tvseries.toString() : "0",
-        is_paid: v.is_paid.toString(),
+        is_paid: v.is_paid?.toString() || "0",
         video_quality: v.video_quality,
         thumbnail_url: v.thumbnail_url || "https://multiplexplay.com/office/uploads/default_image/thumbnail.jpg",
         poster_url: v.poster_url || "https://multiplexplay.com/office/uploads/default_image/poster.jpg"
