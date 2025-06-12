@@ -6,7 +6,6 @@ const planSchema = require('../../models/plan.model');
 // Create Razorpay order and save subscription
 exports.addSubscription = async (req, res) => {
     try {
-        
         const {
             plan_id,
             user_id,
@@ -23,36 +22,26 @@ exports.addSubscription = async (req, res) => {
         const now = Date.now();
 
         // 0. Check if user already has an active subscription
-        if (plan_id) {
-            const activePlan = await SubscriptionSchema.findOne({
-                user_id,
-                plan_id,
-                channel_id,
-                status: 1,
-                timestamp_to: { $gt: now }
-            });
+        const activeConditions = {
+            user_id,
+            channel_id,
+            status: 1,
+            timestamp_to: { $gt: now }
+        };
 
-            if (activePlan) {
-                return res.status(200).json({
-                    message: "User already has an active subscription for this plan",
-                    subscription: activePlan
-                });
-            }
-        } else if (video_id) {
-            const activeVideo = await SubscriptionSchema.findOne({
-                user_id,
-                video_id,
-                channel_id,
-                status: 1,
-                timestamp_to: { $gt: now }
-            });
+        const existingSubscriptions = await SubscriptionSchema.find({
+            ...activeConditions,
+            $or: [
+                plan_id ? { plan_id } : null,
+                video_id ? { video_id } : null
+            ].filter(Boolean)
+        });
 
-            if (activeVideo) {
-                return res.status(200).json({
-                    message: "User already has an active subscription for this video",
-                    subscription: activeVideo
-                });
-            }
+        if (existingSubscriptions.length > 0) {
+            return res.status(200).json({
+                message: "User already has an active subscription for this plan or video",
+                subscription: existingSubscriptions
+            });
         }
 
         // 1. Create Razorpay Order
@@ -62,47 +51,37 @@ exports.addSubscription = async (req, res) => {
         let validityPeriod;
 
         // 2. Validity Period calculation
-        if (!plan_id) {
+        if (!plan_id && !video_id) {
+            return res.status(400).json({ message: "Missing plan_id or video_id" });
+        }
 
-            if (!video_id) {
-                return res.status(400).json({ message: "Missing video_id for single video purchase" });
-            }
-
-            validityPeriod = 48 * 60 * 60 * 1000; //48hours //45 * 24 * 60 * 60 * 1000; // 45 days
-
-        } else {
-
+        if (plan_id) {
+            // Plan present (priority)
             const plan = await planSchema.findById(plan_id);
-
             if (!plan) {
                 return res.status(400).json({ message: "Invalid plan_id" });
             }
 
             if ((plan.type === "custom" && plan.day) || custom_duration) {
-
                 validityPeriod = (plan.day || custom_duration) * 24 * 60 * 60 * 1000;
-
             } else {
-
                 switch (plan.type) {
-
                     case "monthly":
                         validityPeriod = 30 * 24 * 60 * 60 * 1000;
-
                         break;
                     case "quarterly":
-
                         validityPeriod = 90 * 24 * 60 * 60 * 1000;
                         break;
-
                     case "yearly":
                         validityPeriod = 365 * 24 * 60 * 60 * 1000;
                         break;
-
                     default:
                         validityPeriod = 30 * 24 * 60 * 60 * 1000;
                 }
             }
+        } else if (video_id && !plan_id) {
+            // Only video present
+            validityPeriod = 48 * 60 * 60 * 1000; // 48 hours
         }
 
         const timestamp_from = currentTimestamp;
@@ -113,7 +92,7 @@ exports.addSubscription = async (req, res) => {
             plan_id: plan_id || null,
             user_id,
             channel_id,
-            video_id,
+            video_id: video_id || null,
             price_amount,
             paid_amount,
             timestamp_from,
@@ -153,6 +132,7 @@ exports.addSubscription = async (req, res) => {
         res.status(500).json({ message: "Failed to create subscription with payment", error: error.message });
     }
 };
+
 
 exports.addSingleVideoPurchase = async (req, res) => {
   try {
@@ -224,7 +204,7 @@ exports.addSingleVideoPurchase = async (req, res) => {
           }]
         : [],
       payment_timestamp: now,
-      receipt: razorpayOrder?.receipt || "",
+      receipt: razorpayOrder?.receipt || "Free",
       razorpay_order_id: razorpayOrder?.id || "",
       currency: razorpayOrder?.currency || currencyCode,
       amount: razorpayOrder?.amount || 0,
