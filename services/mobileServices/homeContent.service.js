@@ -151,7 +151,7 @@ const getHomeContent = async (country) => {
     // Merge both arrays
     const mergedVideos = [
       ...(videos || []).map(v => ({
-        videos_id: v.videos_id,
+        videos_id: v._id.toString(),
         title: v.title,
         release: v.release ? v.release.toString() : "",
         is_tvseries: v.is_tvseries ? v.is_tvseries.toString() : "0",
