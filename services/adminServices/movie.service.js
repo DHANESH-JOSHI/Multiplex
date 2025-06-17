@@ -109,7 +109,7 @@ class MovieService {
   }
 
   async getMovieById(movieId, fieldName = "_id") {
-    return CRUDService.getById(Movie, fieldName, movieId);
+    return CRUDService.getByIdArray(Movie, fieldName, movieId);
   }
 
   /* ──────────────────────────────────────────

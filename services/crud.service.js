@@ -205,6 +205,39 @@ class CRUDService {
         }
     }
 
+    async getByIdArray(model, idField, id, populateOptions) {
+        try {
+            const query = mongoose.Types.ObjectId.isValid(id)
+            ? { [idField]: id }
+            : { [idField]: parseInt(id) };
+
+            let dbQuery = model.findOne(query);
+
+            if (populateOptions && typeof populateOptions === "object") {
+            dbQuery = dbQuery.populate(populateOptions);
+            }
+
+            const record = await dbQuery;
+
+            if (!record) {
+            return {
+                message: "No record found.",
+                data: [],
+                totalCount: 0
+            };
+            }
+
+            return {
+            message: "Record fetched successfully",
+            data: [record], // ✅ Wrapping the single object in array
+            totalCount: 1
+            };
+        } catch (error) {
+            throw new Error("Error fetching record: " + error.message);
+        }
+    }
+
+
     async getByIdAllNest(model, idField, id, populateOptions) {
         try {
             const query = mongoose.Types.ObjectId.isValid(id)
