@@ -3,6 +3,7 @@ const WebSeries = require("../../models/webseries.model");
 const Season = require("../../models/seasons.model");
 const Episode = require("../../models/episodes.model");
 const CloudCDNService = require("../../config/cloudFlareCDN");
+const { default: mongoose } = require("mongoose");
 
 class WebSeriesService {
   // Create a new WebSeries with Seasons and Episodes
@@ -98,23 +99,52 @@ class WebSeriesService {
   }
 
 
-  async getWebSeriesById(id, field) {
-      try {
-              const webSeries = await CRUDService.getById(WebSeries, field, id,
-                {
-                  path: "seasonsId",
-                  select: "title description episodes",
-                  populate: {
-                    path: "episodesId", // this is inside seasonsId
-                    select: "title video_url",
-                  },
-                }
-              );
-        return webSeries;
-      } catch (error) {
-        throw new Error("Error fetching WebSeries: " + error.message);
+  async getWebSeriesById(id, field, user_id) {
+  try {
+    const query = mongoose.Types.ObjectId.isValid(id)
+      ? { [field]: id }
+      : { [field]: parseInt(id) };
+
+    const webSeries = await WebSeries.findOne(query).populate({
+      path: "seasonsId",
+      populate: {
+        path: "episodesId",
+      },
+      select: "__v",
+    });
+
+    if (!webSeries) {
+      throw new Error("WebSeries not found.");
+    }
+
+    // Default to false
+    let isSubscribed = false;
+
+    if (user_id) {
+      const subscription = await SubscriptionSchema.findOne({ user_id }).lean();
+
+      if (
+        subscription &&
+        subscription.channel_id?.toString() === webSeries.channel_id?.toString()
+      ) {
+        isSubscribed = true;
       }
     }
+
+    // Convert to plain object to add custom field
+    const webSeriesObj = webSeries.toObject();
+    webSeriesObj.isSubscribed = isSubscribed;
+
+    return {
+      message: "Record fetched successfully",
+      data: webSeriesObj,
+    };
+
+  } catch (error) {
+    throw new Error("Error fetching WebSeries: " + error.message);
+  }
+}
+
 
     async getWebSeriesSeasons(field, id) {
 

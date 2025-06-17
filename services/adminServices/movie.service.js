@@ -83,6 +83,7 @@ class MovieService {
       creator: creatorId,
       meta: { title }
     });
+    console.log('uploadResult:', uploadResult)
 
     if (!uploadResult?.success) {
       throw new Error("Video upload to Cloudflare Stream failed.");

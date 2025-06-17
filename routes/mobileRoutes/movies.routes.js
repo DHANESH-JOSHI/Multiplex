@@ -7,7 +7,7 @@ const  {upload} = require("../../middleware/multer");
 
 // Routes
 router.get("/", cacheMiddleware(3600), MovieController.getAllMovies);
-router.get("/:id", cacheMiddleware(3600), MovieController.getMovieById);
+router.get("/single-movie", cacheMiddleware(3600), MovieController.getMovieById);
 router.post("/", upload.single('file'), MovieController.addMovie);
 router.post("/upload", upload.single('file'), MovieController.uploadOnly);
 router.put("/:id", MovieController.updateMovie);

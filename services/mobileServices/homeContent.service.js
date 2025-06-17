@@ -66,15 +66,29 @@ const getHomeContent = async (country) => {
 //country: { $in: country }
   // 6. Latest movies (where is_tvseries is 0)
   const latestMovies = await Video.find({ }).sort({ cre: -1 }).lean();
+  
+
+
   const latestWebseries = await webseriesModel.find({ }).sort({ cre: -1 }).lean();
 
   const allVideos = [...latestMovies, ...latestWebseries];
+  function getPriceByCountry(v, country) {
+        if (!country) return v.use_global_price ? v.price : 0;
 
+        const entry = Array.isArray(v.pricing)
+          ? v.pricing.find(p => p.country === country)
+          : null;
+
+        if (entry) return entry.price;
+        if (!v.use_global_price) return 0;
+
+        return v.price ?? 0;
+      }
   const latest_movies = allVideos.map((v, index) => {
   if (!v._id || !v.title) {
     console.warn(`Content at index ${index} is missing ID or title`, v);
   }
-
+  
   return {
     videos_id: v._id,
     numeric_videos_id: v.videos_id ?? "",
@@ -84,7 +98,7 @@ const getHomeContent = async (country) => {
     slug: v.slug ?? "",
     release: v.release ? v.release.toString() : "",
     is_paid: (v.is_paid ?? 0).toString(),
-    price: v.price ?? 0,
+    price: getPriceByCountry(v, country) ?? 0,
     pricing: v.pricing ?? [ { "country": "null", "price": 0 },],
     use_global_price: v.use_global_price ?? true,
     runtime: v.runtime ?? 0,

@@ -2,8 +2,7 @@ const HomeContentService = require('../../services/mobileServices/homeContent.se
 
 const getHomeContentForAndroid = async (req, res) => {
   try {
-     let country = req.query.country;
-    console.log(country);
+    let country = req.query.country;
     const data = await HomeContentService.getHomeContent(country);
     res.json(data);
   } catch (err) {
