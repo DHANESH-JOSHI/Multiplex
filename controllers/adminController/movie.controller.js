@@ -94,25 +94,56 @@ class MovieController {
    *  ────────────────────────────────────────────*/
   async getAllMovies(req, res) {
     try {
-      // Check if vId is provided in the query
-      if (req.query.vId) {
-        const movieId = req.query.vId;
-        const fieldAliases = { video_id: "videos_id", vid: "videos_id" };
-        const rawField = req.query.fieldKey;
-        const fieldName = fieldAliases[rawField] || rawField || "_id";
+    let result;
+    let isSubscribed = false; // Default
+    const { vId, user_id, channel_id } = req.query;
 
-        const result = await MovieService.getMovieById(movieId, fieldName);
-        return res.status(200).json(result);
+    if (vId) {
+      const movieId = vId;
+      const fieldAliases = { video_id: "videos_id", vid: "videos_id" };
+      const rawField = req.query.fieldKey;
+      const fieldName = fieldAliases[rawField] || rawField || "_id";
+
+      // Step 1: Fetch Movie
+      result = await MovieService.getMovieById(movieId, fieldName);
+
+      // Step 2: Check Subscription
+      if (user_id && channel_id) {
+        const now = Date.now();
+        const activeSubscription = await SubscriptionSchema.findOne({
+          user_id,
+          video_id: movieId,
+          channel_id,
+          status: 1,
+          timestamp_to: { $gt: now }
+        });
+
+        if (activeSubscription) {
+          isSubscribed = true;
+        }
       }
-
-      // If no vId, proceed to fetch all movies
-      const result = await MovieService.getAllMovies(req.query);
-      res.status(200).json(result);
-    } catch (error) {
-      const statusCode = error.message.includes("not found") ? 404 : 500;
-      res.status(statusCode).json({ message: error.message });
+    } else {
+      // If no vId, fetch all movies
+      result = await MovieService.getAllMovies(req.query);
     }
+
+    // Step 3: Format Final Response
+    const finalResponse = {
+      message: result.message,
+      isSubscribed,
+      data: result.data
+    };
+
+    res.status(200).json(finalResponse);
+  } catch (error) {
+    const statusCode = error.message.includes("not found") ? 404 : 500;
+    res.status(statusCode).json({
+      message: error.message,
+      isSubscribed: false,
+      data: []
+    });
   }
+}
 
 
   /** ─────────────────────────────────────────────
@@ -164,6 +195,7 @@ class MovieController {
       };
 
       const result = await MovieService.updateMovie(req.params.id, updatePayload);
+
       res.status(200).json(result);
     } catch (error) {
       res.status(400).json({ message: error.message });
