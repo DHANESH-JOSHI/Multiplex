@@ -7,6 +7,7 @@ const mongoose = require('mongoose');
 const dayjs = require('dayjs');
 const relativeTime = require('dayjs/plugin/relativeTime');
 const { subscribe } = require('../../routes/indexRoutes');
+const subscriptionModel = require('../../models/subscription.model');
 dayjs.extend(relativeTime);
 
 const getChannelList = async (limit = 10, platform = null) => {
@@ -67,83 +68,93 @@ const getChannelList = async (limit = 10, platform = null) => {
 
 const getChannelInfoService = async (channel_id, uid) => {
   try {
-    //  Step 1: Validate and Parse channel_id
-    const parsedChannelId = parseInt(channel_id);
-    const parsedUserId = parseInt(uid);
-
-    if (isNaN(parsedChannelId)) {
-      throw new Error("Invalid channel_id. Must be a number.");
+    // Step 1: Convert channel_id to ObjectId
+    if (!mongoose.Types.ObjectId.isValid(channel_id)) {
+      throw new Error("Invalid channel_id. Must be a valid ObjectId.");
     }
 
-    //  Step 2: Fetch channel details
-    const channel = await Channel.findOne({ channel_id: parsedChannelId });
+    const objectChannelId = new mongoose.Types.ObjectId(channel_id);
+    const objectUserId = mongoose.Types.ObjectId.isValid(uid) ? new mongoose.Types.ObjectId(uid) : null;
 
+    // Step 2: Fetch the channel by _id
+    const channel = await Channel.findById(objectChannelId);
     if (!channel) {
       throw new Error("Channel not found.");
     }
 
-    let stt = 0; // Subscription status
-
-    //  Step 3: Check subscription if user_id is provided
-    if (parsedUserId > 0) {
-      const subscription = await Subscription.find({ c_id: parsedChannelId, user_id: parsedUserId });
-      if (subscription.length > 0) {
-        stt = 1; // User is subscribed
+    // Step 3: Check subscription
+    let subscriptionStatus = 0;
+    if (objectUserId) {
+      const subscription = await subscriptionModel.findOne({
+        channel_id: objectChannelId,
+        user_id: objectUserId
+      });
+      console.log("====>", subscription);
+      if (subscription) {
+        subscriptionStatus = 1;
       }
     }
 
-    //  Step 4: Get total views for the channel's videos
-    const totalViews = await videoSchema.aggregate([
-      { $match: { imdbid: parsedChannelId } },
+    // Step 4: Get total views from videos under this channel
+    const totalViewsResult = await videoSchema.aggregate([
+      { $match: { imdbid: objectChannelId } },
       { $group: { _id: null, total_view: { $sum: "$total_view" } } }
     ]);
 
-    const totalViewCount = totalViews.length > 0 ? totalViews[0].total_view : 0;
+    const totalViewCount = totalViewsResult.length > 0 ? totalViewsResult[0].total_view : 0;
 
-    //  Step 5: Fetch the count of subscribers
-    const subscriberCount = await Subscription.countDocuments({ c_id: parsedChannelId });
+    // Step 5: Count of subscribers
+    const subscriberCount = await subscriptionModel.countDocuments({ c_id: objectChannelId });
 
-    //  Step 6: Fetch related videos
+    // Step 6: Related Movies
     const relatedMovies = await videoSchema.aggregate([
-      { $match: { imdbid: parsedChannelId, is_tvseries: { $ne: 1 }, publication: 1 } },
-      { $limit: 10 }, // Adjust based on your needs
+      {
+        $match: {
+          channel_id: objectChannelId,
+        }
+      },
+      { $limit: 10 }
     ]);
+    // console.log(relatedMovies);
 
-    //  Step 7: Prepare the response
+    // Step 7: Prepare response
     const response = {
       channel_name: channel.channel_name,
-      channel_id: String(channel.channel_id),
+      channel_id: String(channel._id),
       channel_img: channel.img || 'https://multiplexplay.com/office/uploads/default_image/poster.jpg',
-      subcribe: stt,
+      subcribe: subscriptionStatus,
       view: String(totalViewCount),
       count: String(subscriberCount),
-      related_movie: relatedMovies.map(videoSchema => ({
-        videos_id: String(videoSchema.videos_id),
-        genre: videoSchema.genre || null,
-        country: videoSchema.country || null,
+      related_movie: relatedMovies.map(video => ({
+        videos_id: String(video._id || ''),
+        genre: video.genre || null,
+        country: video.country || null,
         channel_name: channel.channel_name,
-        channel_id: String(channel.channel_id),
+        channel_id: String(channel._id),
         channel_img: channel.img,
-        title: videoSchema.title,
-        view: String(videoSchema.total_view || 0),
-        description: videoSchema.description || "",
-        slug: `-${videoSchema.videos_id}`,
-        is_paid: String(videoSchema.is_paid),
-        is_tvseries: String(videoSchema.is_tvseries),
-        release: videoSchema.release || "2000",
-        runtime: String(videoSchema.runtime),
-        video_quality: videoSchema.video_quality,
-        thumbnail_url: videoSchema.thumbnail_url,
-        poster_url: videoSchema.poster_url
+        title: video.title || '',
+        view: String(video.total_view || 0),
+        description: video.description || '',
+        slug: `-${video.videos_id || ''}`,
+        is_paid: String(video.is_paid || 0),
+        is_tvseries: String(video.is_tvseries || 0),
+        release: video.release || "2000",
+        runtime: String(video.runtime || 0),
+        video_quality: video.video_quality || 'HD',
+        thumbnail_url: video.thumbnail_url || '',
+        poster_url: video.poster_url || ''
       }))
     };
 
     return response;
 
   } catch (error) {
+    console.error("getChannelInfoService Error:", error.message);
     throw new Error(error.message || "Something went wrong on the server.");
   }
 };
+
+
 
 const getSingleMovieDetailsByIdc = async (id, uid) => {
   try {
