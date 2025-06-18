@@ -47,12 +47,13 @@ const CloudflareStreamService = {
               uid: mediaId,
               playback: {
                 hls: `https://videodelivery.net/${mediaId}/manifest/video.m3u8`,
-                mp4: `https://videodelivery.net/${mediaId}/manifest/default.mpd`,
+                mp4: `https://videodelivery.net/${mediaId}/manifest/default.mp4`,
               },
             });
           } else {
             resolve({ success: false, error: "Missing stream-media-id in response." });
           }
+          
         },
       });
 

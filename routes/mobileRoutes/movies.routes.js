@@ -2,14 +2,14 @@ const express = require("express");
 const router = express.Router();
 const MovieController = require("../../controllers/adminController/movie.controller");
 const { cacheMiddleware } = require("../../middleware/nodeCache");
-const  {upload} = require("../../middleware/multer");
+const  {upload, deleteFileAfterResponse} = require("../../middleware/multer");
 
 
 // Routes
-router.get("/", cacheMiddleware(3600), MovieController.getAllMovies);
+router.get("/", cacheMiddleware(3600),deleteFileAfterResponse, MovieController.getAllMovies);
 router.get("/single-movie", cacheMiddleware(3600), MovieController.getMovieById);
-router.post("/", upload.single('file'), MovieController.addMovie);
-router.post("/upload", upload.single('file'), MovieController.uploadOnly);
+router.post("/", upload.single('file'),deleteFileAfterResponse, MovieController.addMovie);
+router.post("/upload", upload.single('file'),deleteFileAfterResponse, MovieController.uploadOnly);
 router.put("/:id", MovieController.updateMovie);
 router.delete("/:id", MovieController.deleteMovie);
 

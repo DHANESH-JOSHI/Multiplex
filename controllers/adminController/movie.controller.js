@@ -1,3 +1,4 @@
+const CloudflareStreamService = require("../../config/cloudFlareCDN");
 const MovieService = require("../../services/adminServices/movie.service");
 
 class MovieController {
@@ -8,72 +9,102 @@ class MovieController {
    *  Returns { videoPath, uploadMeta }
    *  ────────────────────────────────────────────*/
   async #handleUpload(req, title, creatorId = null) {
-    const file = req.file?.path || null;
-    if (!file) return { videoPath: null, uploadMeta: null };
-
-    // reuse the centralized upload service
-    const uploadResult = await MovieService.uploadVideoOnly(title, file, creatorId);
-    // Adjust the key names here to whatever your service returns
-    return { 
-      videoPath: uploadResult?.storedPath || uploadResult?.url || null,
-      uploadMeta: uploadResult
-    };
+   
   }
 
   /** ─────────────────────────────────────────────
    *  Add a new movie
    *  ────────────────────────────────────────────*/
-  async addMovie(req, res) {
-    try {
-      const {
-        title,
-        genre,
-        channel_id,
-        release,
-        price,
-        is_paid,
-        publication,
-        trailer,
-        thumbnail_url,
-        poster_url,
-        enable_download,
-        pricing,
-        use_global_price
-      } = req.body;
+async addMovie(req, res) {
+  try {
+    const {
+      title,
+      genre,
+      channel_id,
+      release,
+      price,
+      is_paid,
+      publication,
+      trailer,
+      thumbnail_url,
+      poster_url,
+      enable_download,
+      pricing,
+      use_global_price,
+    } = req.body;
 
-      /* ① upload file (if any) through the single helper */
-      const { videoPath } = await this.#handleUpload(req, title, channel_id);
+    const parsedGenre = Array.isArray(genre)
+      ? genre
+      : typeof genre === "string"
+        ? JSON.parse(genre)
+        : [];
 
-      /* ② parse pricing safely */
-      const parsedPricing = Array.isArray(pricing)
-        ? pricing
-        : typeof pricing === "string"
-          ? JSON.parse(pricing)
-          : [];
+    const parsedPricing = Array.isArray(pricing)
+      ? pricing
+      : typeof pricing === "string"
+        ? JSON.parse(pricing)
+        : [];
 
-      /* ③ create movie */
-      const movie = await MovieService.addMovie({
-        title,
-        genre,
-        channel_id,
-        release,
-        is_paid,
-        publication,
-        trailer,
-        thumbnail_url,
-        poster_url,
-        enable_download,
-        video_url: videoPath,      // <── centralised upload path
-        pricing: parsedPricing,
-        price: Number(price) || 0, // global price
-        use_global_price: use_global_price !== "false"
+    let video_url = null;
+    let videoContent_id = null;
+    let download_url = null;
+
+    if (req.file?.path) {
+      const uploadResult = await CloudflareStreamService.uploadVideo(title, req.file.path, {
+        creator: channel_id,
+        meta: { title }
       });
 
-      res.status(200).json({ success: true, movie });
-    } catch (error) {
-      res.status(400).json({ message: error.message });
+      if (!uploadResult?.success) {
+        throw new Error("Failed to upload video to Cloudflare Stream");
+      }
+
+      const { uid, playback } = uploadResult;
+      videoContent_id = uid;
+      video_url = playback?.hls || null;
+
+      if (enable_download === "true" || enable_download === true) {
+        const dl = await CloudflareStreamService.createDownload(uid);
+        if (dl?.success) {
+          download_url = dl.downloadUrl;
+        } else {
+          console.warn("Download link generation failed:", dl?.error);
+        }
+      }
     }
+
+    const movie = await MovieService.addMovie({
+      title,
+      genre: parsedGenre,
+      channel_id,
+      release,
+      is_paid,
+      publication,
+      trailer,
+      thumbnail_url,
+      poster_url,
+      enable_download,
+      pricing: parsedPricing,
+      price: Number(price) || 0,
+      use_global_price: use_global_price !== "false",
+      video_url,
+      videoContent_id,
+      download_url
+    });
+
+    res.status(200).json({ success: true, movie });
+
+  } catch (error) {
+    console.error("Error in addMovie:", error);
+    res.status(400).json({ message: `Error creating record: ${error.message}` });
   }
+}
+
+
+
+
+
+
 
   /** ─────────────────────────────────────────────
    *  Upload-only endpoint (unchanged, still public)

@@ -4,7 +4,7 @@ const mongooseSequence = require("mongoose-sequence")(mongoose);
 
 const videoSchema = new mongoose.Schema({
   videos_id: {
-    type: Number,
+    type: mongoose.Schema.Types.ObjectId,
     unique: true
   },
 
@@ -17,7 +17,7 @@ const videoSchema = new mongoose.Schema({
   uploaded_by: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
-    required: true
+    required: false
   },
 
   imdbid: Number,
@@ -111,7 +111,7 @@ const videoSchema = new mongoose.Schema({
 
   videoContent_id: {
     type: String,
-    required: true,
+    required: false,
     default: 0
   },
   
@@ -215,8 +215,12 @@ const videoSchema = new mongoose.Schema({
 });
 
 
-videoSchema.plugin(mongooseSequence, {
-  inc_field: "videos_id",
+videoSchema.pre('save', function (next) {
+  if (!this.videos_id) {
+    this.videos_id = this._id;
+  }
+  next();
 });
+
 
 module.exports = mongoose.model("Video", videoSchema);

@@ -7,71 +7,50 @@ class MovieService {
    * 1️⃣  CREATE  (file upload + DB insert)
    * ──────────────────────────────────────────*/
   async addMovie({
+  title,
+  genre,
+  channel_id,
+  release,
+  price = 0,
+  is_paid = 0,
+  publication,
+  trailer,
+  thumbnail_url,
+  poster_url,
+  enable_download = false,
+  pricing = [],
+  use_global_price = true,
+  video_url = null,
+  videoContent_id = null,
+  download_url = null
+}) {
+  const genreArray = Array.isArray(genre)
+    ? genre
+    : typeof genre === "string"
+      ? JSON.parse(genre)
+      : [genre];
+
+  return CRUDService.create(Movie, {
     title,
-    genre,
-    file,
+    genre: genreArray,
     channel_id,
     release,
-    price = "0",          // global price (fallback)
-    is_paid = 0,
+    is_paid,
     publication,
     trailer,
     thumbnail_url,
     poster_url,
-    enable_download = false,
-    pricing = [],       // [{ country, price }, ...]
-    use_global_price = true
-  }) {
-    let video_url = null;
-    let download_url = null;
-    let videoContent_id = null;
+    enable_download,
+    video_url,          // ✅ received from controller
+    videoContent_id,    // ✅ received from controller
+    download_url,       // ✅ received if applicable
+    pricing,
+    price: Number(price) || 0,
+    use_global_price,
+    is_movie: true
+  });
+}
 
-    const genreArray = Array.isArray(genre) ? genre : [genre];
-
-    /* ① Upload to Cloudflare Stream (if file given) */
-    if (file) {
-      const uploadResult = await CloudCDNService.uploadVideo(title, file, {
-        creator: channel_id,          // store who uploaded
-        meta: { title }
-      });
-
-      if (!uploadResult?.success) {
-        throw new Error("Failed to upload video to Cloudflare Stream");
-      }
-
-      const { uid, playback } = uploadResult;
-      videoContent_id = parseInt(uid);
-      video_url = playback.hls;
-
-      /* ② Generate download link (optional) */
-      if (enable_download) {
-        const dl = await CloudCDNService.createDownload(uid);
-        if (dl?.success) download_url = dl.downloadUrl;
-        else console.warn("Download link generation failed:", dl?.error);
-      }
-    }
-
-    /* ③ Insert record in MongoDB */
-    return CRUDService.create(Movie, {
-      videoContent_id,       // may be null if no file yet
-      channel_id,
-      title,
-      genre: genreArray,
-      video_url,
-      download_url,
-      release,
-      price: Number(price) || 0,
-      pricing,               // country-wise array
-      use_global_price,
-      is_paid,
-      is_movie: true,
-      publication,
-      trailer,
-      thumbnail_url,
-      poster_url,
-      enable_download
-    });
-  }
 
   /* ──────────────────────────────────────────
    * 2️⃣  PURE UPLOAD  (re-used by controller helper)
