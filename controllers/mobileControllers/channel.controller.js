@@ -117,7 +117,7 @@ const getChannelInfoController = async (req, res) => {
 const getChannelVideo = async (req, res) => {
   try {
     const { id, uid } = req.query;
-
+    console.log(id, uid);
     const data = await getSingleMovieDetailsByIdc(id, uid);
     res.json(data);
   } catch (err) {

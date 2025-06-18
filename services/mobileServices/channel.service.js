@@ -158,23 +158,39 @@ const getChannelInfoService = async (channel_id, uid) => {
 
 const getSingleMovieDetailsByIdc = async (id, uid) => {
   try {
-    // Step 1: Fetch video details
-    const video = await Video.findById(id);
+    console.log("Received video ID:", id);
+
+    // Step 1: Validate ID
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      console.warn("Invalid movie ID passed:", id);
+      return {}; // Return empty safely instead of throwing
+    }
+
+    const objectVideoId = new mongoose.Types.ObjectId(id);
+
+    // Step 2: Fetch video details
+    const video = await Video.findById(objectVideoId);
     if (!video) return {};
 
-    // Step 2: Fetch channel details
-    const channel = await Channel.findOne({ channel_id: video.imdbid });
+    // Step 3: Fetch channel details
+const channel = await Channel.findById(video.channel_id);
 
-    // Step 3: Check subscription
+    // Step 4: Validate and check subscription
     let subscribed = 0;
-    if (uid) {
-      const sub = await Subscription.findOne({ c_id: video.imdbid, user_id: uid });
+    if (uid && mongoose.Types.ObjectId.isValid(uid)) {
+      const objectUserId = new mongoose.Types.ObjectId(uid);
+
+      const sub = await subscriptionModel.findOne({
+        channel_id: video.channel_id,
+        user_id: objectUserId,
+      });
+
       if (sub) subscribed = 1;
     }
 
-    // Step 4: Update view counts
+    // Step 5: Update view counts
     await Video.updateOne(
-      { _id: id },
+      { _id: objectVideoId },
       {
         $inc: {
           today_view: 1,
@@ -185,7 +201,7 @@ const getSingleMovieDetailsByIdc = async (id, uid) => {
       }
     );
 
-    // Step 5: Prepare and return movie details
+    // Step 6: Prepare and return movie details
     return {
       videos_id: video._id,
       title: video.title,
@@ -217,7 +233,7 @@ const getSingleMovieDetailsByIdc = async (id, uid) => {
         ...(video.cast || [])
       ],
       trailler_youtube_source: video.trailler_youtube_source || '',
-      related_movie: [] // Optional: Add related movies logic
+      related_movie: []
     };
 
   } catch (error) {
@@ -225,6 +241,8 @@ const getSingleMovieDetailsByIdc = async (id, uid) => {
     throw new Error("Something went wrong while fetching movie details.");
   }
 };
+
+
 
 // Create new channel
 const createChannel = async (channelData) => {
