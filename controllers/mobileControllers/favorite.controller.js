@@ -45,18 +45,42 @@ class FavoriteController {
     try {
       const { user_id, videos_id, episode_id } = req.query;
       console.log(user_id, videos_id, episode_id);
+
       let user = user_id;
       let video_id = videos_id;
-      if (!user || (!video_id && !episode_id))
-        return res.status(400).json({ message: "User ID and either Video or Episode ID required" });
+
+      if (!user || (!video_id && !episode_id)) {
+        return res.status(400).json({
+          status: false,
+          message: "User ID and either Video ID or Episode ID are required",
+        });
+      }
 
       const favorite = await FavoriteService.isFavorite(user, video_id, episode_id);
-      res.json({ exists: !!favorite });
+
+      if (favorite) {
+        return res.status(200).json({
+          status: true,
+          message: "Favorite exists.",
+          exists: true,
+        });
+      } else {
+        return res.status(200).json({
+          status: true,
+          message: "Favorite does not exist.",
+          exists: false,
+        });
+      }
+
     } catch (error) {
       console.error("Error verifying favorite:", error);
-      res.status(500).json({ message: "Internal server error." });
+      return res.status(500).json({
+        status: false,
+        message: "Internal server error.",
+      });
     }
   }
+
 
   async removeFavorite(req, res) {
     try {
