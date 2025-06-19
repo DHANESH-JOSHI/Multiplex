@@ -30,54 +30,31 @@ async addMovie(req, res) {
       poster_url,
       enable_download,
       pricing,
-      use_global_price,
+      use_global_price
     } = req.body;
 
+    // 🧠 Parse genre safely
     const parsedGenre = Array.isArray(genre)
       ? genre
       : typeof genre === "string"
         ? JSON.parse(genre)
         : [];
 
+    // 💰 Parse pricing safely
     const parsedPricing = Array.isArray(pricing)
       ? pricing
       : typeof pricing === "string"
         ? JSON.parse(pricing)
         : [];
 
-    let video_url = null;
-    let videoContent_id = null;
-    let download_url = null;
-
-    if (req.file?.path) {
-      const uploadResult = await CloudflareStreamService.uploadVideo(title, req.file.path, {
-        creator: channel_id,
-        meta: { title }
-      });
-
-      if (!uploadResult?.success) {
-        throw new Error("Failed to upload video to Cloudflare Stream");
-      }
-
-      const { uid, playback } = uploadResult;
-      videoContent_id = uid;
-      video_url = playback?.hls || null;
-
-      if (enable_download === "true" || enable_download === true) {
-        const dl = await CloudflareStreamService.createDownload(uid);
-        if (dl?.success) {
-          download_url = dl.downloadUrl;
-        } else {
-          console.warn("Download link generation failed:", dl?.error);
-        }
-      }
-    }
-
+    // 🧾 Call Service
     const movie = await MovieService.addMovie({
       title,
       genre: parsedGenre,
+      file: req.file?.path,
       channel_id,
       release,
+      price,
       is_paid,
       publication,
       trailer,
@@ -85,20 +62,32 @@ async addMovie(req, res) {
       poster_url,
       enable_download,
       pricing: parsedPricing,
-      price: Number(price) || 0,
-      use_global_price: use_global_price !== "false",
-      video_url,
-      videoContent_id,
-      download_url
+      use_global_price
     });
+    function cleanMongoDoc(doc) {
+      const json = JSON.parse(JSON.stringify(doc));
+      const walk = (obj) => {
+        for (const key in obj) {
+          if (typeof obj[key] === "object" && obj[key] !== null) {
+            if (obj[key].$oid) obj[key] = obj[key].$oid;
+            if (obj[key].$date) obj[key] = obj[key].$date;
+            else walk(obj[key]);
+          }
+        }
+      };
+      walk(json);
+      return json;
+    }
 
-    res.status(200).json({ success: true, movie });
+    // ✅ Return clean response
+    res.status(200).json({ success: true, movie: cleanMongoDoc(movie)  });
 
   } catch (error) {
-    console.error("Error in addMovie:", error);
+    console.error("❌ Error in addMovie:", error);
     res.status(400).json({ message: `Error creating record: ${error.message}` });
   }
 }
+
 
 
 

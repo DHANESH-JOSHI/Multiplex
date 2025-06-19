@@ -31,7 +31,7 @@ const getHomeContent = async (country) => {
   // };
 
   // 2. Popular stars
-  const popularStars = await Star.find({  }).sort({ view: -1 }).limit(1).lean();
+  const popularStars = await Star.find({  }).sort({ view: -1 }).lean();
   const popular_stars = popularStars.map(star => ({
     star_id: star.star_id,
     star_name: star.star_name,

@@ -99,8 +99,8 @@ const getChannelListController = async (req, res) => {
 // };
 const getChannelInfoController = async (req, res) => {
   try {
-    const { channel_id, uid } = req.query;
-    console.log(channel_id, uid);
+    const { channel_id, user_id }  = req.query;
+    let uid = user_id;
     // Call the service method
     const response = await getChannelInfoService(channel_id, uid);
 

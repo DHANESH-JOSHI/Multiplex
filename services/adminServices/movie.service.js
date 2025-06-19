@@ -9,9 +9,10 @@ class MovieService {
   async addMovie({
   title,
   genre,
+  file,
   channel_id,
   release,
-  price = 0,
+  price = "0",
   is_paid = 0,
   publication,
   trailer,
@@ -19,37 +20,61 @@ class MovieService {
   poster_url,
   enable_download = false,
   pricing = [],
-  use_global_price = true,
-  video_url = null,
-  videoContent_id = null,
-  download_url = null
+  use_global_price = true
 }) {
-  const genreArray = Array.isArray(genre)
-    ? genre
-    : typeof genre === "string"
-      ? JSON.parse(genre)
-      : [genre];
+  let video_url = null;
+  let download_link = null;
+  let videoContent_id = null;
 
-  return CRUDService.create(Movie, {
+  const genreArray = Array.isArray(genre) ? genre : [genre];
+
+  // ① Upload to Cloudflare Stream
+  if (file) {
+    const uploadResult = await CloudCDNService.uploadVideo(title, file, {
+      creator: channel_id,
+      meta: { title }
+    });
+
+    if (!uploadResult?.success) {
+      throw new Error("❌ Failed to upload video to Cloudflare Stream");
+    }
+
+    const { uid, playback } = uploadResult;
+    videoContent_id = uid;
+    video_url = playback?.hls || null;
+
+    // ② Optional: Generate download link
+    if (enable_download) {
+      const dl = await CloudCDNService.createDownload(uid);
+      if (dl?.success) download_link = dl.downloadUrl;
+      else console.warn("⚠️ Download link generation failed:", dl?.error);
+    }
+  }
+
+  // ③ Save to DB
+  const result = await CRUDService.create(Movie, {
+    videoContent_id,
+    channel_id,
     title,
     genre: genreArray,
-    channel_id,
+    video_url,
+    download_link,
     release,
+    price: Number(price) || 0,
+    pricing,
+    use_global_price,
     is_paid,
+    is_movie: true,
     publication,
     trailer,
     thumbnail_url,
     poster_url,
-    enable_download,
-    video_url,          // ✅ received from controller
-    videoContent_id,    // ✅ received from controller
-    download_url,       // ✅ received if applicable
-    pricing,
-    price: Number(price) || 0,
-    use_global_price,
-    is_movie: true
+    enable_download
   });
+
+  return result;
 }
+
 
 
   /* ──────────────────────────────────────────
