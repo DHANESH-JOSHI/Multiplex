@@ -43,7 +43,10 @@ class FavoriteController {
 
   async verifyFavorite(req, res) {
     try {
-      const { user, video_id, episode_id } = req.query;
+      const { user_id, videos_id, episode_id } = req.query;
+      console.log(user_id, videos_id, episode_id);
+      let user = user_id;
+      let video_id = videos_id;
       if (!user || (!video_id && !episode_id))
         return res.status(400).json({ message: "User ID and either Video or Episode ID required" });
 
