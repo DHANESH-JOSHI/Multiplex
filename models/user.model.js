@@ -15,6 +15,7 @@ const userSchema = new mongoose.Schema({
   token: String,
   theme: { type: String, default: 'default' },
   theme_color: { type: String, default: '#16163F' },
+  
   join_date: Date,
   last_login: Date,
   deactivate_reason: String,
@@ -28,8 +29,8 @@ const userSchema = new mongoose.Schema({
   },
   otpExpire: { type: Date },
   vstatus: { type: Number, required: true, default: 1 },
-  deviceid: String,
-  fcm: String,
+  deviceid: { type: String },
+  fcm: { type: String },
   versioncode: { type: String, default: '1' },
   // OAuth fields
   google_id: String,

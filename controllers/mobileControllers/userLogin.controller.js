@@ -116,7 +116,7 @@ exports.verifyOtp = async (req, res) => {
 
     const { user_id, otp, deviceid, fcm, versioncode } = req.body;
 
-    if (!user_id || !otp) {
+    if (!user_id || !otp) { 
         return res.status(400).json({ message: "User ID and OTP are required" });
     }
 
@@ -141,11 +141,11 @@ exports.verifyOtp = async (req, res) => {
     // Update user info
     user.otp = null;
     user.otpExpire = null;
-    user.deviceId = deviceid || null;
-    user.fcmToken = fcm || null;
+    user.deviceid = deviceid || null;
+    user.fcm = fcm || null;
 
     await user.save();
-    console.log(user);
+    
     res.status(200).json({
         message: "Login successful",
         userId: user._id,
