@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const mongooseSequence = require("mongoose-sequence")(mongoose); // Pass mongoose here
+const mongooseSequence = require("mongoose-sequence")(mongoose);
 
 
 const userSchema = new mongoose.Schema({
@@ -7,7 +7,7 @@ const userSchema = new mongoose.Schema({
   name: String,
   slug: { type: String, required: false },
   username: String,
-  email: { type: String, required: true },
+  email: { type: String, required: false },
   is_password_set: { type: Number, required: true, default: 0 },
   password: { type: String, required: true },
   gender: { type: Number, default: 1 },
