@@ -57,7 +57,7 @@ exports.login = async (req, res) => {
                 username: newUserId,
                 email,
                 is_password_set: 0,
-                password: "e10adc3949ba59abbe56e057f20f883e",  // Example hash for default password
+                password: "25f9e794323b453885f5181f1b624d0b",  // Example hash for default password
                 gender: 1,
                 role: "user",
                 token: "",
@@ -152,6 +152,163 @@ exports.verifyOtp = async (req, res) => {
         status: "success"
     });
 };
+
+
+
+
+
+// Firebase_auth
+// 🚀 Firebase Auth Entry Point
+exports.firebaseAuth = async (req, res) => {
+    try {
+        const { uid, phone, email, name, image_url, deviceid, fcm, versioncode } = req.body;
+        console.log(req.body);
+        const country = req.query.country || 'IN';
+        const apiKey = req.headers['api-key'];
+
+        if (!uid) return res.status(400).json({ message: "UID is required" });
+
+        let user = null;
+
+        // 🌐 GOOGLE AUTH
+        if (email && name && image_url && phone && deviceid && fcm && versioncode) {
+            if (!validateEmail(email)) {
+                return res.status(400).json({ message: "Invalid email format" });
+            }
+
+            user = await User.findOne({ email });
+            if (!user) {
+                const lastUser = await User.findOne().sort({ user_id: -1 });
+                const newUserId = lastUser ? lastUser.user_id + 1 : 1;
+
+                user = await User.create({
+                    user_id: newUserId,
+                    name,
+                    slug: newUserId,
+                    username: newUserId,
+                    email,
+                    phone,
+                    google_id: uid,
+                    profile_picture: image_url,
+                    deviceid,
+                    fcm,
+                    versioncode,
+                    firebase_auth_uid: uid,
+                    theme: 'default',
+                    theme_color: '#16163F',
+                    role: 'user',
+                    join_date: new Date(),
+                    last_login: new Date(),
+                    is_password_set: 0,
+                    password: "25f9e794323b453885f5181f1b624d0b",
+                    status: 1,
+                    vstatus: 1
+                });
+            }
+
+        // ☎️ PHONE AUTH
+        } else if (phone) {
+            user = await User.findOne({ phone });
+            const otp = generateOtp();
+            const otpExpire = new Date(Date.now() + 5 * 60 * 1000);
+
+            if (user) {
+                user.otp = otp;
+                user.otpExpire = otpExpire;
+                await user.save();
+            } else {
+                const lastUser = await User.findOne().sort({ user_id: -1 });
+                const newUserId = lastUser ? lastUser.user_id + 1 : 1;
+                const extractedName = email?.split('@')[0] || `user${newUserId}`;
+
+                user = await User.create({
+                    user_id: newUserId,
+                    name: extractedName,
+                    slug: newUserId,
+                    username: newUserId,
+                    email: email || '',
+                    phone,
+                    firebase_auth_uid: uid,
+                    otp,
+                    otpExpire,
+                    role: 'user',
+                    theme: 'default',
+                    theme_color: '#16163F',
+                    is_password_set: 0,
+                    password: "25f9e794323b453885f5181f1b624d0b",
+                    join_date: new Date(),
+                    last_login: new Date(),
+                    status: 1,
+                    vstatus: 1
+                });
+            }
+
+            await sendOtp(phone, otp); // Send OTP
+        }
+
+        // 🌍 FACEBOOK AUTH
+        else if (email && name && image_url) {
+            user = await User.findOne({ email });
+            if (!user) {
+                const lastUser = await User.findOne().sort({ user_id: -1 });
+                const newUserId = lastUser ? lastUser.user_id + 1 : 1;
+
+                user = await User.create({
+                    user_id: newUserId,
+                    name,
+                    slug: newUserId,
+                    username: newUserId,
+                    email,
+                    firebase_auth_uid: uid,
+                    profile_picture: image_url,
+                    role: 'user',
+                    theme: 'default',
+                    theme_color: '#16163F',
+                    is_password_set: 0,
+                    password: "buildVersion ",
+                    join_date: new Date(),
+                    last_login: new Date(),
+                    status: 1,
+                    vstatus: 1
+                });
+            }
+        }
+
+        if (!user) {
+            return res.status(400).json({ message: "Invalid request parameters" });
+        }
+
+        return res.status(200).json({
+            message: "Authentication successful",
+            user: {
+                user_id: user._id,
+                name: user.name,
+                email: user.email,
+                phone: user.phone,
+                username: user.username,
+                role: user.role,
+                theme: user.theme,
+                theme_color: user.theme_color,
+                join_date: user.join_date,
+                last_login: user.last_login,
+                status: user.status
+            }
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Internal Server Error", error: err.message });
+    }
+};
+
+
+
+
+
+
+
+
+
 
 /**
  * Validate the email format using a simple regex.

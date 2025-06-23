@@ -77,7 +77,7 @@ class WebSeriesController {
         const { id, field, user_id } = req.query;
 
         // Step 1: Check if user has an active subscription
-        const subscription = await SubscriptionSchema.findOne({ user_id })
+        const subscription = await subscriptionModel.findOne({ user_id })
           .populate({
             path: 'channel_id',
             select: 'channel_name _id phone email img'
