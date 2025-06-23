@@ -292,7 +292,7 @@ exports.firebaseAuth = async (req, res) => {
                 gender: "male",
                 data: "stuein",
                 image_url: "photo",
-                password_unavailable: 1,
+                password_available: false,
                 last_login: user.last_login,
                 status: user.status
         });

@@ -1,5 +1,7 @@
+const { default: mongoose } = require("mongoose");
 const subscriptionModel = require("../../models/subscription.model");
 const WebSeriesService = require("../../services/adminServices/webSeries.service");
+const webseriesModel = require("../../models/webseries.model");
 
 class WebSeriesController {
   // Add a new WebSeries with Seasons and Episodes
@@ -72,68 +74,93 @@ class WebSeriesController {
   
     // Get WebSeries by ID
     async getWebSeriesById(req, res) {
-      try {
-        
-        const { id, field, user_id } = req.query;
+  try {
+    const { id, field, user_id } = req.query;
 
-        // Step 1: Check if user has an active subscription
-        const subscription = await subscriptionModel.findOne({ user_id })
-          .populate({
-            path: 'channel_id',
-            select: 'channel_name _id phone email img'
-          })
-          .populate({
-            path: 'plan_id',
-            select: 'name price'
-          })
-          .lean();
-
-        if (!subscription) {
-          return res.status(403).json({
-            message: "Access denied: No active subscription found.",
-            subscribed: false,
-            data: []
-          });
-        }
-
-        // Step 2: Fetch the web series
-        const webSeries = await WebSeriesService.getWebSeriesById(id, field);
-        if (!webSeries) {
-          return res.status(404).json({
-            message: "Web series not found",
-            subscribed: true,
-            data: []
-          });
-        }
-
-        // Step 3: Check if subscription matches the web series's channel
-        if (
-          webSeries.channel_id &&
-          subscription.channel_id &&
-          webSeries.channel_id.toString() !== subscription.channel_id._id.toString()
-        ) {
-          return res.status(403).json({
-            message: "Access denied: Subscription does not match the web series channel.",
-            subscribed: false,
-            data: []
-          });
-        }
-
-        // Step 4: Return final data with `subscribed: true`
-        res.status(200).json({
-          message: "Web series fetched successfully",
-          subscribed: true,
-          data: webSeries
-        });
-      } catch (error) {
-        res.status(500).json({
-          message: "Internal Server Error",
-          subscribed: false,
-          data: [],
-          error: error.message
-        });
-      }
+    // Step 1: Validate query params
+    if (!id || !field || !user_id) {
+      return res.status(400).json({
+        message: "Missing required parameters: id, field, user_id",
+        subscribed: false,
+        data: []
+      });
     }
+
+    // Step 2: Check subscription
+    const subscription = await subscriptionModel.findOne({ user_id })
+      .populate({
+        path: 'channel_id',
+        select: 'channel_name _id phone email img'
+      })
+      .populate({
+        path: 'plan_id',
+        select: 'name price'
+      })
+      .lean();
+
+    if (!subscription) {
+      return res.status(403).json({
+        message: "Access denied: No active subscription found.",
+        subscribed: false,
+        data: []
+      });
+    }
+
+    // Step 3: Create query based on ID type
+    const query = mongoose.Types.ObjectId.isValid(id)
+      ? { [field]: id }
+      : { [field]: parseInt(id) };
+
+    // Step 4: Fetch web series and populate seasons and episodes
+    const webSeries = await webseriesModel.findOne(query).populate({
+      path: "seasonsId",
+      populate: {
+        path: "episodesId",
+      },
+      select: "__v",
+    });
+
+    if (!webSeries) {
+      return res.status(404).json({
+        message: "Web series not found",
+        subscribed: true,
+        data: []
+      });
+    }
+
+    // Step 5: Check if the subscription's channel matches
+    if (
+      webSeries.channel_id &&
+      subscription.channel_id &&
+      webSeries.channel_id.toString() !== subscription.channel_id._id.toString()
+    ) {
+      return res.status(403).json({
+        message: "Access denied: Subscription does not match the web series channel.",
+        subscribed: false,
+        data: []
+      });
+    }
+
+    // Step 6: Add isSubscribed flag and return response
+    const webSeriesObj = webSeries.toObject();
+    webSeriesObj.isSubscribed = true;
+
+    res.status(200).json({
+      message: "Web series fetched successfully",
+      subscribed: true,
+      data: webSeriesObj
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      message: "Internal Server Error",
+      subscribed: false,
+      data: [],
+      error: error.message
+    });
+  }
+}
+
 
 
   
