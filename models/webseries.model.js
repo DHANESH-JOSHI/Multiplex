@@ -11,6 +11,7 @@ const webSeriesSchema = new mongoose.Schema({
   }],
   creatorId: { type: mongoose.Schema.Types.ObjectId, ref: "channel" },
   seasonsId: [{ type: mongoose.Schema.Types.ObjectId, ref: "Season" }],
+  price: { type: Number, default: 0 },
 }, {
   timestamps: true,
   collection: "webseries"

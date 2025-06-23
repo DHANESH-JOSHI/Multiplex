@@ -7,13 +7,14 @@ class WebSeriesController {
   // Add a new WebSeries with Seasons and Episodes
   async addWebSeries(req, res) {
     try {
-      const { title, description, genre, release_year } = req.body;
+      const { title, description, genre, release_year, price } = req.body;
       // Create base webseries data
       const webSeriesData = {
         title,
         description,
         genre,
-        release_year
+        release_year,
+        price
       };
 
       if (req.file) {
@@ -75,7 +76,7 @@ class WebSeriesController {
     // Get WebSeries by ID
     async getWebSeriesById(req, res) {
   try {
-    const { id, field, user_id } = req.query;
+    const { id, field, user_id, country } = req.query;
 
     // Step 1: Validate query params
     if (!id || !field || !user_id) {
@@ -86,32 +87,12 @@ class WebSeriesController {
       });
     }
 
-    // Step 2: Check subscription
-    const subscription = await subscriptionModel.findOne({ user_id })
-      .populate({
-        path: 'channel_id',
-        select: 'channel_name _id phone email img'
-      })
-      .populate({
-        path: 'plan_id',
-        select: 'name price'
-      })
-      .lean();
-
-    if (!subscription) {
-      return res.status(403).json({
-        message: "Access denied: No active subscription found.",
-        subscribed: false,
-        data: []
-      });
-    }
-
-    // Step 3: Create query based on ID type
+    // Step 2: Create query based on ID type
     const query = mongoose.Types.ObjectId.isValid(id)
       ? { [field]: id }
       : { [field]: parseInt(id) };
 
-    // Step 4: Fetch web series and populate seasons and episodes
+    // Step 3: Fetch web series and populate seasons and episodes
     const webSeries = await webseriesModel.findOne(query).populate({
       path: "seasonsId",
       populate: {
@@ -123,31 +104,41 @@ class WebSeriesController {
     if (!webSeries) {
       return res.status(404).json({
         message: "Web series not found",
-        subscribed: true,
-        data: []
-      });
-    }
-
-    // Step 5: Check if the subscription's channel matches
-    if (
-      webSeries.channel_id &&
-      subscription.channel_id &&
-      webSeries.channel_id.toString() !== subscription.channel_id._id.toString()
-    ) {
-      return res.status(403).json({
-        message: "Access denied: Subscription does not match the web series channel.",
         subscribed: false,
         data: []
       });
     }
 
-    // Step 6: Add isSubscribed flag and return response
     const webSeriesObj = webSeries.toObject();
-    webSeriesObj.isSubscribed = true;
+
+    // Step 4: Check if user has active subscription for this web series
+    const subscription = await subscriptionModel.findOne({
+      user_id,
+      video_id: webSeries._id
+    })
+      .populate({
+        path: 'plan_id',
+        select: 'name price'
+      })
+      .lean();
+
+    const isSubscribed = !!subscription;
+
+    // Step 5: If not subscribed, nullify video_url in each episode
+    if (!isSubscribed) {
+      webSeriesObj.seasonsId.forEach(season => {
+        season.episodesId.forEach(episode => {
+          episode.video_url = null;
+        });
+      });
+    }
+
+    // Step 6: Return response with isSubscribed flag
+    webSeriesObj.isSubscribed = isSubscribed;
 
     res.status(200).json({
       message: "Web series fetched successfully",
-      subscribed: true,
+      subscribed: isSubscribed,
       data: webSeriesObj
     });
 
@@ -160,6 +151,7 @@ class WebSeriesController {
     });
   }
 }
+
 
 
 
