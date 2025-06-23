@@ -158,7 +158,7 @@ exports.verifyOtp = async (req, res) => {
 
 
 // Firebase_auth
-// 🚀 Firebase Auth Entry Point
+// Firebase Auth Entry Point
 exports.firebaseAuth = async (req, res) => {
     try {
         const { uid, phone, email, name, image_url, deviceid, fcm, versioncode } = req.body;
@@ -198,6 +198,7 @@ exports.firebaseAuth = async (req, res) => {
                     theme_color: '#16163F',
                     role: 'user',
                     join_date: new Date(),
+                    gender: "male",
                     last_login: new Date(),
                     is_password_set: 0,
                     password: "25f9e794323b453885f5181f1b624d0b",
@@ -279,8 +280,6 @@ exports.firebaseAuth = async (req, res) => {
         }
 
         return res.status(200).json({
-            message: "Authentication successful",
-            user: {
                 user_id: user._id,
                 name: user.name,
                 email: user.email,
@@ -292,7 +291,6 @@ exports.firebaseAuth = async (req, res) => {
                 join_date: user.join_date,
                 last_login: user.last_login,
                 status: user.status
-            }
         });
 
     } catch (err) {
