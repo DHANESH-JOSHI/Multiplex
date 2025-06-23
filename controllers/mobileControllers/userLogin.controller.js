@@ -289,6 +289,10 @@ exports.firebaseAuth = async (req, res) => {
                 theme: user.theme,
                 theme_color: user.theme_color,
                 join_date: user.join_date,
+                gender: "male",
+                data: "stuein",
+                image_url: "photo",
+                password_unavailable: 1,
                 last_login: user.last_login,
                 status: user.status
         });
