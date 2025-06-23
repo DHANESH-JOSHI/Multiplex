@@ -138,14 +138,14 @@ class WebSeriesController {
 
     res.status(200).json({
       message: "Web series fetched successfully",
-      subscribed: isSubscribed,
+      isSubscribed,
       data: webSeriesObj
     });
 
   } catch (error) {
     res.status(500).json({
       message: "Internal Server Error",
-      subscribed: false,
+      isSubscribed: false,
       data: [],
       error: error.message
     });
