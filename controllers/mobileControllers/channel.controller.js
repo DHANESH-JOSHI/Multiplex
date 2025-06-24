@@ -1,3 +1,4 @@
+const userModel = require('../../models/user.model');
 const { getChannelList, getChannelInfoService, createChannel, updateChannel, deleteChannel, getChannelById, getSingleMovieDetailsByIdc } = require('../../services/mobileServices/channel.service');
 
 
@@ -200,6 +201,39 @@ const statusChannelController = async (req, res) => {
   }
 };
 
+
+const removeUser = async (req, res) => {
+  try {
+    const { user_id, country } = req.query;
+    console.log("===>",user_id);
+    // Validate inputs
+    // if (!user_id || !country) {
+    //   return res.status(400).json({ status: false, message: 'user_id and country are required.' });
+    // }
+
+    // Find user from DB
+    const user = await userModel.findById(user_id);
+    console.log(user);
+    if (!user) {
+      return res.status(404).json({ status: false, message: 'User not found.' });
+    }
+
+    // Delete or deactivate user
+    await user.deleteOne(); // Or user.status = 'deleted'; await user.save();
+
+    return res.status(200).json({
+      status: true,
+      message: 'User deleted successfully.',
+      user_id
+    });
+
+  } catch (error) {
+    console.error('Error removing user:', error);
+    return res.status(500).json({ status: false, message: 'Server error.' });
+  }
+};
+
+
 module.exports = {
   getChannelListController,
   getChannelInfoController,
@@ -207,5 +241,6 @@ module.exports = {
   createChannelController,
   updateChannelController,
   deleteChannelController,
-  statusChannelController
+  statusChannelController,
+  removeUser
 };
