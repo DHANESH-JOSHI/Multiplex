@@ -154,6 +154,85 @@ const getChannelInfoService = async (channel_id, uid) => {
   }
 };
 
+const getMovieDetailsBychannels = async (uid) => {
+  try {
+    const videos = await Video.find({});
+    if (!videos.length) return [];
+
+    // Step 1: Check subscription (if user exists)
+    let subscribedChannels = [];
+    if (uid && mongoose.Types.ObjectId.isValid(uid)) {
+      subscribedChannels = await subscriptionModel.find({ user_id: uid });
+    }
+
+    // Step 2: Loop through videos
+    const result = await Promise.all(
+      videos.map(async (video) => {
+        // Fetch the specific channel for this video
+        const channel = await Channel.findById(video.channel_id);
+
+        // Check if user is subscribed to this specific video’s channel
+        const isSubscribed = subscribedChannels.some(
+          (sub) => sub.channel_id.toString() === video.channel_id.toString()
+        );
+
+        // Update view count
+        await Video.updateOne(
+          { _id: video._id },
+          {
+            $inc: {
+              today_view: 1,
+              weekly_view: 1,
+              monthly_view: 1,
+              total_view: 1,
+            },
+          }
+        );
+
+        return {
+          videos_id: video._id,
+          title: video.title,
+          description: video.description || '',
+          admin: video.imdbid ? 0 : 1,
+          subcribe: isSubscribed ? 1 : 0,
+          slug: video.slug || '',
+          release: video.release || '',
+          runtime: video.runtime || '',
+          video_quality: video.video_quality || '',
+          channel_name: channel?.channel_name || '',
+          channel_id: channel?._id || '',
+          channel_img: channel?.img || '',
+          is_tvseries: String(video.is_tvseries || '0'),
+          is_paid: video.is_paid,
+          enable_download: video.enable_download,
+          download_links: video.enable_download === '1' ? [video.download_link] : [],
+          thumbnail_url: video.thumbnail_url || '',
+          poster_url: video.poster_url || '',
+          videos: video.videos || [],
+          genre: video.genre || [],
+          country: video.country || [],
+          director: video.director || [],
+          writer: video.writer || [],
+          cast: video.cast || [],
+          cast_and_crew: [
+            ...(video.director || []),
+            ...(video.writer || []),
+            ...(video.cast || [])
+          ],
+          trailler_youtube_source: video.trailer || '',
+          related_movie: []
+        };
+      })
+    );
+
+    return result;
+
+  } catch (error) {
+    console.error("Error in getMovieDetailsBychannels:", error.message);
+    throw new Error("Something went wrong while fetching movie + channel details.");
+  }
+};
+
 
 
 const getSingleMovieDetailsByIdc = async (id, uid) => {
@@ -274,6 +353,7 @@ module.exports = {
   getChannelList,
   getChannelInfoService,
   getSingleMovieDetailsByIdc,
+  getMovieDetailsBychannels,
   createChannel,
   updateChannel,
   deleteChannel,

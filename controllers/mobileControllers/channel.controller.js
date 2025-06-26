@@ -1,5 +1,5 @@
 const userModel = require('../../models/user.model');
-const { getChannelList, getChannelInfoService, createChannel, updateChannel, deleteChannel, getChannelById, getSingleMovieDetailsByIdc } = require('../../services/mobileServices/channel.service');
+const { getChannelList, getChannelInfoService, createChannel, updateChannel, deleteChannel, getChannelById, getSingleMovieDetailsByIdc, getMovieDetailsBychannels } = require('../../services/mobileServices/channel.service');
 
 
 const getChannelListController = async (req, res) => {
@@ -119,7 +119,7 @@ const getChannelVideo = async (req, res) => {
   try {
     const { id, uid } = req.query;
     console.log(id, uid);
-    const data = await getSingleMovieDetailsByIdc(id, uid);
+    const data = await getMovieDetailsBychannels(id, uid);
     res.json(data);
   } catch (err) {
     console.error(err);

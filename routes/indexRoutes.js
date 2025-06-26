@@ -15,6 +15,8 @@ const sliderRoutes = require("./adminRoutes/slider.routes");
 const statusRoutes = require("./adminRoutes/status.routes");
 const LanguageRoutes = require("./adminRoutes/language.routes");
 const addPaymentrRoutes = require("./adminRoutes/payment.routes");
+const searchRoutes = require("./adminRoutes/search.routes");
+
 
 // Mobile Routes
 
@@ -32,6 +34,9 @@ router.use("/all_package", planRoutes);
 router.use("/slider", sliderRoutes);
 router.use("/status", statusRoutes);
 router.use("/payment", addPaymentrRoutes);
+router.use("/search", searchRoutes);
+
+
 
 
 //Import Admin Routes modules
