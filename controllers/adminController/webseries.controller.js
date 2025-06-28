@@ -94,11 +94,15 @@ class WebSeriesController {
 
     // Step 3: Fetch web series and populate seasons and episodes
     const webSeries = await webseriesModel.findOne(query).populate({
-      path: "seasonsId",
-      populate: {
-        path: "episodesId",
-      },
-      select: "__v",
+          path: "seasonsId",
+    select: "title __v", // Make sure this line is correct
+    populate: {
+      path: "episodesId",
+      select: "title video_url" // optionally select episode fields
+    },
+    options: {
+      lean: true
+    }
     });
 
     if (!webSeries) {
