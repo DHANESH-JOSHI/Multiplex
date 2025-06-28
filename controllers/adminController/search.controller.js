@@ -10,6 +10,7 @@ class SearchController {
   try {
     const { s, type, range_to, range_from, tv_category_id, genre_id, country_id, country } = req.query;
 
+    let q = s;
     let movieQuery = {};
     let tvseriesQuery = {};
     let tvChannelsQuery = {};
