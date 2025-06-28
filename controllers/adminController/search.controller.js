@@ -8,7 +8,7 @@ class SearchController {
     *  ────────────────────────────────────────────*/
  async search(req, res) {
   try {
-    const { q, type, range_to, range_from, tv_category_id, genre_id, country_id, country } = req.query;
+    const { s, type, range_to, range_from, tv_category_id, genre_id, country_id, country } = req.query;
 
     let movieQuery = {};
     let tvseriesQuery = {};
