@@ -159,24 +159,19 @@ const getMovieDetailsBychannels = async (uid) => {
     const videos = await Video.find({});
     if (!videos.length) return [];
 
-    // Step 1: Check subscription (if user exists)
     let subscribedChannels = [];
     if (uid && mongoose.Types.ObjectId.isValid(uid)) {
       subscribedChannels = await subscriptionModel.find({ user_id: uid });
     }
 
-    // Step 2: Loop through videos
     const result = await Promise.all(
       videos.map(async (video) => {
-        // Fetch the specific channel for this video
         const channel = await Channel.findById(video.channel_id);
 
-        // Check if user is subscribed to this specific video’s channel
         const isSubscribed = subscribedChannels.some(
           (sub) => sub.channel_id.toString() === video.channel_id.toString()
         );
 
-        // Update view count
         await Video.updateOne(
           { _id: video._id },
           {
@@ -232,6 +227,7 @@ const getMovieDetailsBychannels = async (uid) => {
     throw new Error("Something went wrong while fetching movie + channel details.");
   }
 };
+
 
 
 

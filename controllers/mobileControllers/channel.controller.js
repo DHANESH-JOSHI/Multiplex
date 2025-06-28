@@ -120,7 +120,10 @@ const getChannelVideo = async (req, res) => {
     const { id, uid } = req.query;
     console.log(id, uid);
     const data = await getMovieDetailsBychannels(id, uid);
-    res.json(data);
+      res.status(200).json({
+      message: "Records fetched successfully",
+      data
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal Server Error' });
