@@ -8,6 +8,7 @@ class FavoriteService {
                           .populate({
                             path: "video",
                             populate: [
+                              this.populate,
                               { path: "genre", model: "Genre" },
                               { path: "country", model: "country" },
                              
@@ -49,13 +50,18 @@ class FavoriteService {
 
   async isFavorite(user, video, episode) {
     try {
-      const favorite = await Favorite.findOne({ user, video, episode });
-      return favorite ? true : false;
+      const query = { user };
+      if (video) query.video = video;
+      if (episode) query.episode = episode;
+
+      const favorite = await Favorite.findOne(query);
+      return !!favorite;
     } catch (error) {
       console.error("Error checking favorite:", error.message);
       throw error;
     }
   }
+
 
   async removeFavorite(user, video, episode) {
     try {

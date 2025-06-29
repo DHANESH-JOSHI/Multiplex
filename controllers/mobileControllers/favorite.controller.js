@@ -22,24 +22,32 @@ class FavoriteController {
   async addFavorite(req, res) {
     try {
       const { wish_list_type, user, video, episode } = req.body;
-      console.log(wish_list_type, user, video, episode);
 
-      if (!user || !wish_list_type)
-        return res.status(400).json({ message: "Missing required fields" });
+      if (!user) {
+        return res.status(400).json({ message: "User is required." });
+      }
 
       // Check if favorite already exists
-      const existingFavorite = await FavoriteService.isFavorite(user, video, episode);
-      if (existingFavorite) {
+      const exists = await FavoriteService.isFavorite(user, video, episode);
+      if (exists) {
         return res.status(409).json({ message: "Already in favorites." });
       }
 
-      await FavoriteService.addFavorite(wish_list_type, user, video, episode);
+      // Create the favorite entry
+      const newFavorite = new Favorite({ user });
+
+      if (wish_list_type) newFavorite.wish_list_type = wish_list_type;
+      if (video) newFavorite.video = video;
+      if (episode) newFavorite.episode = episode;
+
+      await newFavorite.save();
       res.json({ message: "Added to favorites." });
     } catch (error) {
       console.error("Error adding favorite:", error);
       res.status(500).json({ message: "Internal server error." });
     }
   }
+
 
   async verifyFavorite(req, res) {
     try {
