@@ -4,7 +4,7 @@ const { getChannelList, getChannelInfoService, createChannel, updateChannel, del
 
 const getChannelListController = async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit, 10) || 0;
+    const limit = parseInt(req.query.limit) || 0;
     let channel;
     channel = await getChannelList();
     console.log(channel);

@@ -10,46 +10,46 @@ const { subscribe } = require('../../routes/indexRoutes');
 const subscriptionModel = require('../../models/subscription.model');
 dayjs.extend(relativeTime);
 
-const getChannelList = async (limit = 10, platform = null) => {
+const getChannelList = async (limit, platform = null) => {
   try {
     // Step 1: Get approved channels, with optional platform filter
     const query = { status: 'approve' };
     if (platform) {
       query.platform = platform;
     }
-
     const channels = await Channel.find(query)
       .limit(limit)
       .lean();
 
-    // Step 2: For each channel, fetch one latest video based on user_id
     const result = await Promise.all(
       channels.map(async (channel) => {
         const video = await Video.findOne({ channel_id: new mongoose.Types.ObjectId(channel.user_id) })
-          .sort({ cre: -1 }) // latest video first
+          .sort({ cre: -1 })
           .lean();
 
-        if (!video) return null;
-
+        // Always return something — with or without video
         return {
           channel_name: channel.channel_name,
           channel_img: channel.img,
           channel_id: channel._id.toString(),
-          videos_id: video.videos_id.toString(),
-          title: video.title,
-          description: video.description,
-          release: video.cre ? dayjs(video.cre).fromNow() : '',
-          is_paid: video.is_paid,
-          runtime: video.runtime,
-          video_quality: video.video_quality,
-          view: video.total_view,
+          videos_id: video?.videos_id?.toString() || null,
+          title: video?.title || '',
+          description: video?.description || '',
+          release: video?.cre ? dayjs(video.cre).fromNow() : '',
+          is_paid: video?.is_paid || 0,
+          runtime: video?.runtime || '',
+          video_quality: video?.video_quality || '',
+          view: video?.total_view || 0,
 
-          thumbnail_url: `https://multiplexplay.com/office/uploads/video_thumb/${video.videos_id}.jpg`,
-          poster_url: `https://multiplexplay.com/office/uploads/poster_image/${video.videos_id}.jpg`,
-          slug:
-            video.title.toLowerCase().replace(/\s+/g, '-') +
-            '-' +
-            video.videos_id.toString()
+          thumbnail_url: video
+            ? `https://multiplexplay.com/office/uploads/video_thumb/${video.videos_id}.jpg`
+            : '',
+          poster_url: video
+            ? `https://multiplexplay.com/office/uploads/poster_image/${video.videos_id}.jpg`
+            : '',
+          slug: video
+            ? video.title.toLowerCase().replace(/\s+/g, '-') + '-' + video.videos_id.toString()
+            : ''
         };
       })
     );
