@@ -122,12 +122,14 @@ async addMovie(req, res) {
 
     if (vId) {
       const movieId = vId;
+      const country  = req.query.country; //|| req.headers['x-country'] ||
+      console.log(country);
       const fieldAliases = { video_id: "videos_id", vid: "videos_id" };
       const rawField = req.query.fieldKey;
       const fieldName = fieldAliases[rawField] || rawField || "_id";
+      const populate = req.query.populate?.split(",") || [];
 
-      // Step 1: Fetch Movie
-      result = await MovieService.getMovieById(movieId, fieldName);
+      result = await MovieService.getMovieById(movieId, fieldName, populate, country);
 
       // Step 2: Check Subscription
       if (user_id && channel_id) {
@@ -174,7 +176,8 @@ async addMovie(req, res) {
   async getMovieById(req, res) {
     try {
       const movieId = req.query.vId;
-      const country  = req.query.country || req.headers['x-country'] || 'IN';
+      const country  = req.query.country; //|| req.headers['x-country'] ||
+      console.log(country);
       const fieldAliases = { video_id: "videos_id", vid: "videos_id" };
       const rawField = req.query.fieldKey;
       const fieldName = fieldAliases[rawField] || rawField || "_id";

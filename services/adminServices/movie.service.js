@@ -116,24 +116,24 @@ class MovieService {
     const movieResult = await CRUDService.getByIdArray(Movie, fieldName, movieId, populate);
 
     if (movieResult?.data?.length) {
-      const movie = movieResult.data[0]; // Extract movie object
+      const movie = movieResult.data[0];
 
       if (!movie.use_global_price) {
-        // Find matching country price
-        const countryPricing = movie.pricing?.find(p => p.country === country);
+        const matchedPricing = movie.pricing?.find(p => p.country.toUpperCase() === country.toUpperCase());
 
-        if (countryPricing) {
-          movie.price = countryPricing.price; // Override global price
+        if (matchedPricing) {
+          movie.price = matchedPricing.price; // Override with dynamic price
         } else {
-          movie.price = null; // Optional: handle no match
+          movie.price = 0; // or fallback global/def  ault price if no country match
         }
       }
 
-      movieResult.data[0] = movie; // Put modified movie back into array
+      movieResult.data[0] = movie;
     }
 
     return movieResult;
   }
+
 
 
   /* ──────────────────────────────────────────
