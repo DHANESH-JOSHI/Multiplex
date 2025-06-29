@@ -6,8 +6,8 @@ const  {upload, deleteFileAfterResponse} = require("../../middleware/multer");
 
 
 // Routes
-router.get("/", cacheMiddleware(3600),deleteFileAfterResponse, MovieController.getAllMovies);   
-router.get("/single-movie", cacheMiddleware(3600), MovieController.getMovieById);
+router.get("/", cacheMiddleware(36),deleteFileAfterResponse, MovieController.getAllMovies);   
+router.get("/single-movie", cacheMiddleware(36), MovieController.getMovieById);
 router.post("/", upload.single('file'),deleteFileAfterResponse, MovieController.addMovie);
 router.post("/upload", upload.single('file'),deleteFileAfterResponse, MovieController.uploadOnly);
 router.put("/:id", MovieController.updateMovie);
