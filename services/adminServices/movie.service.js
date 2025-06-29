@@ -112,9 +112,29 @@ class MovieService {
     return CRUDService.getAllPages(Movie, {}, queryParams);
   }
 
-  async getMovieById(movieId, fieldName = "_id") {
-    return CRUDService.getByIdArray(Movie, fieldName, movieId);
+  async getMovieById(movieId, fieldName = "_id", populate = [], country = "IN") {
+    const movieResult = await CRUDService.getByIdArray(Movie, fieldName, movieId, populate);
+
+    if (movieResult?.data?.length) {
+      const movie = movieResult.data[0]; // Extract movie object
+
+      if (!movie.use_global_price) {
+        // Find matching country price
+        const countryPricing = movie.pricing?.find(p => p.country === country);
+
+        if (countryPricing) {
+          movie.price = countryPricing.price; // Override global price
+        } else {
+          movie.price = null; // Optional: handle no match
+        }
+      }
+
+      movieResult.data[0] = movie; // Put modified movie back into array
+    }
+
+    return movieResult;
   }
+
 
   /* ──────────────────────────────────────────
    * 4️⃣  UPDATE  (uses _id by default)

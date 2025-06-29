@@ -172,23 +172,23 @@ async addMovie(req, res) {
    *  Get movie by ID (with alias support)
    *  ────────────────────────────────────────────*/
   async getMovieById(req, res) {
-  try {
-    const movieId = req.query.vId;
-    const fieldAliases = { video_id: "videos_id", vid: "videos_id" };
-    const rawField = req.query.fieldKey;
-    const fieldName = fieldAliases[rawField] || rawField || "_id";
+    try {
+      const movieId = req.query.vId;
+      const country  = req.query.country || req.headers['x-country'] || 'IN';
+      const fieldAliases = { video_id: "videos_id", vid: "videos_id" };
+      const rawField = req.query.fieldKey;
+      const fieldName = fieldAliases[rawField] || rawField || "_id";
+      const populate = req.query.populate?.split(",") || [];
 
-    // Optional populate fields (comma-separated)
-    const populate = req.query.populate?.split(",") || [];
+      const result = await MovieService.getMovieById(movieId, fieldName, populate, country);
 
-    const result = await MovieService.getMovieById(movieId, fieldName, populate);
-
-    res.status(200).json(result);
-  } catch (error) {
-    const statusCode = error.message.includes("not found") ? 404 : 500;
-    res.status(statusCode).json({ message: error.message });
+      res.status(200).json(result);
+    } catch (error) {
+      const statusCode = error.message.includes("not found") ? 404 : 500;
+      res.status(statusCode).json({ message: error.message });
+    }
   }
-}
+
 
 
   /** ─────────────────────────────────────────────
