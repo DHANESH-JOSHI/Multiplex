@@ -5,6 +5,7 @@ const episodeSchema = new mongoose.Schema({
   video_url: { type: String, required: true },
   videoContent_id: { type: Number, required: true }, 
   seasonId: { type: mongoose.Schema.Types.ObjectId, ref: "Season" },
+  is_movie: { type: Boolean },
 }, {
   timestamps: true,
   collection: "episodes"

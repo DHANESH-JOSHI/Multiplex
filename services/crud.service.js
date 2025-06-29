@@ -205,37 +205,46 @@ class CRUDService {
         }
     }
 
-    async getByIdArray(model, idField, id, populateOptions) {
+    async getMovieWithRelated(model, idField, id, populateFields = [], relatedField = "related_movies") {
         try {
             const query = mongoose.Types.ObjectId.isValid(id)
-            ? { [idField]: id }
+            ? { [idField]: new mongoose.Types.ObjectId(id) }
             : { [idField]: parseInt(id) };
 
             let dbQuery = model.findOne(query);
 
-            if (populateOptions && typeof populateOptions === "object") {
-            dbQuery = dbQuery.populate(populateOptions);
+            // Populate requested fields (e.g., "channel_id", "related_movies")
+            if (Array.isArray(populateFields)) {
+            populateFields.forEach(field => {
+                dbQuery = dbQuery.populate(field);
+            });
             }
 
             const record = await dbQuery;
 
             if (!record) {
-            return {
-                message: "No record found.",
-                data: [],
-                totalCount: 0
-            };
+            throw new Error("Movie not found");
             }
+
+            // Fetch full related movie data (if not already populated)
+            const relatedIds = record[relatedField] || [];
+
+            const relatedRecords = await model.find({
+            _id: { $in: relatedIds }
+            }).select("title thumbnail genre").populate("channel_id");
 
             return {
             message: "Record fetched successfully",
-            data: [record], // ✅ Wrapping the single object in array
-            totalCount: 1
+            data: record,
+            related_movies: relatedRecords
             };
         } catch (error) {
             throw new Error("Error fetching record: " + error.message);
         }
     }
+
+
+
 
 
     async getByIdAllNest(model, idField, id, populateOptions) {

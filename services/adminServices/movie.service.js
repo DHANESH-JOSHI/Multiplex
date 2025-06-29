@@ -112,9 +112,11 @@ class MovieService {
     return CRUDService.getAllPages(Movie, {}, queryParams);
   }
 
-  async getMovieById(movieId, fieldName = "_id") {
-    return CRUDService.getByIdArray(Movie, fieldName, movieId);
+  
+  async  getMovieById(movieId, fieldName = "_id", populateFields = []) {
+    return CRUDService.getMovieWithRelated(Movie, fieldName, movieId, populateFields);
   }
+
 
   /* ──────────────────────────────────────────
    * 4️⃣  UPDATE  (uses _id by default)

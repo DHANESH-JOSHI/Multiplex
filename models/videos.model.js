@@ -122,11 +122,7 @@ const videoSchema = new mongoose.Schema({
     default: 0
   },
 
-  is_movie: {
-    type: Boolean,
-  },
-
-  
+  is_movie: { type: Boolean },
 
   publication: Number,
 
@@ -164,6 +160,8 @@ const videoSchema = new mongoose.Schema({
     required: true,
     default: 0
   },
+
+
 
   total_rating: {
     type: Number,
