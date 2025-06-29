@@ -123,7 +123,6 @@ async addMovie(req, res) {
     if (vId) {
       const movieId = vId;
       const country  = req.query.country; //|| req.headers['x-country'] ||
-      console.log(country);
       const fieldAliases = { video_id: "videos_id", vid: "videos_id" };
       const rawField = req.query.fieldKey;
       const fieldName = fieldAliases[rawField] || rawField || "_id";
