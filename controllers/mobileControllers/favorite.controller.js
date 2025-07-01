@@ -32,9 +32,9 @@ class FavoriteController {
       video = (video && video.trim() !== "") ? video : null;
 
       // ✅ Only one of them should be provided
-      if ((video && episode) || (!video && !episode)) {
-        return res.status(400).json({ message: "Either video or episode must be provided, not both." });
-      }
+      // if ((video && episode) || (!video && !episode)) {
+      //   return res.status(400).json({ message: "Either video or episode must be provided, not both." });
+      // }
 
       const isAlreadyFavorite = await FavoriteService.isFavorite(user, video, episode);
       if (isAlreadyFavorite) {
