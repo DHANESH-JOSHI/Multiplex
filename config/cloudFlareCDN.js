@@ -56,53 +56,53 @@ const CloudflareStreamService = {
           
         },
       });
-
       upload.start();
-    }),
-    deleteVideo: async (uid) => {
-      try {
-        const response = await fetch(
-          `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream/${uid}`,
-          {
-            method: "DELETE",
-            headers: {
-              Authorization: `Bearer ${CLOUDFLARE_API_TOKEN}`,
-            },
-          }
-        );
+  }),
 
-        const data = await response.json();
-        if (data.success) {
-          return { success: true, message: "Video deleted successfully." };
-        } else {
-          return { success: false, error: data.errors };
+  deleteVideo: async (uid) => {
+    try {
+      const response = await fetch(
+        `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream/${uid}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${CLOUDFLARE_API_TOKEN}`,
+          },
         }
-      } catch (err) {
-        return { success: false, error: err.message || err };
-      }
-    },
-    checkStatus: async (uid) => {
-      try {
-        const response = await fetch(
-          `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream/${uid}`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${CLOUDFLARE_API_TOKEN}`,
-            },
-          }
-        );
-        const data = await response.json();
-        if (data.success) {
-          return { success: true, status: data.result.status.state };
-        } else {
-          return { success: false, error: data.errors };
-        }
-      } catch (err) {
-        return { success: false, error: err.message || err };
-      }
-    },
+      );
 
+      const data = await response.json();
+      if (data.success) {
+        return { success: true, message: "Video deleted successfully." };
+      } else {
+        return { success: false, error: data.errors };
+      }
+    } catch (err) {
+      return { success: false, error: err.message || err };
+    }
+  },
+
+  checkStatus: async (uid) => {
+    try {
+      const response = await fetch(
+        `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream/${uid}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${CLOUDFLARE_API_TOKEN}`,
+          },
+        }
+      );
+      const data = await response.json();
+      if (data.success) {
+        return { success: true, status: data.result.status.state };
+      } else {
+        return { success: false, error: data.errors };
+      }
+    } catch (err) {
+      return { success: false, error: err.message || err };
+    }
+  },
     /**
      * Wait until a stream is ready to be viewed.
      *
@@ -114,49 +114,46 @@ const CloudflareStreamService = {
      * @param {number} [interval=5000] - The time to wait between checks.
      * @return {Promise<boolean>} true if the stream is ready, false if the timeout is reached.
      */
-    waitUntilReady: async (uid, timeout = 120000, interval = 5000) => {
-      const start = Date.now();
-      while (Date.now() - start < timeout) {
-        const status = await CloudflareStreamService.checkStatus(uid);
-        if (status.success && status.status === "ready") {
-          return true;
-        }
-        await new Promise((res) => setTimeout(res, interval));
+  waitUntilReady: async (uid, timeout = 120000, interval = 5000) => {
+    const start = Date.now();
+    while (Date.now() - start < timeout) {
+      const status = await CloudflareStreamService.checkStatus(uid);
+      if (status.success && status.status === "ready") {
+        return true;
       }
-      return false; // timed out
-    },
-
-
+      await new Promise((res) => setTimeout(res, interval));
+    }
+    return false; // timed out
+  },
     //Download_url
-    createDownload: async (uid) => {
-      try {
-        const response = await fetch(
-          `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream/${uid}/downloads`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${CLOUDFLARE_API_TOKEN}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({}),
-          }
-        );
-
-        const data = await response.json();
-        if (data.success) {
-          const downloadUrl = data.result?.default?.url;
-          return {
-            success: true,
-            downloadUrl,
-          };
-        } else {
-          return { success: false, error: data.errors };
+  createDownload: async (uid) => {
+    try {
+      const response = await fetch(
+        `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream/${uid}/downloads`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${CLOUDFLARE_API_TOKEN}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({}),
         }
-      } catch (err) {
-        return { success: false, error: err.message || err };
-      }
-    },
+      );
 
+      const data = await response.json();
+      if (data.success) {
+        const downloadUrl = data.result?.default?.url;
+        return {
+          success: true,
+          downloadUrl,
+        };
+      } else {
+        return { success: false, error: data.errors };
+      }
+    } catch (err) {
+      return { success: false, error: err.message || err };
+    }
+  },
 
   getDownload: async (uid) => {
     try {
@@ -201,10 +198,6 @@ const CloudflareStreamService = {
       return { success: false, error: err.message || err };
     }
   },
-
 };
-
-
-
 
 module.exports = CloudflareStreamService;
