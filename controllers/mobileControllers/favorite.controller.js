@@ -21,32 +21,36 @@ class FavoriteController {
 
   async addFavorite(req, res) {
     try {
-      const { wish_list_type, user, video, episode } = req.body;
+      let { wish_list_type, user, video, episode } = req.body;
 
-      if (!user) {
-        return res.status(400).json({ message: "User is required." });
+      if (!user || !wish_list_type) {
+        return res.status(400).json({ message: "Missing required fields: user or wish_list_type" });
       }
 
-      // Check if favorite already exists
-      const exists = await FavoriteService.isFavorite(user, video, episode);
-      if (exists) {
+      // ✅ Normalize episode/video: convert empty string to null
+      episode = (episode && episode.trim() !== "") ? episode : null;
+      video = (video && video.trim() !== "") ? video : null;
+
+      // ✅ Only one of them should be provided
+      if ((video && episode) || (!video && !episode)) {
+        return res.status(400).json({ message: "Either video or episode must be provided, not both." });
+      }
+
+      const isAlreadyFavorite = await FavoriteService.isFavorite(user, video, episode);
+      if (isAlreadyFavorite) {
         return res.status(409).json({ message: "Already in favorites." });
       }
 
-      // Create the favorite entry
-      const newFavorite = new Favorite({ user });
+      const result = await FavoriteService.addFavorite(wish_list_type, user, video, episode);
+      return res.status(200).json({ message: result.message });
 
-      if (wish_list_type) newFavorite.wish_list_type = wish_list_type;
-      if (video) newFavorite.video = video;
-      if (episode) newFavorite.episode = episode;
-
-      await newFavorite.save();
-      res.json({ message: "Added to favorites." });
     } catch (error) {
       console.error("Error adding favorite:", error);
       res.status(500).json({ message: "Internal server error." });
     }
   }
+
+
 
 
   async verifyFavorite(req, res) {

@@ -1,5 +1,7 @@
 // const mongoose = require("mongoose");
+const { default: mongoose } = require("mongoose");
 const Favorite = require("../../models/wish_list.model");
+const toObjectId = require("../../config/toObjectId");
 
 class FavoriteService {
   async getFavorites(user) {
@@ -8,7 +10,6 @@ class FavoriteService {
                           .populate({
                             path: "video",
                             populate: [
-                              this.populate,
                               { path: "genre", model: "Genre" },
                               { path: "country", model: "country" },
                              
@@ -33,14 +34,29 @@ class FavoriteService {
 
   }
 
-  async addFavorite( wish_list_type, user, video, episode) {
+  async addFavorite(wish_list_type, user, video, episode) {
     try {
-      const exists = await Favorite.findOne({ user, video, episode });
+      const userId = toObjectId(user);
+      const videoId = toObjectId(video); 
+      const episodeId = toObjectId(episode);
+
+      const query = {
+        user: userId,
+        ...(videoId ? { video: videoId } : {}),
+        ...(episodeId ? { episode: episodeId } : { episode: { $in: [null, undefined] } })
+      };
+
+      const exists = await Favorite.findOne(query);
       if (exists) return { success: false, message: "Already in favorites." };
 
-      const newFavorite = new Favorite({wish_list_type, user, video, episode });
-      await newFavorite.save();
+      const newFavorite = new Favorite({
+        wish_list_type,
+        user: userId,
+        video: videoId,
+        episode: episodeId,
+      });
 
+      await newFavorite.save();
       return { success: true, message: "Added to favorites successfully." };
     } catch (error) {
       console.error("Error adding favorite:", error.message);
@@ -48,19 +64,31 @@ class FavoriteService {
     }
   }
 
-  async isFavorite(user, video, episode) {
-    try {
-      const query = { user };
-      if (video) query.video = video;
-      if (episode) query.episode = episode;
 
-      const favorite = await Favorite.findOne(query);
-      return !!favorite;
-    } catch (error) {
-      console.error("Error checking favorite:", error.message);
-      throw error;
-    }
+
+  async isFavorite(user, video, episode) {
+  try {
+    const userId = toObjectId(user);
+    const videoId = toObjectId(video);
+    const episodeId = toObjectId(episode);
+
+    const query = {
+      user: userId,
+      ...(videoId ? { video: videoId } : {}),
+      ...(episodeId ? { episode: episodeId } : { episode: { $in: [null, undefined] } })
+    };
+
+    const favorite = await Favorite.findOne(query);
+    return !!favorite;
+  } catch (error) {
+    console.error("Error checking favorite:", error.message);
+    throw error;
   }
+}
+
+
+
+
 
 
   async removeFavorite(user, video, episode) {

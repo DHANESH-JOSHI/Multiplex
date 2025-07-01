@@ -25,6 +25,7 @@ const channelSchema = new mongoose.Schema({
   last_name: String,
   first_name: String,
   email: String,
+  subscribers: { type: Number, default: 0 },
   password: { type: String, required: true },
   img: { type: String, default: 'https://multiplexplay.com/office/uploads/default_image/poster.jpg' }
 }, {

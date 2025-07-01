@@ -9,8 +9,8 @@ const wishListSchema = new mongoose.Schema({
   video: { type: mongoose.Schema.Types.ObjectId, ref: "Video" },
 
   // Relate to Episode model
-  episode: { type: mongoose.Schema.Types.ObjectId, ref: "Episode" },
-
+  episode:{ type: mongoose.Schema.Types.ObjectId, ref: "Episode"},
+  
   // Relate to Season model
   season: { type: mongoose.Schema.Types.ObjectId, ref: "Season" },
 

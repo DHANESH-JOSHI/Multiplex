@@ -8,6 +8,8 @@ const dayjs = require('dayjs');
 const relativeTime = require('dayjs/plugin/relativeTime');
 const { subscribe } = require('../../routes/indexRoutes');
 const subscriptionModel = require('../../models/subscription.model');
+const subcribeModel = require('../../models/subcribe.model');
+
 dayjs.extend(relativeTime);
 
 const getChannelList = async (limit, platform = null) => {
@@ -341,9 +343,46 @@ const deleteChannel = async (channelId) => {
 
 // Get single channel by ID
 const getChannelById = async (channelId) => {
-  return await Channel.findOne({ channel_id: channelId });
+  return await Channel.findOne({ _id: channelId });
   // return await Channel.findOne(channelId).populate('video');
 };
+
+const subscribeToChannel = async (channelId, userId) => {
+ try {
+    const channelObjectId = channelId;//new mongoose.Types.ObjectId(channelId);
+    const userObjectId = userId; // new mongoose.Types.ObjectId(userId);
+    // 1. Check if the channel exists
+    const channel = await Channel.findById(channelObjectId);
+    if (!channel) {
+      return { message: 'Channel not found. Please provide a valid channel.' };
+    }
+
+    // 2. Check if already subscribed
+    const subscription = await subcribeModel.findOne({
+      channel: channelObjectId,
+      user: userObjectId,
+    });
+
+    if (subscription) {
+      return { message: 'You are already subscribed to this channel.' };
+    }
+
+    // 3. Create a new subscription
+    const newSubscription = new subcribeModel({
+      channel: channelObjectId,
+      user: userObjectId,
+    });
+    await newSubscription.save();
+
+    // 4. Increment subscribers count in the Channel collection
+    await Channel.findByIdAndUpdate({_id: channelObjectId}, { $inc: { subscribers: 1 } });
+
+    return { message: 'Subscription successful.' };
+  } catch (error) {
+    console.error('Subscription Error:', error);
+    throw error;
+  }
+}
 
 module.exports = {
   getChannelList,
@@ -354,5 +393,5 @@ module.exports = {
   updateChannel,
   deleteChannel,
   getChannelById,
-
+  subscribeToChannel
 };

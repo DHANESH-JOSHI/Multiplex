@@ -1,5 +1,15 @@
+const { default: mongoose } = require('mongoose');
 const userModel = require('../../models/user.model');
-const { getChannelList, getChannelInfoService, createChannel, updateChannel, deleteChannel, getChannelById, getSingleMovieDetailsByIdc, getMovieDetailsBychannels } = require('../../services/mobileServices/channel.service');
+const { getChannelList,
+   getChannelInfoService,
+    createChannel,
+     updateChannel,
+      deleteChannel,
+       getChannelById,
+        getSingleMovieDetailsByIdc,
+         getMovieDetailsBychannels,
+         subscribeToChannel
+         } = require('../../services/mobileServices/channel.service');
 
 
 const getChannelListController = async (req, res) => {
@@ -205,6 +215,25 @@ const statusChannelController = async (req, res) => {
 };
 
 
+const setSubscribe = async ( req, res ) => {
+  try {
+    const { id, user_id } = req.query;
+
+    // const channel = await getChannelById(id);
+    // if (!channel) {
+    //   return res.status(404).json({ message: 'Channel not found.' });
+    // }
+  const result = await subscribeToChannel(id, user_id);
+  return res.status(200).json(result);
+
+  }
+  catch (err) {
+    console.error('Error updating channel status:', err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+}
+
+
 const removeUser = async (req, res) => {
   try {
     const { user_id, country } = req.query;
@@ -245,5 +274,6 @@ module.exports = {
   updateChannelController,
   deleteChannelController,
   statusChannelController,
+  setSubscribe,
   removeUser
 };
