@@ -30,6 +30,24 @@ const CloudflareStreamService = {
           resolve({ success: false, error: error.message || error });
         },
 
+        onProgress: function (bytesUploaded, bytesTotal) {
+            var percentage = ((bytesUploaded / bytesTotal) * 100).toFixed(2);
+            console.log(bytesUploaded, bytesTotal, percentage + "%");
+        },
+        onSuccess: () => {
+          if (mediaId) {
+            resolve({
+              success: true,
+              uid: mediaId,
+              playback: {
+                hls: `https://videodelivery.net/${mediaId}/manifest/video.m3u8`,
+                mpd: `https://videodelivery.net/${mediaId}/manifest/default.mpd`,
+              },
+            });
+          } else {
+            resolve({ success: false, error: "Missing stream-media-id in response." });
+          }
+        },
         onAfterResponse: (req, res) => {
           return new Promise((resCb) => {
             const streamMediaId = res.getHeader("stream-media-id");
@@ -40,21 +58,7 @@ const CloudflareStreamService = {
           });
         },
 
-        onSuccess: () => {
-          if (mediaId) {
-            resolve({
-              success: true,
-              uid: mediaId,
-              playback: {
-                hls: `https://videodelivery.net/${mediaId}/manifest/video.m3u8`,
-                mp4: `https://videodelivery.net/${mediaId}/manifest/default.mp4`,
-              },
-            });
-          } else {
-            resolve({ success: false, error: "Missing stream-media-id in response." });
-          }
-          
-        },
+        
       });
       upload.start();
   }),
@@ -128,8 +132,8 @@ const CloudflareStreamService = {
     //Download_url
   createDownload: async (uid) => {
     try {
-      const response = await fetch(
-        `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream/${uid}/downloads`,
+      // https://api.cloudflare.com/client/v4/accounts/b1f1f2f1b34ead91be9bcb8b0a4e6036/stream/08270e06aa8b3c40a9c4f346c65f94ef/downloads
+      const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream/${uid}/downloads`,
         {
           method: "POST",
           headers: {
@@ -139,13 +143,14 @@ const CloudflareStreamService = {
           body: JSON.stringify({}),
         }
       );
-
+      console.log("CreateDownload", response, "UID===>", uid);
       const data = await response.json();
       if (data.success) {
         const downloadUrl = data.result?.default?.url;
         return {
           success: true,
           downloadUrl,
+          data
         };
       } else {
         return { success: false, error: data.errors };

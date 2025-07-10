@@ -85,48 +85,48 @@ const getHomeContent = async (country) => {
         return v.price ?? 0;
       }
   const latest_movies = allVideos.map((v, index) => {
-  if (!v._id || !v.title) {
-    console.warn(`Content at index ${index} is missing ID or title`, v);
-  }
-  
-  return {
-    videos_id: v._id,
-    numeric_videos_id: v.videos_id ?? "",
-    channel_id: v.channel_id,
-    title: v.title,
-    description: v.description ?? "",
-    slug: v.slug ?? "",
-    release: v.release ? v.release.toString() : "",
-    is_paid: (v.is_paid ?? 0).toString(),
-    price: getPriceByCountry(v, country) ?? 0,
-    pricing: v.pricing ?? [ { "country": "null", "price": 0 },],
-    use_global_price: v.use_global_price ?? true,
-    runtime: v.runtime ?? 0,
-    video_quality: v.video_quality ?? "HD",
-    video_url: v.video_url ?? "",
-    trailer: v.trailer ?? "",
-    download_link: v.download_link ?? "",
-    enable_download: v.enable_download ?? "0",
-    is_tvseries: v.is_tvseries ?? 1,
-    videoContent_id: v.videoContent_id ?? "",
-    stars: v.stars ?? "",
-    director: v.director ?? [],
-    writer: v.writer ?? [],
-    rating: v.rating ?? "0",
-    country: v.country ?? [],
-    genre: v.genre ?? [],
-    language: v.language ?? [],
-    total_rating: v.total_rating ?? 0,
-    today_view: v.today_view ?? 0,
-    weekly_view: v.weekly_view ?? 0,
-    monthly_view: v.monthly_view ?? 0,
-    total_view: v.total_view ?? 0,
-    last_ep_added: v.last_ep_added ?? "",
-    created_at: v.cre ?? "",
-    thumbnail_url: v.thumbnail_url || fallbackThumb,
-    poster_url: v.poster_url || fallbackPoster,
-    __v: v.__v ?? 0,
-  };
+    if (!v._id || !v.title) {
+      console.warn(`Content at index ${index} is missing ID or title`, v);
+    }
+    
+    return {
+      videos_id: v._id,
+      numeric_videos_id: v.videos_id ?? "",
+      channel_id: v.channel_id,
+      title: v.title,
+      description: v.description ?? "",
+      slug: v.slug ?? "",
+      release: v.release ? v.release.toString() : "",
+      is_paid: (v.is_paid ?? 0).toString(),
+      price: getPriceByCountry(v, country) ?? 0,
+      pricing: v.pricing ?? [ { "country": "null", "price": 0 },],
+      use_global_price: v.use_global_price ?? true,
+      runtime: v.runtime ?? 0,
+      video_quality: v.video_quality ?? "HD",
+      video_url: v.video_url ?? "",
+      trailer: v.trailer ?? "",
+      download_link: v.download_link ?? "",
+      enable_download: v.enable_download ?? "0",
+      is_tvseries: v.is_tvseries ?? 1,
+      videoContent_id: v.videoContent_id ?? "",
+      stars: v.stars ?? "",
+      director: v.director ?? [],
+      writer: v.writer ?? [],
+      rating: v.rating ?? "0",
+      country: v.country ?? [],
+      genre: v.genre ?? [],
+      language: v.language ?? [],
+      total_rating: v.total_rating ?? 0,
+      today_view: v.today_view ?? 0,
+      weekly_view: v.weekly_view ?? 0,
+      monthly_view: v.monthly_view ?? 0,
+      total_view: v.total_view ?? 0,
+      last_ep_added: v.last_ep_added ?? "",
+      created_at: v.cre ?? "",
+      thumbnail_url: v.thumbnail_url || fallbackThumb,
+      poster_url: v.poster_url || fallbackPoster,
+      __v: v.__v ?? 0,
+    };
 });
 
 
@@ -154,9 +154,14 @@ const getHomeContent = async (country) => {
   // 8. Featured Genre and Movie – for each genre, fetch a list of videos matching that genre
  const features_genre_and_movie = await Promise.all(
   all_genre.map(async g => {
-    const videos = await Video.find({ genre: { $in: [g.genre_id] } })
+    const videos = await Video.find({
+        genre: { $in: [g.genre_id] },
+        is_movie: { $eq: false, $exists: true }  // `is_movie` must exist and be false
+      })
       .sort({ cre: -1 })
       .lean();
+
+
 
     const webseriess = await webseriesModel.find({ genre: { $in: [g.genre_id] } })
       .sort({ cre: -1 })

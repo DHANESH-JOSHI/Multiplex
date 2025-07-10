@@ -28,24 +28,22 @@ class MovieService {
 
   const genreArray = Array.isArray(genre) ? genre : [genre];
 
-  // ① Upload to Cloudflare Stream
+  // ① Upload to Cloudflare Stream using reusable function
   if (file) {
-    const uploadResult = await CloudCDNService.uploadVideo(title, file, {
-      creator: channel_id,
-      meta: { title }
-    });
+    const upload = await this.uploadVideoOnly(title, file, channel_id);
 
-    if (!uploadResult?.success) {
+    if (!upload?.success) {
       throw new Error("❌ Failed to upload video to Cloudflare Stream");
     }
-
-    const { uid, playback } = uploadResult;
-    videoContent_id = uid;
-    video_url = playback?.hls || null;
-
+    console.log("ADD Movie", upload);
+    const { uid, playback } = upload;
+    videoContent_id = upload.videoContent_id;
+    video_url = upload.video_url;
+    
     // ② Optional: Generate download link
     if (enable_download) {
-      const dl = await CloudCDNService.createDownload(uid);
+      const dl = await CloudCDNService.createDownload(videoContent_id);
+      console.log(dl);
       if (dl?.success) download_link = dl.downloadUrl;
       else console.warn("⚠️ Download link generation failed:", dl?.error);
     }
@@ -77,6 +75,7 @@ class MovieService {
 
 
 
+
   /* ──────────────────────────────────────────
    * 2️⃣  PURE UPLOAD  (re-used by controller helper)
    * ──────────────────────────────────────────*/
@@ -87,19 +86,46 @@ class MovieService {
       creator: creatorId,
       meta: { title }
     });
-    console.log('uploadResult:', uploadResult)
+
+    console.log('uploadResult:', uploadResult);
 
     if (!uploadResult?.success) {
       throw new Error("Video upload to Cloudflare Stream failed.");
     }
 
-    const { uid, playback } = uploadResult;
+    let { uid, playback } = uploadResult;
+
+    // ⏳ Wait for uid if not immediately available
+    let retryCount = 0;
+    const maxRetries = 10;
+    const delay = (ms) => new Promise((res) => setTimeout(res, ms));
+
+    while ((!uid || !playback?.hls) && retryCount < maxRetries) {
+      console.warn(`Waiting for UID/playback... Retry ${retryCount + 1}`);
+      await delay(1500); // wait for 1.5 seconds
+
+      // Try to fetch video status again (you may need an API to check the upload status)
+      const status = await CloudCDNService.getVideoStatus(uploadResult.temp_id || uid); // adjust key if needed
+      if (status?.uid && status?.playback?.hls) {
+        uid = status.uid;
+        playback = status.playback;
+        break;
+      }
+
+      retryCount++;
+    }
+
+    if (!uid || !playback?.hls) {
+      throw new Error("UID or video playback URL not available after retries.");
+    }
+
     return {
       success: true,
-      videoContent_id: parseInt(uid),
+      videoContent_id: uid,
       video_url: playback.hls
     };
   }
+
 
   /* ──────────────────────────────────────────
    * 3️⃣  READ OPERATIONS

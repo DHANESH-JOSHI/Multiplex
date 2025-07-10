@@ -37,7 +37,7 @@ class FavoriteService {
   async addFavorite(wish_list_type, user, video, episode) {
     try {
       const userId = toObjectId(user);
-      const videoId = toObjectId(video); 
+      const videoId = toObjectId(video);
       const episodeId = toObjectId(episode);
 
       const query = {
