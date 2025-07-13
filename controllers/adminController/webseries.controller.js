@@ -120,29 +120,40 @@ class WebSeriesController {
     if (user_id && channel_id) {
       const now = Date.now();
       
-      // WebSeries is ONLY available via Admin subscription (plan_id exists with is_movie: false)
-      // No individual webseries subscriptions allowed (plan_id: null not allowed)
+      // WebSeries is ONLY available via Admin subscription
+      // NO Individual WebSeries subscriptions - only admin plans allowed
       const adminSubscription = await subscriptionModel.findOne({
         user_id,
         channel_id,
         status: 1,
         is_active: 1,
         timestamp_to: { $gt: now },
-        plan_id: { $exists: true, $ne: null } // Must have a plan
+        plan_id: { $exists: true, $ne: null } // Must have a plan for WebSeries
       }).populate({
         path: 'plan_id',
-        match: { is_movie: false }, // ONLY Admin plans give webseries access
         select: 'name price is_movie type'
       }).lean();
 
       console.log("WebSeries subscription check (Admin only):", {
         webSeriesId: webSeries._id,
         user_id,
-        adminSub: !!adminSubscription?.plan_id
+        subscriptionFound: !!adminSubscription,
+        planData: adminSubscription?.plan_id
       });
       
+      // WebSeries access only for Admin plans (is_movie: false or missing field)
       if (adminSubscription && adminSubscription.plan_id) {
-        isSubscribed = true;
+        const plan = adminSubscription.plan_id;
+        
+        // Admin plan: is_movie = false OR field doesn't exist (old plans)
+        if (plan.is_movie === false || plan.is_movie === undefined) {
+          isSubscribed = true;
+          console.log("✅ WebSeries access granted via Admin subscription");
+        } else {
+          console.log("❌ Individual plan found but WebSeries requires Admin subscription");
+        }
+      } else {
+        console.log("❌ No valid subscription found for WebSeries");
       }
     }
 
