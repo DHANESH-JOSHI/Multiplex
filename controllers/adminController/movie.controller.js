@@ -1,4 +1,5 @@
 const CloudflareStreamService = require("../../config/cloudFlareCDN");
+const subscriptionModel = require("../../models/subscription.model");
 const MovieService = require("../../services/adminServices/movie.service");
 
 class MovieController {
@@ -133,15 +134,57 @@ async addMovie(req, res) {
       // Step 2: Check Subscription
       if (user_id && channel_id) {
         const now = Date.now();
-        const activeSubscription = await SubscriptionSchema.findOne({
+        
+        // Check for individual movie subscription (plan_id: null OR plan with is_movie: true)
+        const individualSubscription = await subscriptionModel.findOne({
           user_id,
           video_id: movieId,
           channel_id,
           status: 1,
+          is_active: 1,
           timestamp_to: { $gt: now }
+        }).populate({
+          path: 'plan_id',
+          match: { is_movie: true }, // Individual movie plans
+          select: 'name price is_movie type'
         });
 
-        if (activeSubscription) {
+        // Also check for subscription with no plan (plan_id: null)
+        const noPlanSubscription = await subscriptionModel.findOne({
+          user_id,
+          video_id: movieId,
+          channel_id,
+          status: 1,
+          is_active: 1,
+          timestamp_to: { $gt: now },
+          plan_id: null
+        });
+
+        // Check for admin subscription (plan_id exists with is_movie: false)
+        const adminSubscription = await subscriptionModel.findOne({
+          user_id,
+          channel_id,
+          status: 1,
+          is_active: 1,
+          timestamp_to: { $gt: now },
+          plan_id: { $exists: true, $ne: null }
+        }).populate({
+          path: 'plan_id',
+          match: { is_movie: false }, // Admin plans for all content
+          select: 'name price is_movie type'
+        });
+
+        console.log("Movie subscription check:", {
+          movieId,
+          user_id,
+          individualPlanSub: !!individualSubscription?.plan_id,
+          noPlanSub: !!noPlanSubscription,
+          adminSub: !!adminSubscription?.plan_id
+        });
+
+        if ((individualSubscription && individualSubscription.plan_id) || 
+            noPlanSubscription || 
+            (adminSubscription && adminSubscription.plan_id)) {
           isSubscribed = true;
         }
       }

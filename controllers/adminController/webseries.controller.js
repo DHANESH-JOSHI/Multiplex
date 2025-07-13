@@ -76,12 +76,12 @@ class WebSeriesController {
     // Get WebSeries by ID
     async getWebSeriesById(req, res) {
   try {
-    const { id, field, user_id, country } = req.query;
+    const { id, field, user_id, channel_id, country } = req.query;
 
     // Step 1: Validate query params
     if (!id || !field || !user_id) {
       return res.status(400).json({
-        message: "Missing required parameters: id, field, user_id",
+        message: "Missing required parameters: id, field, user_id, channel_id",
         subscribed: false,
         data: []
       });
@@ -116,17 +116,35 @@ class WebSeriesController {
     const webSeriesObj = webSeries.toObject();
 
     // Step 4: Check if user has active subscription for this web series
-    const subscription = await subscriptionModel.findOne({
-      user_id,
-      video_id: webSeries._id
-    })
-      .populate({
+    let isSubscribed = false;
+    if (user_id && channel_id) {
+      const now = Date.now();
+      
+      // WebSeries is ONLY available via Admin subscription (plan_id exists with is_movie: false)
+      // No individual webseries subscriptions allowed (plan_id: null not allowed)
+      const adminSubscription = await subscriptionModel.findOne({
+        user_id,
+        channel_id,
+        status: 1,
+        is_active: 1,
+        timestamp_to: { $gt: now },
+        plan_id: { $exists: true, $ne: null } // Must have a plan
+      }).populate({
         path: 'plan_id',
-        select: 'name price'
-      })
-      .lean();
+        match: { is_movie: false }, // ONLY Admin plans give webseries access
+        select: 'name price is_movie type'
+      }).lean();
 
-    const isSubscribed = !!subscription;
+      console.log("WebSeries subscription check (Admin only):", {
+        webSeriesId: webSeries._id,
+        user_id,
+        adminSub: !!adminSubscription?.plan_id
+      });
+      
+      if (adminSubscription && adminSubscription.plan_id) {
+        isSubscribed = true;
+      }
+    }
 
     // Step 5: If not subscribed, nullify video_url in each episode
     if (!isSubscribed) {

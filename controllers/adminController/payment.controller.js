@@ -1,5 +1,5 @@
 const axios = require("axios");
-const { createRazorpayOrder } = require('../../services/razorpayService');
+const { createRazorpayOrder, verifyRazorpayPayment, getPaymentDetails, refundPayment } = require('../../services/razorpayService');
 const SubscriptionSchema = require('../../models/subscription.model');
 const planSchema = require('../../models/plan.model');
 
@@ -292,14 +292,29 @@ exports.grantManualSubscription = async (req, res) => {
 };
 
 
-// Update payment info after Razorpay payment is done
+// Update payment info after Razorpay payment is done with verification
 exports.updatePayment = async (req, res) => {
     try {
         const { razorpay_order_id, razorpay_payment_id, razorpay_signature, status } = req.body;
         if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-            return res.status(400).json({ message: "Missing payment parameters" });
+            return res.status(400).json({ 
+                message: "Missing payment parameters",
+                isSubscribed: false 
+            });
         }
 
+        // Step 1: Verify payment with Razorpay
+        const verificationResult = verifyRazorpayPayment(razorpay_payment_id, razorpay_order_id, razorpay_signature);
+        
+        if (!verificationResult.success || !verificationResult.isValid) {
+            return res.status(400).json({ 
+                message: "Payment verification failed",
+                isSubscribed: false,
+                error: verificationResult.message 
+            });
+        }
+
+        // Step 2: Update subscription if verification successful
         const updated = await SubscriptionSchema.findOneAndUpdate(
             { "payment_info.0.razorpay_order_id": razorpay_order_id },
             {
@@ -316,17 +331,25 @@ exports.updatePayment = async (req, res) => {
         );
 
         if (!updated) {
-            return res.status(404).json({ message: "Subscription not found for this order_id" });
+            return res.status(404).json({ 
+                message: "Subscription not found for this order_id",
+                isSubscribed: false 
+            });
         }
 
         return res.status(200).json({
-            message: "Payment info updated, subscription active",
+            message: "Payment verified and subscription activated successfully",
+            isSubscribed: true,
             data: updated
         });
 
     } catch (err) {
         console.error(err);
-        return res.status(500).json({ message: "Error updating payment", error: err.message });
+        return res.status(500).json({ 
+            message: "Error updating payment", 
+            isSubscribed: false,
+            error: err.message 
+        });
     }
 };
 
@@ -441,6 +464,136 @@ exports.checkVideoSubscription = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             message: "Error checking video subscription",
+            isSubscribed: false,
+            error: error.message
+        });
+    }
+};
+
+// Manual refund subscription
+exports.manualRefundSubscription = async (req, res) => {
+    try {
+        const { subscription_id, reason, refund_amount } = req.body;
+
+        if (!subscription_id) {
+            return res.status(400).json({
+                message: "Subscription ID is required",
+                isSubscribed: false
+            });
+        }
+
+        // Find the subscription
+        const subscription = await SubscriptionSchema.findById(subscription_id);
+        if (!subscription) {
+            return res.status(404).json({
+                message: "Subscription not found",
+                isSubscribed: false
+            });
+        }
+
+        // Check if subscription has payment info for refund
+        if (!subscription.payment_info || !subscription.payment_info[0]?.razorpay_payment_id) {
+            return res.status(400).json({
+                message: "No payment information found for refund",
+                isSubscribed: false
+            });
+        }
+
+        const payment_id = subscription.payment_info[0].razorpay_payment_id;
+        
+        // Call Razorpay refund service
+        const refundResult = await refundPayment(payment_id, refund_amount);
+
+        if (!refundResult.success) {
+            return res.status(400).json({
+                message: `Refund failed: ${refundResult.error}`,
+                isSubscribed: false
+            });
+        }
+
+        // Update subscription status to cancelled/refunded
+        const updatedSubscription = await SubscriptionSchema.findByIdAndUpdate(
+            subscription_id,
+            {
+                $set: {
+                    status: 0, // Deactivate subscription
+                    is_active: 0,
+                    refund_info: {
+                        refund_id: refundResult.refund.id,
+                        refund_amount: refundResult.refund.amount,
+                        refund_status: refundResult.refund.status,
+                        refund_timestamp: Date.now(),
+                        reason: reason || "Manual refund"
+                    }
+                }
+            },
+            { new: true }
+        );
+
+        return res.status(200).json({
+            message: "Subscription refunded successfully",
+            isSubscribed: false,
+            data: {
+                subscription: updatedSubscription,
+                refund: refundResult.refund
+            }
+        });
+
+    } catch (error) {
+        console.error("Manual refund error:", error);
+        res.status(500).json({
+            message: "Error processing manual refund",
+            isSubscribed: false,
+            error: error.message
+        });
+    }
+};
+
+// Get payment details for a subscription
+exports.getSubscriptionPaymentDetails = async (req, res) => {
+    try {
+        const { subscription_id } = req.params;
+
+        if (!subscription_id) {
+            return res.status(400).json({
+                message: "Subscription ID is required",
+                isSubscribed: false
+            });
+        }
+
+        const subscription = await SubscriptionSchema.findById(subscription_id);
+        if (!subscription) {
+            return res.status(404).json({
+                message: "Subscription not found",
+                isSubscribed: false
+            });
+        }
+
+        // Get payment details from Razorpay if payment_id exists
+        let paymentDetails = null;
+        if (subscription.payment_info && subscription.payment_info[0]?.razorpay_payment_id) {
+            const payment_id = subscription.payment_info[0].razorpay_payment_id;
+            const paymentResult = await getPaymentDetails(payment_id);
+            
+            if (paymentResult.success) {
+                paymentDetails = paymentResult.payment;
+            }
+        }
+
+        return res.status(200).json({
+            message: "Subscription payment details retrieved successfully",
+            isSubscribed: subscription.status === 1,
+            data: {
+                subscription,
+                razorpayPaymentDetails: paymentDetails
+            }
+        });
+
+    } catch (error) {
+        console.error("Get payment details error:", error);
+        res.status(500).json({
+            message: "Error retrieving payment details",
+            isSubscribed: false,
             error: error.message
         });
     }
