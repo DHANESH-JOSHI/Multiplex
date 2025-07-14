@@ -6,11 +6,42 @@ const Video = require('../../models/videos.model.js');
 const webseriesModel = require('../../models/webseries.model.js');
 const episodesModel = require('../../models/episodes.model.js');
 const channelModel = require('../../models/channel.model.js');
+const subscriptionModel = require('../../models/subscription.model.js');
 
-const getHomeContent = async (country) => {
+const getHomeContent = async (country, channel_id, user_id) => {
 
   const fallbackThumb = "https://multiplexplay.com/office/uploads/default_image/thumbnail.jpg";
   const fallbackPoster = "https://multiplexplay.com/office/uploads/default_image/poster.jpg";
+
+  // Check user subscription for access control
+  let userHasAdminSubscription = false;
+  if (user_id && channel_id) {
+    const now = Date.now();
+    const adminSubscription = await subscriptionModel.findOne({
+      user_id,
+      channel_id,
+      status: 1,
+      is_active: 1,
+      timestamp_to: { $gt: now },
+      plan_id: { $exists: true, $ne: null }
+    }).populate({
+      path: 'plan_id',
+      match: { 
+        $or: [
+          { is_movie: false },        // Admin plan
+          { is_movie: { $exists: false } }  // Old plan without field
+        ]
+      },
+      select: 'name price is_movie type'
+    }).lean();
+
+    userHasAdminSubscription = !!(adminSubscription && adminSubscription.plan_id);
+    console.log("HomeContent subscription check:", {
+      user_id,
+      channel_id,
+      hasAdminSub: userHasAdminSubscription
+    });
+  }
 
   // 1. Slider data
   // const sliderData = await Slider.find({ }).sort({ order: 1 }).lean();
@@ -64,12 +95,12 @@ const getHomeContent = async (country) => {
   const featured_tv_channel = await channelModel.find({ }).sort({ cre: -1 }).lean() || [] ; // For now, leave empty or implement as needed
   // const movies = 
 //country: { $in: country }
-  // 6. Latest movies (where is_tvseries is 0)
-  const latestMovies = await Video.find({ }).sort({ cre: -1 }).lean();
+  // 6. Latest movies (filter by channel_id if provided)
+  const movieFilter = channel_id ? { channel_id } : {};
+  const latestMovies = await Video.find(movieFilter).sort({ cre: -1 }).lean();
   
-
-
-  const latestWebseries = await webseriesModel.find({ }).sort({ cre: -1 }).lean();
+  const webseriesFilter = channel_id ? { channel_id } : {};
+  const latestWebseries = await webseriesModel.find(webseriesFilter).sort({ cre: -1 }).lean();
 
   const allVideos = [...latestMovies, ...latestWebseries];
   function getPriceByCountry(v, country) {
@@ -88,6 +119,18 @@ const getHomeContent = async (country) => {
     if (!v._id || !v.title) {
       console.warn(`Content at index ${index} is missing ID or title`, v);
     }
+
+    // Determine subscription status for this content
+    let isSubscribed = false;
+    if (userHasAdminSubscription) {
+      // Admin subscription gives access to all content
+      isSubscribed = true;
+    } else if (user_id && channel_id) {
+      // Check for individual content subscription
+      // This would need to be checked against subscription table
+      // For now, defaulting to false unless admin subscription
+      isSubscribed = false;
+    }
     
     return {
       videos_id: v._id,
@@ -103,9 +146,9 @@ const getHomeContent = async (country) => {
       use_global_price: v.use_global_price ?? true,
       runtime: v.runtime ?? 0,
       video_quality: v.video_quality ?? "HD",
-      video_url: v.video_url ?? "",
+      video_url: isSubscribed ? v.video_url ?? "" : "", // Hide video_url if not subscribed
       trailer: v.trailer ?? "",
-      download_link: v.download_link ?? "",
+      download_link: isSubscribed ? v.download_link ?? "" : "", // Hide download if not subscribed
       enable_download: v.enable_download ?? "0",
       is_tvseries: v.is_tvseries ?? 1,
       videoContent_id: v.videoContent_id ?? "",
@@ -125,19 +168,15 @@ const getHomeContent = async (country) => {
       created_at: v.cre ?? "",
       thumbnail_url: v.thumbnail_url || fallbackThumb,
       poster_url: v.poster_url || fallbackPoster,
+      isSubscribed: isSubscribed, // Add subscription status
       __v: v.__v ?? 0,
     };
 });
 
 
-
-
-
-
-
-
-  // 7. Latest TV series (where is_tvseries is 1)
-  const latestTvseries = await Video.find({  }).sort({ cre: -1 }).lean();
+// 7. Latest TV series (filter by channel_id if provided)
+  const tvseriesFilter = channel_id ? { channel_id } : {};
+  const latestTvseries = await Video.find(tvseriesFilter).sort({ cre: -1 }).lean();
   const latest_tvseries = latestTvseries.map(v => ({
     videos_id: v.videos_id,
     title: v.title,
@@ -153,17 +192,23 @@ const getHomeContent = async (country) => {
 
   // 8. Featured Genre and Movie – for each genre, fetch a list of videos matching that genre
  const features_genre_and_movie = await Promise.all(
-  all_genre.map(async g => {
-    const videos = await Video.find({
-        genre: { $in: [g.genre_id] },
-        is_movie: { $eq: false, $exists: true }  // `is_movie` must exist and be false
-      })
+ all_genre.map(async g => {
+ // Add channel_id filter for videos
+ const videoFilter = {
+ genre: { $in: [g.genre_id] },
+ is_movie: { $eq: false, $exists: true },  // `is_movie` must exist and be false
+ ...(channel_id && { channel_id })  // Add channel filter if provided
+ };
+    const videos = await Video.find(videoFilter)
       .sort({ cre: -1 })
       .lean();
 
-
-
-    const webseriess = await webseriesModel.find({ genre: { $in: [g.genre_id] } })
+ // Add channel_id filter for webseries
+ const webseriesFilterGenre = {
+      genre: { $in: [g.genre_id] },
+      ...(channel_id && { channel_id })  // Add channel filter if provided
+    };
+    const webseriess = await webseriesModel.find(webseriesFilterGenre)
       .sort({ cre: -1 })
       .lean();
 
@@ -172,6 +217,7 @@ const getHomeContent = async (country) => {
       ...(videos || []).map(v => ({
         videos_id: v._id.toString(),
         title: v.title,
+        channel_id: v.channel_id,
         release: v.release ? v.release.toString() : "",
         is_tvseries: v.is_tvseries ? v.is_tvseries.toString() : "0",
         is_paid: v.is_paid?.toString() || "1",
@@ -182,6 +228,7 @@ const getHomeContent = async (country) => {
       ...(webseriess || []).map(w => ({
         videos_id: w._id.toString(), // Use _id as videos_id if needed
         title: w.title,
+        channel_id: w.channel_id,
         release: w.release ? w.release.toString() : "",
         is_tvseries: "1", // Assuming all webseries are TV series
         is_paid: w.is_paid?.toString() || "1",
