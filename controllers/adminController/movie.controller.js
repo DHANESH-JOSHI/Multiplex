@@ -136,33 +136,9 @@ async addMovie(req, res) {
       if (user_id && channel_id) {
         const now = Date.now();
         
-        // Check for individual movie subscription (plan_id: null OR plan with is_movie: true)
-        const individualSubscription = await subscriptionModel.findOne({
-          user_id,
-          video_id: movieId,
-          channel_id,
-          status: 1,
-          is_active: 1,
-          timestamp_to: { $gt: now }
-        }).populate({
-          path: 'plan_id',
-          match: { is_movie: true }, // Individual movie plans
-          select: 'name price is_movie type'
-        });
-
-        // Also check for subscription with no plan (plan_id: null)
-        const noPlanSubscription = await subscriptionModel.findOne({
-          user_id,
-          video_id: movieId,
-          channel_id,
-          status: 1,
-          is_active: 1,
-          timestamp_to: { $gt: now },
-          plan_id: null
-        });
-
-        // Check for admin subscription (plan_id exists with is_movie: false)
-        const adminSubscription = await subscriptionModel.findOne({
+        // 🔍 Check for admin subscription (is_movie: false) - unlocks ALL movies
+        // Admin subscription can have any video_id, but plan should be is_movie: false
+        const allUserSubscriptions = await subscriptionModel.find({
           user_id,
           channel_id,
           status: 1,
@@ -171,22 +147,70 @@ async addMovie(req, res) {
           plan_id: { $exists: true, $ne: null }
         }).populate({
           path: 'plan_id',
-          match: { is_movie: false }, // Admin plans for all content
-          select: 'name price is_movie type'
+          select: 'name price is_movie type' // Get all plan data
         });
 
-        console.log("Movie subscription check:", {
-          movieId,
-          user_id,
-          individualPlanSub: !!individualSubscription?.plan_id,
-          noPlanSub: !!noPlanSubscription,
-          adminSub: !!adminSubscription?.plan_id
+        console.log("🔍 All user subscriptions:", {
+          count: allUserSubscriptions.length,
+          subscriptions: allUserSubscriptions.map(sub => ({
+            video_id: sub.video_id,
+            plan_id: sub.plan_id?._id,
+            plan_is_movie: sub.plan_id?.is_movie,
+            plan_name: sub.plan_id?.name
+          }))
         });
 
-        if ((individualSubscription && individualSubscription.plan_id) || 
-            noPlanSubscription || 
-            (adminSubscription && adminSubscription.plan_id)) {
+        // Check if user has ANY admin plan (is_movie: false or undefined)
+        let hasAdminAccess = false;
+        for (const subscription of allUserSubscriptions) {
+          if (subscription.plan_id) {
+            const plan = subscription.plan_id;
+            if (plan.is_movie === false || plan.is_movie === undefined) {
+              hasAdminAccess = true;
+              console.log("✅ Admin access found via plan:", plan.name);
+              break;
+            }
+          }
+        }
+
+        console.log("🎯 Admin access result:", hasAdminAccess);
+
+        if (hasAdminAccess) {
           isSubscribed = true;
+        } else {
+          // Check individual movie subscription
+          const individualSubscription = await subscriptionModel.findOne({
+            user_id,
+            video_id: movieId,
+            channel_id,
+            status: 1,
+            is_active: 1,
+            timestamp_to: { $gt: now }
+          }).populate({
+            path: 'plan_id',
+            match: { is_movie: true },
+            select: 'name price is_movie type'
+          });
+
+          // Check no plan subscription
+          const noPlanSubscription = await subscriptionModel.findOne({
+            user_id,
+            video_id: movieId,
+            channel_id,
+            status: 1,
+            is_active: 1,
+            timestamp_to: { $gt: now },
+            plan_id: null
+          });
+
+          console.log("🔍 Individual subscription check:", {
+            individualPlanSub: !!individualSubscription?.plan_id,
+            noPlanSub: !!noPlanSubscription
+          });
+
+          if ((individualSubscription && individualSubscription.plan_id) || noPlanSubscription) {
+            isSubscribed = true;
+          }
         }
       }
     } else {
