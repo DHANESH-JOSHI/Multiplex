@@ -91,6 +91,13 @@ async addMovie(req, res) {
   }
 }
 
+
+
+
+
+
+
+
   /** ─────────────────────────────────────────────
    *  Upload-only endpoint (unchanged, still public)
    *  ────────────────────────────────────────────*/
@@ -112,6 +119,7 @@ async addMovie(req, res) {
     try {
     let result;
     let isSubscribed = false; // Default
+    console.log(req.query);
     const { vId, user_id, channel_id } = req.query;
 
     if (vId) {
@@ -128,26 +136,7 @@ async addMovie(req, res) {
       if (user_id && channel_id) {
         const now = Date.now();
         
-        // Check for admin subscription (is_movie: false) - unlocks ALL movies
-        const adminSubscription = await subscriptionModel.findOne({
-          user_id,
-          channel_id,
-          status: 1,
-          is_active: 1,
-          timestamp_to: { $gt: now },
-          plan_id: { $exists: true, $ne: null }
-        }).populate({
-          path: 'plan_id',
-          match: { 
-            $or: [
-              { is_movie: false },              // Admin plan
-              { is_movie: { $exists: false } }  // Old plan without field
-            ]
-          },
-          select: 'name price is_movie type'
-        });
-
-        // Check for individual movie subscription (plan_id: null OR specific video_id)
+        // Check for individual movie subscription (plan_id: null OR plan with is_movie: true)
         const individualSubscription = await subscriptionModel.findOne({
           user_id,
           video_id: movieId,
@@ -172,17 +161,31 @@ async addMovie(req, res) {
           plan_id: null
         });
 
+        // Check for admin subscription (plan_id exists with is_movie: false)
+        const adminSubscription = await subscriptionModel.findOne({
+          user_id,
+          channel_id,
+          status: 1,
+          is_active: 1,
+          timestamp_to: { $gt: now },
+          plan_id: { $exists: true, $ne: null }
+        }).populate({
+          path: 'plan_id',
+          match: { is_movie: false }, // Admin plans for all content
+          select: 'name price is_movie type'
+        });
+
         console.log("Movie subscription check:", {
           movieId,
           user_id,
-          adminSub: !!adminSubscription?.plan_id,
           individualPlanSub: !!individualSubscription?.plan_id,
-          noPlanSub: !!noPlanSubscription
+          noPlanSub: !!noPlanSubscription,
+          adminSub: !!adminSubscription?.plan_id
         });
 
-        if ((adminSubscription && adminSubscription.plan_id) ||
-            (individualSubscription && individualSubscription.plan_id) || 
-            noPlanSubscription) {
+        if ((individualSubscription && individualSubscription.plan_id) || 
+            noPlanSubscription || 
+            (adminSubscription && adminSubscription.plan_id)) {
           isSubscribed = true;
         }
       }
