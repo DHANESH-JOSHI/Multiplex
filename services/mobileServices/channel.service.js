@@ -42,7 +42,7 @@ const getChannelList = async (limit, platform = null) => {
           runtime: video?.runtime || '',
           video_quality: video?.video_quality || '',
           view: video?.total_view || 0,
-
+          is_movie: true,
           thumbnail_url: video?.thumbnail_url || 'https://multiplexplay.com/storage/banners/1752765686_logo1.png',
           poster_url: video?.poster_url || 'https://multiplexplay.com/storage/banners/1752765686_logo1.png',
           slug: video
