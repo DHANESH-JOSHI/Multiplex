@@ -9,6 +9,7 @@ const channelModel = require('../../models/channel.model.js');
 const subscriptionModel = require('../../models/subscription.model.js');
 
 const getHomeContent = async (country, channel_id, user_id) => {
+  
 
   const fallbackThumb = "https://multiplexplay.com/office/uploads/default_image/thumbnail.jpg";
   const fallbackPoster = "https://multiplexplay.com/office/uploads/default_image/poster.jpg";
