@@ -9,6 +9,7 @@ const relativeTime = require('dayjs/plugin/relativeTime');
 const { subscribe } = require('../../routes/indexRoutes');
 const subscriptionModel = require('../../models/subscription.model');
 const subcribeModel = require('../../models/subcribe.model');
+const channelModel = require('../../models/channel.model');
 
 dayjs.extend(relativeTime);
 
@@ -76,6 +77,7 @@ const getChannelInfoService = async (channel_id, uid) => {
 
     // Step 2: Fetch the channel by _id
     const channel = await Channel.findById(objectChannelId);
+    
     if (!channel) {
       throw new Error("Channel not found.");
     }
@@ -87,22 +89,24 @@ const getChannelInfoService = async (channel_id, uid) => {
         channel_id: objectChannelId,
         user_id: objectUserId
       });
-      console.log("====>", subscription);
+      // console.log("====>", subscription);
       if (subscription) {
-        subscriptionStatus = 1;
+        
+        subscriptionStatus = channel.subscribers;
       }
     }
 
     // Step 4: Get total views from videos under this channel
     const totalViewsResult = await videoSchema.aggregate([
-      { $match: { imdbid: objectChannelId } },
+      { $match: { channel_id: objectChannelId } },
       { $group: { _id: null, total_view: { $sum: "$total_view" } } }
     ]);
 
     const totalViewCount = totalViewsResult.length > 0 ? totalViewsResult[0].total_view : 0;
 
     // Step 5: Count of subscribers
-    const subscriberCount = await subscriptionModel.countDocuments({ c_id: objectChannelId });
+    
+     const subscriberCount = await subscriptionModel.countDocuments({ c_id: objectChannelId });
 
     // Step 6: Related Movies
     const relatedMovies = await videoSchema.aggregate([
@@ -111,7 +115,6 @@ const getChannelInfoService = async (channel_id, uid) => {
           channel_id: objectChannelId,
         }
       },
-      { $limit: 10 }
     ]);
     // console.log(relatedMovies);
 
@@ -165,11 +168,12 @@ const getMovieDetailsBychannels = async (uid) => {
     const result = await Promise.all(
       videos.map(async (video) => {
         const channel = await Channel.findById(video.channel_id);
-
+        // console.log(channel);
         const isSubscribed = subscribedChannels.some(
           (sub) => sub.channel_id.toString() === video.channel_id.toString()
         );
-
+        let subscribeCount = channelModel.findOne({ _id: video.channel_id });
+        console.log(subscribeCount);
         await Video.updateOne(
           { _id: video._id },
           {
