@@ -136,9 +136,8 @@ async addMovie(req, res) {
       if (user_id && channel_id) {
         const now = Date.now();
         
-        // 🔍 Check for admin subscription (is_movie: false) - unlocks ALL movies
-        // Admin subscription can have any video_id, but plan should be is_movie: false
-        const allUserSubscriptions = await subscriptionModel.find({
+        // 🎯 Simple Logic: Check if user has admin plan (is_movie: false or doesn't exist)
+        const userSubscription = await subscriptionModel.findOne({
           user_id,
           channel_id,
           status: 1,
@@ -147,33 +146,26 @@ async addMovie(req, res) {
           plan_id: { $exists: true, $ne: null }
         }).populate({
           path: 'plan_id',
-          select: 'name price is_movie type' // Get all plan data
+          select: 'name price is_movie type'
         });
 
-        console.log("🔍 All user subscriptions:", {
-          count: allUserSubscriptions.length,
-          subscriptions: allUserSubscriptions.map(sub => ({
-            video_id: sub.video_id,
-            plan_id: sub.plan_id?._id,
-            plan_is_movie: sub.plan_id?.is_movie,
-            plan_name: sub.plan_id?.name
-          }))
+        console.log("🔍 User subscription check:", {
+          subscriptionFound: !!userSubscription,
+          planExists: !!userSubscription?.plan_id,
+          planIsMovie: userSubscription?.plan_id?.is_movie,
+          planName: userSubscription?.plan_id?.name
         });
 
-        // Check if user has ANY admin plan (is_movie: false or undefined)
+        // Admin plan: is_movie = false OR is_movie field doesn't exist
         let hasAdminAccess = false;
-        for (const subscription of allUserSubscriptions) {
-          if (subscription.plan_id) {
-            const plan = subscription.plan_id;
-            if (plan.is_movie === false || plan.is_movie === undefined) {
-              hasAdminAccess = true;
-              console.log("✅ Admin access found via plan:", plan.name);
-              break;
-            }
-          }
+        if (userSubscription && userSubscription.plan_id) {
+          const plan = userSubscription.plan_id;
+          // Admin plan condition: is_movie is false OR field doesn't exist
+          hasAdminAccess = (plan.is_movie === false || plan.is_movie === undefined);
+          console.log("✅ Admin access:", hasAdminAccess, "| Plan is_movie:", plan.is_movie);
         }
 
-        console.log("🎯 Admin access result:", hasAdminAccess);
+        console.log("🎯 Final result - hasAdminAccess:", hasAdminAccess);
 
         if (hasAdminAccess) {
           isSubscribed = true;
