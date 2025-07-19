@@ -1,5 +1,6 @@
 const CloudflareStreamService = require("../../config/cloudFlareCDN");
 const subscriptionModel = require("../../models/subscription.model");
+const videosModel = require("../../models/videos.model");
 const MovieService = require("../../services/adminServices/movie.service");
 
 class MovieController {
@@ -131,6 +132,14 @@ async addMovie(req, res) {
       const populate = req.query.populate?.split(",") || [];
 
       result = await MovieService.getMovieById(movieId, fieldName, populate, country);
+      if (result?.data?.[0]) {
+        const isMovie = result.data[0].is_movie;
+        const relatedVideos = await videosModel.find({ is_movie: isMovie }).lean();
+        result.related_movie = relatedVideos;
+      }
+
+      
+      
 
       // Step 2: Check Subscription
       if (user_id && channel_id) {
@@ -214,7 +223,8 @@ async addMovie(req, res) {
     const finalResponse = {
       message: result.message,
       isSubscribed,
-      data: result.data
+      data: result.data,
+      related_movie: result.related_movie
     };
 
     res.status(200).json(finalResponse);

@@ -95,7 +95,6 @@ class MovieService {
 
     let { uid, playback } = uploadResult;
 
-    // ⏳ Wait for uid if not immediately available
     let retryCount = 0;
     const maxRetries = 10;
     const delay = (ms) => new Promise((res) => setTimeout(res, ms));
