@@ -30,8 +30,14 @@ class LanguageController {
     // Get language by ID
     async getLanguageById(req, res) {
         try {
-            const languageId = req.query.id;
-            const result = await LanguageService.getLanguageById(languageId);
+            const staticId = req.query.id;
+            const languageId = req.query.lid;
+            if (!languageId) {
+                return res.status(400).json({ message: "Language ID is required" });
+            }
+            
+            const result = await LanguageService.getLanguageById(languageId, staticId);
+            // const result = await LanguageService.getLanguageById(languageId);
             res.status(200).json(result);
         } catch (error) {
             const statusCode = error.message.includes("not found") ? 404 : 500;

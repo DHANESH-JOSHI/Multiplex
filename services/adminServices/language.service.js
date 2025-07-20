@@ -1,5 +1,6 @@
 
 const Language = require("../../models/languages_iso.model");
+const videosModel = require("../../models/videos.model");
 const CRUDService = require("../../services/crud.service");
 
 class LanguageService {
@@ -31,7 +32,9 @@ class LanguageService {
      * @returns {Promise<Object>} - Language details
      */
     async getLanguageById(languageId) {
-        return await CRUDService.getById(Language, "_id", languageId);
+        const videoData = await videosModel.find({ language: languageId });
+        
+        return await CRUDService.getById(Language, "id", languageId);
     }
 
     /**

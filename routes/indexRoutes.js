@@ -35,6 +35,8 @@ router.use("/slider", sliderRoutes);
 router.use("/status", statusRoutes);
 router.use("/payment", addPaymentrRoutes);
 router.use("/search", searchRoutes);
+router.use("/", LanguageRoutes);
+
 
 
 

@@ -1,4 +1,3 @@
-
 const mongoose = require('mongoose');
 
 const languagesIsoSchema = new mongoose.Schema({

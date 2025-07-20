@@ -62,6 +62,26 @@ const getChannelList = async (limit, platform = null) => {
   }
 };
 
+const getChannelInfo = async (channelId, userId) => {
+  try {
+    const channel = await Channel.findById(channelId);
+
+    if (!channel) {
+      return { message: 'Channel not found.' };
+    }
+
+   
+    return {
+      channelName: channel.name,
+      subscribers: channel.subscribers,
+      isSubscribed: !!isSubscribed,
+    };
+  } catch (err) {
+    console.error('Error fetching channel info:', err);
+    throw err;
+  }
+};
+
 
 
 
@@ -85,7 +105,7 @@ const getChannelInfoService = async (channel_id, uid) => {
     }
 
     // Step 3: Check subscription
-    let subscriptionStatus = 0;
+    let subscriptionStatus;
     if (objectUserId) {
       const subscription = await subscriptionModel.findOne({
         channel_id: objectChannelId,
@@ -119,21 +139,29 @@ const getChannelInfoService = async (channel_id, uid) => {
       },
     ]);
     // console.log(relatedMovies);
-    const userSubscribe = await subcribeModel.find({
-              user: uid,
-              channel: channel._id,
+   const totalSubscribers = await subcribeModel.countDocuments({ channel: channel._id });
+
+    // 2. Check if the current user is subscribed
+    if (uid) {
+      const userSubscribe = await subcribeModel.findOne({
+        user: uid,
+        channel: channel._id,
       });
-    if (userSubscribe.length > 0) {
-      userSubscribed = true;
+
+      if (userSubscribe) {
+        userSubscribed = true;
+      }
     }
+
+
 
     // Step 7: Prepare response
     const response = {
       channel_name: channel.channel_name,
       channel_id: String(channel._id),
       channel_img: channel.img || 'https://multiplexplay.com/office/uploads/default_image/poster.jpg',
-      subcribe: subscriptionStatus,
-      userSubscribed,
+      subcribe: totalSubscribers,
+      userSubscribed: userSubscribed,
       view: String(totalViewCount),
       count: String(subscriberCount),
       related_movie: relatedMovies.map(video => ({
@@ -357,15 +385,31 @@ const getChannelById = async (channelId) => {
   // return await Channel.findOne(channelId).populate('video');
 };
 
-const subscribeToChannel = async (channelId, userId) => {
- try {
-    const channelObjectId = channelId;//new mongoose.Types.ObjectId(channelId);
-    const userObjectId = userId; // new mongoose.Types.ObjectId(userId);
+
+
+
+
+
+const subscribeToChannel = async (channelId, userId = null) => {
+  try {
+    const channelObjectId = channelId;
+
     // 1. Check if the channel exists
     const channel = await Channel.findById(channelObjectId);
     if (!channel) {
       return { message: 'Channel not found. Please provide a valid channel.' };
     }
+
+    // 🔹 If userId is not provided, just return subscriber count
+    if (!userId) {
+      return {
+        message: 'User ID not provided. Showing subscriber count only.',
+        subscribers: channel.subscribers,
+        isSubscribed: false,
+      };
+    }
+
+    const userObjectId = userId;
 
     // 2. Check if already subscribed
     const subscription = await subcribeModel.findOne({
@@ -374,7 +418,11 @@ const subscribeToChannel = async (channelId, userId) => {
     });
 
     if (subscription) {
-      return { message: 'You are already subscribed to this channel.' };
+      return {
+        message: 'You are already subscribed to this channel.',
+        subscribers: channel.subscribers,
+        isSubscribed: true,
+      };
     }
 
     // 3. Create a new subscription
@@ -384,15 +432,27 @@ const subscribeToChannel = async (channelId, userId) => {
     });
     await newSubscription.save();
 
-    // 4. Increment subscribers count in the Channel collection
-    await Channel.findByIdAndUpdate({_id: channelObjectId}, { $inc: { subscribers: 1 } });
+    // 4. Increment subscribers count and return updated channel
+    const updatedChannel = await Channel.findByIdAndUpdate(
+      channelObjectId,
+      { $inc: { subscribers: 1 } },
+      { new: true }
+    );
 
-    return { message: 'Subscription successful.' };
+    return {
+      message: 'Subscription successful.',
+      subscribers: updatedChannel.subscribers,
+      isSubscribed: true,
+    };
   } catch (error) {
     console.error('Subscription Error:', error);
     throw error;
   }
-}
+};
+
+
+
+
 
 module.exports = {
   getChannelList,
