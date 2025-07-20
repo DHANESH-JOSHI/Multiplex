@@ -168,7 +168,7 @@ async addMovie(req, res) {
           plan_id: { $exists: true, $ne: null }
         }).populate({
           path: 'plan_id',
-          select: 'name price is_movie type'
+          select: 'price is_movie typename '
         });
 
         console.log("🔍 User subscription check:", {
@@ -182,7 +182,6 @@ async addMovie(req, res) {
         let hasAdminAccess = false;
         if (userSubscription && userSubscription.plan_id) {
           const plan = userSubscription.plan_id;
-          // Admin plan condition: is_movie is false OR field doesn't exist
           hasAdminAccess = (plan.is_movie === false || plan.is_movie === undefined);
           console.log("✅ Admin access:", hasAdminAccess, "| Plan is_movie:", plan.is_movie);
         }

@@ -16,7 +16,7 @@ dayjs.extend(relativeTime);
 const getChannelList = async (limit, platform = null) => {
   try {
     // Step 1: Get approved channels, with optional platform filter
-    const query = { status: 'approve' };
+    const query = { status: 'approve', is_movie: true, isChannel: true };
       if (platform) {
       query.platform = platform;
     }
