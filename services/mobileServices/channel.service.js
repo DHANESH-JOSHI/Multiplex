@@ -117,13 +117,22 @@ const getChannelInfoService = async (channel_id, uid) => {
       },
     ]);
     // console.log(relatedMovies);
+    const userSubscribe = await subcribeModel.find({
+              user: uid,
+              channel: channel._id,
+      });
+    if (userSubscribe.length > 0) {
+        var userSubscribed = true;
+    }
 
     // Step 7: Prepare response
     const response = {
       channel_name: channel.channel_name,
       channel_id: String(channel._id),
+      
       channel_img: channel.img || 'https://multiplexplay.com/office/uploads/default_image/poster.jpg',
       subcribe: subscriptionStatus,
+      userSubscribed,
       view: String(totalViewCount),
       count: String(subscriberCount),
       related_movie: relatedMovies.map(video => ({
