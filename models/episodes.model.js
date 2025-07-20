@@ -6,7 +6,8 @@ const episodeSchema = new mongoose.Schema({
   videoContent_id: { type: String, required: true },
   seasonId: { type: mongoose.Schema.Types.ObjectId, ref: "Season" },
   is_movie: { type: Boolean },
-
+  thumbnail_url: { type: String},
+  description: { type: String, default: "" },
   enable_download: {
     type: String,
     Default: 1

@@ -161,7 +161,10 @@ const videoSchema = new mongoose.Schema({
     default: 0
   },
 
-
+  movie_description: {
+    type: String,
+    default: ""
+  },
 
   total_rating: {
     type: Number,

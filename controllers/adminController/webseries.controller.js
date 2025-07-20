@@ -98,7 +98,7 @@ class WebSeriesController {
           select: "title __v", // Make sure this line is correct
           populate: {
             path: "episodesId",
-            select: "title video_url thumbnail_url download_url enable_download __v" // optionally select episode fields  
+            select: "title video_url thumbnail_url download_url enable_download description __v" // optionally select episode fields  
           },
           options: {
             lean: true
