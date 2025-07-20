@@ -15,28 +15,30 @@ dayjs.extend(relativeTime);
 
 const getChannelList = async (limit, platform = null) => {
   try {
-    // Step 1: Get approved channels, with optional platform filter
-    const query = { status: 'approve', is_movie: true, isChannel: true };
-      if (platform) {
+    // Step 1: Build query to get approved movie channels
+    const query = { status: 'approve' };
+    if (platform) {
       query.platform = platform;
     }
 
+    // Step 2: Fetch channels
     const channels = await Channel.find(query).limit(limit).lean();
 
+    // Step 3: Fetch latest video per channel
     const result = await Promise.all(
       channels.map(async (channel) => {
         const video = await Video.findOne({
-          channel_id: new mongoose.Types.ObjectId(channel.user_id)
+          channel_id: new mongoose.Types.ObjectId(channel.user_id),
+          is_movie: true,
+          isChannel:true
         })
-          .sort({ cre: -1 })
+          .sort({ cre: -1 }) // Assuming 'cre' is creation date
           .lean();
 
-        // ❌ Skip if no video found
-        if (!video || !video.videos_id) {
-          return null;
-        }
+        // ❌ Skip if no valid video found
+        if (!video || !video.videos_id) return null;
 
-        // ✅ Construct response
+        // ✅ Construct and return formatted response
         return {
           channel_name: channel.channel_name,
           channel_img: channel.img,
@@ -48,22 +50,22 @@ const getChannelList = async (limit, platform = null) => {
           runtime: video.runtime || '',
           video_quality: video.video_quality || '',
           view: video.total_view || 0,
-          is_movie: true,
           thumbnail_url: video.thumbnail_url || 'https://multiplexplay.com/storage/banners/1752765686_logo1.png',
           poster_url: video.poster_url || 'https://multiplexplay.com/storage/banners/1752765686_logo1.png',
-          slug: video.title.toLowerCase().replace(/\s+/g, '-') + '-' + video.videos_id.toString()
+          slug: `${(video.title || 'video').toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '')}-${video.videos_id}`
         };
       })
     );
 
-    // ✅ Remove any channels without valid videos
+    // Step 4: Filter out nulls (channels with no videos)
     return result.filter(item => item !== null);
 
   } catch (error) {
-    console.error('Error fetching channel list:', error);
+    console.error('❌ Error fetching channel list:', error);
     throw error;
   }
 };
+
 
 
 const getChannelInfo = async (channelId, userId) => {
