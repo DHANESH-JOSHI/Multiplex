@@ -17,7 +17,7 @@ const getChannelList = async (limit, platform = null) => {
   try {
     // Step 1: Get approved channels, with optional platform filter
     const query = { status: 'approve' };
-    if (platform) {
+      if (platform) {
       query.platform = platform;
     }
 
@@ -45,7 +45,6 @@ const getChannelList = async (limit, platform = null) => {
           title: video.title || '',
           description: video.description || '',
           release: video.cre ? dayjs(video.cre).fromNow() : '',
-          is_paid: video.is_paid || 0,
           runtime: video.runtime || '',
           video_quality: video.video_quality || '',
           view: video.total_view || 0,
