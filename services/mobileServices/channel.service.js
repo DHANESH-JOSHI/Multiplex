@@ -67,6 +67,8 @@ const getChannelList = async (limit, platform = null) => {
 
 const getChannelInfoService = async (channel_id, uid) => {
   try {
+
+    let  userSubscribed = false;
     // Step 1: Convert channel_id to ObjectId
     if (!mongoose.Types.ObjectId.isValid(channel_id)) {
       throw new Error("Invalid channel_id. Must be a valid ObjectId.");
@@ -122,9 +124,7 @@ const getChannelInfoService = async (channel_id, uid) => {
               channel: channel._id,
       });
     if (userSubscribe.length > 0) {
-        var userSubscribed = true;
-    }else{
-      userSubscribed = false;
+      userSubscribed = true;
     }
 
     // Step 7: Prepare response
