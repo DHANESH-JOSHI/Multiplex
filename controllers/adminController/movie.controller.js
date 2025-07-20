@@ -1,6 +1,7 @@
 const CloudflareStreamService = require("../../config/cloudFlareCDN");
 const subscriptionModel = require("../../models/subscription.model");
 const videosModel = require("../../models/videos.model");
+const channelSubscribeModel = require("../../models/subcribe.model");
 const MovieService = require("../../services/adminServices/movie.service");
 
 class MovieController {
@@ -135,6 +136,17 @@ async addMovie(req, res) {
       if (result?.data?.[0]) {
         const isMovie = result.data[0].is_movie;
         const relatedVideos = await videosModel.find({ is_movie: isMovie }).lean();
+        const userSubscribe = await channelSubscribeModel.find({
+          user: user_id,
+          channel: channel_id,
+        });
+        if (userSubscribe.length > 0) {
+           var userSubscribed = true;
+        }
+        // console.log("data",userSubscribe);
+        // result = result.data
+        // result.data.userSubscribed = userSubscribe.length > 0;
+
         result.related_movie = relatedVideos;
       }
 
@@ -223,6 +235,7 @@ async addMovie(req, res) {
     const finalResponse = {
       message: result.message,
       isSubscribed,
+      userSubscribed,
       data: result.data,
       related_movie: result.related_movie
     };
