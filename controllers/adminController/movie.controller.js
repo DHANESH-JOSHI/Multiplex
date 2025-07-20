@@ -121,6 +121,7 @@ async addMovie(req, res) {
     try {
     let result;
     let isSubscribed = false; // Default
+    let userSubscribed = false;
     console.log(req.query);
     const { vId, user_id, channel_id } = req.query;
 
@@ -141,7 +142,7 @@ async addMovie(req, res) {
           channel: channel_id,
         });
         if (userSubscribe.length > 0) {
-           var userSubscribed = true;
+           userSubscribed = true;
         }
         // console.log("data",userSubscribe);
         // result = result.data

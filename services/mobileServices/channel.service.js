@@ -123,13 +123,14 @@ const getChannelInfoService = async (channel_id, uid) => {
       });
     if (userSubscribe.length > 0) {
         var userSubscribed = true;
+    }else{
+      userSubscribed = false;
     }
 
     // Step 7: Prepare response
     const response = {
       channel_name: channel.channel_name,
       channel_id: String(channel._id),
-      
       channel_img: channel.img || 'https://multiplexplay.com/office/uploads/default_image/poster.jpg',
       subcribe: subscriptionStatus,
       userSubscribed,
