@@ -17,7 +17,7 @@ const getChannelListController = async (req, res) => {
     const limit = parseInt(req.query.limit) || 0;
     let channel;
     channel = await getChannelList();
-    console.log(channel);
+
     res.json(channel);
   } catch (error) {
     console.error('Error fetching channel list:', error);

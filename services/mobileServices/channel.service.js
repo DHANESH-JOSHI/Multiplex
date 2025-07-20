@@ -20,40 +20,44 @@ const getChannelList = async (limit, platform = null) => {
     if (platform) {
       query.platform = platform;
     }
-    const channels = await Channel.find(query)
-      .limit(limit)
-      .lean();
+
+    const channels = await Channel.find(query).limit(limit).lean();
 
     const result = await Promise.all(
       channels.map(async (channel) => {
-        const video = await Video.findOne({ channel_id: new mongoose.Types.ObjectId(channel.user_id) })
+        const video = await Video.findOne({
+          channel_id: new mongoose.Types.ObjectId(channel.user_id)
+        })
           .sort({ cre: -1 })
           .lean();
 
-        // Always return something — with or without video
+        // ❌ Skip if no video found
+        if (!video || !video.videos_id) {
+          return null;
+        }
+
+        // ✅ Construct response
         return {
           channel_name: channel.channel_name,
           channel_img: channel.img,
           channel_id: channel._id.toString(),
-          videos_id: video?.videos_id?.toString() || null,
-          title: video?.title || '',
-          description: video?.description || '',
-          release: video?.cre ? dayjs(video.cre).fromNow() : '',
-          is_paid: video?.is_paid || 0,
-          runtime: video?.runtime || '',
-          video_quality: video?.video_quality || '',
-          view: video?.total_view || 0,
+          videos_id: video.videos_id.toString(),
+          title: video.title || '',
+          description: video.description || '',
+          release: video.cre ? dayjs(video.cre).fromNow() : '',
+          is_paid: video.is_paid || 0,
+          runtime: video.runtime || '',
+          video_quality: video.video_quality || '',
+          view: video.total_view || 0,
           is_movie: true,
-          thumbnail_url: video?.thumbnail_url || 'https://multiplexplay.com/storage/banners/1752765686_logo1.png',
-          poster_url: video?.poster_url || 'https://multiplexplay.com/storage/banners/1752765686_logo1.png',
-          slug: video
-            ? video.title.toLowerCase().replace(/\s+/g, '-') + '-' + video.videos_id.toString()
-            : ''
+          thumbnail_url: video.thumbnail_url || 'https://multiplexplay.com/storage/banners/1752765686_logo1.png',
+          poster_url: video.poster_url || 'https://multiplexplay.com/storage/banners/1752765686_logo1.png',
+          slug: video.title.toLowerCase().replace(/\s+/g, '-') + '-' + video.videos_id.toString()
         };
       })
     );
 
-    // Remove nulls (in case no videos found)
+    // ✅ Remove any channels without valid videos
     return result.filter(item => item !== null);
 
   } catch (error) {
@@ -61,6 +65,7 @@ const getChannelList = async (limit, platform = null) => {
     throw error;
   }
 };
+
 
 const getChannelInfo = async (channelId, userId) => {
   try {
