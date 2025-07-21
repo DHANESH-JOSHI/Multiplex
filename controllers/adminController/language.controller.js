@@ -1,4 +1,5 @@
 
+const videosModel = require("../../models/videos.model");
 const LanguageService = require("../../services/adminServices/language.service");
 
 class LanguageController {
@@ -27,22 +28,28 @@ class LanguageController {
         }
     }
 
+//     async getVideosByLanguage(req, res) {
+ 
+// }
+
     // Get language by ID
     async getLanguageById(req, res) {
-        try {
-            const staticId = req.query.id;
-            const languageId = req.query.lid;
-            if (!languageId) {
-                return res.status(400).json({ message: "Language ID is required" });
-            }
-            
-            const result = await LanguageService.getLanguageById(languageId, staticId);
-            // const result = await LanguageService.getLanguageById(languageId);
-            res.status(200).json(result);
-        } catch (error) {
-            const statusCode = error.message.includes("not found") ? 404 : 500;
-            res.status(statusCode).json({ message: error.message });
+    try {
+        const languageId = req.query.lid;
+
+        if (!languageId) {
+        return res.status(400).json({ message: "Language ID is required" });
         }
+
+        const videos = await videosModel.find({
+        language: { $in: [languageId] }  // match as string
+        });
+
+        res.status(200).json(videos);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Server error" });
+    }
     }
 
     // Update language
