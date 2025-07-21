@@ -36,19 +36,38 @@ class LanguageController {
     async getLanguageById(req, res) {
     try {
         const languageId = req.query.lid;
+        const VenderCheck = req.query.id;
 
         if (!languageId) {
         return res.status(400).json({ message: "Language ID is required" });
         }
 
-        const videos = await videosModel.find({
-        language: { $in: [languageId] }  // match as string
-        });
+        let videos = [];
 
-        res.status(200).json(videos);
+        if (VenderCheck === "1") {
+        videos = await videosModel.find({
+            language: { $in: [languageId] },
+            isChannel: false,
+            is_movie: false,
+        });
+        } else if (VenderCheck === "2") {
+        videos = await videosModel.find({
+            language: { $in: [languageId] },
+            isChannel: true,
+            is_movie: true,
+        });
+        }
+
+        res.status(200).json({
+        message: "Videos fetched successfully",
+        data: videos,
+        });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: "Server error" });
+        res.status(500).json({
+        message: "Server error",
+        error: error.message,
+        });
     }
     }
 
