@@ -1,14 +1,13 @@
-// models/slider.model.js
 const mongoose = require('mongoose');
 
 const sliderSchema = new mongoose.Schema({
   slider_id: { type: Number, required: true },
   title: { type: String, required: true },
   description: { type: String, default: 'NA' },
-  video_link: { type: String, required: true },
+  videos_id: { type: String, default: 'NA' },
   image_link: { type: String, required: true },
   slug: { type: String, required: true },
-  action_type: String,
+  action_type: {type: String, default: 'NA', enum: ['tvseries', 'movie']}, // e.g., 'tvseries', 'movie'
   action_btn_text: String,
   action_id: Number,
   action_url: String,
