@@ -121,10 +121,8 @@ exports.addSubscription = async (req, res) => {
 
         res.status(201).json({
             message: "Razorpay order created and subscription added successfully",
-            data: {
-                subscription: savedSubscription,
-                razorpayOrder
-            }
+            subscription: savedSubscription,
+            razorpayOrder
         });
 
     } catch (error) {
