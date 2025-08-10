@@ -52,7 +52,7 @@ exports.login = async (req, res) => {
 
             user = await User.create({
                 user_id: newUserId,
-                name: newUserId,    // Set the extracted name
+                name: extractedName,    // ✅ Fixed: Use extracted name from email
                 slug: newUserId,
                 username: newUserId,
                 email,
@@ -85,21 +85,24 @@ exports.login = async (req, res) => {
         // console.log(otp);
         // Send response with the user data and OTP message
         res.status(200).json({
+            success: true,
             message: "OTP sent successfully",
             user: {
-                user_id: user._id,
+                user_id: user._id,           // ✅ MongoDB ObjectId as user_id
+                mongodb_id: user._id,        // ✅ Explicit MongoDB ID
                 name: user.name,
                 username: user.username,
                 email: user.email,
                 phone: user.phone,
-                otp: user.otp,
+                otp: user.otp,               // ✅ OTP for verification
                 otpExpire: user.otpExpire,
                 join_date: user.join_date,
                 last_login: user.last_login,
                 status: user.status,
                 role: user.role,
                 theme: user.theme,
-                theme_color: user.theme_color
+                theme_color: user.theme_color,
+                profile_picture: user.profile_picture
             },
             otpMessage: `Your OTP is ${otp}`
         });
@@ -147,9 +150,25 @@ exports.verifyOtp = async (req, res) => {
     await user.save();
     
     res.status(200).json({
+        success: true,
         message: "Login successful",
-        userId: user._id,
-        status: "success"
+        user_id: user._id,           // ✅ MongoDB ObjectId as user_id
+        mongodb_id: user._id,        // ✅ Explicit MongoDB ID
+        userId: user._id,            // ✅ Keep for backward compatibility
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        username: user.username,
+        role: user.role,
+        theme: user.theme,
+        theme_color: user.theme_color,
+        join_date: user.join_date,
+        last_login: user.last_login,
+        status: "success",
+        profile_picture: user.profile_picture,
+        deviceid: user.deviceid,
+        fcm: user.fcm,
+        versioncode: user.versioncode
     });
 };
 
