@@ -280,7 +280,10 @@ exports.firebaseAuth = async (req, res) => {
         }
 
         return res.status(200).json({
-                user_id: user._id,
+                success: true,
+                message: "Firebase authentication successful",
+                user_id: user._id,        // ✅ MongoDB _id as user_id
+                firebase_uid: uid,        // ✅ Firebase UID for reference
                 name: user.name,
                 email: user.email,
                 phone: user.phone,
@@ -289,12 +292,17 @@ exports.firebaseAuth = async (req, res) => {
                 theme: user.theme,
                 theme_color: user.theme_color,
                 join_date: user.join_date,
-                gender: "male",
+                gender: user.gender || "male",
                 data: "stuein",
-                image_url: "photo",
-                password_available: false,
+                profile_picture: user.profile_picture,
+                image_url: user.profile_picture || image_url,
+                password_available: user.is_password_set === 1,
                 last_login: user.last_login,
-                status: user.status
+                status: user.status,
+                country: country,
+                deviceid: user.deviceid,
+                fcm: user.fcm,
+                versioncode: user.versioncode
         });
 
     } catch (err) {
