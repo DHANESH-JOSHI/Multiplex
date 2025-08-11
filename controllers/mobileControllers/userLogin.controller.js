@@ -22,11 +22,29 @@ function generateOtp() {
 exports.login = async (req, res) => {
 
     try {
+        // Check if request body exists and is valid
+        if (!req.body || Object.keys(req.body).length === 0) {
+            return res.status(400).json({ 
+                success: false,
+                message: "Request body is required. Please send valid JSON data." 
+            });
+        }
+
         const { email, phone } = req.body;
         const mobile = phone;
             
         if (!mobile) {
-            return res.status(400).json({ message: "Mobile is required" });
+            return res.status(400).json({ 
+                success: false,
+                message: "Mobile number is required" 
+            });
+        }
+
+        if (!email) {
+            return res.status(400).json({ 
+                success: false,
+                message: "Email is required" 
+            });
         }
 
         // Extract name from email before the '@' symbol
@@ -46,9 +64,11 @@ exports.login = async (req, res) => {
             // New user create
             const lastUser = await User.findOne().sort({ user_id: -1 });
             let newUserId = 1;
-            if (lastUser) {
-                newUserId = lastUser.user_id + 1;
+            if (lastUser && lastUser.user_id && !isNaN(lastUser.user_id)) {
+                newUserId = parseInt(lastUser.user_id) + 1;
             }
+            
+            console.log("Creating new user with ID:", newUserId);
 
             user = await User.create({
                 user_id: newUserId,
@@ -116,60 +136,89 @@ exports.login = async (req, res) => {
 
 
 exports.verifyOtp = async (req, res) => {
+    try {
+        // Check if request body exists and is valid
+        if (!req.body || Object.keys(req.body).length === 0) {
+            return res.status(400).json({ 
+                success: false,
+                message: "Request body is required. Please send valid JSON data." 
+            });
+        }
 
-    const { user_id, otp, deviceid, fcm, versioncode } = req.body;
+        const { user_id, otp, deviceid, fcm, versioncode } = req.body;
 
-    if (!user_id || !otp) { 
-        return res.status(400).json({ message: "User ID and OTP are required" });
-    }
+        if (!user_id || !otp) { 
+            return res.status(400).json({ 
+                success: false,
+                message: "User ID and OTP are required" 
+            });
+        }
 
     const otpString = otp.toString(); // Ensure OTP is a string    
     // Find user by user_id
-    const user = await User.findOne({ _id: user_id });
+        const user = await User.findOne({ _id: user_id });
 
-    if (!user) {
-        return res.status(400).json({ message: "User not found" });
+        if (!user) {
+            return res.status(400).json({ 
+                success: false,
+                message: "User not found" 
+            });
+        }
+
+        // Compare the OTPs
+        if (user.otp !== otpString) {
+            return res.status(400).json({ 
+                success: false,
+                message: "Invalid OTP" 
+            });
+        }
+
+        // Check if OTP is expired
+        if (user.otpExpire < new Date()) {
+            return res.status(400).json({ 
+                success: false,
+                message: "OTP expired" 
+            });
+        }
+
+        // Update user info
+        user.otp = null;
+        user.otpExpire = null;
+        user.deviceid = deviceid || null;
+        user.fcm = fcm || null;
+
+        await user.save();
+        
+        res.status(200).json({
+            success: true,
+            message: "Login successful",
+            user_id: user._id,           // ✅ MongoDB ObjectId as user_id
+            mongodb_id: user._id,        // ✅ Explicit MongoDB ID
+            userId: user._id,            // ✅ Keep for backward compatibility
+            name: user.name,
+            email: user.email,
+            phone: user.phone,
+            username: user.username,
+            role: user.role,
+            theme: user.theme,
+            theme_color: user.theme_color,
+            join_date: user.join_date,
+            last_login: user.last_login,
+            status: "success",
+            profile_picture: user.profile_picture,
+            deviceid: user.deviceid,
+            fcm: user.fcm,
+            versioncode: user.versioncode
+        });
+
+    } catch (err) {
+        console.error("OTP Verification Error:", err);
+        res.status(500).json({ 
+            success: false,
+            message: "Internal Server Error", 
+            error: err.message 
+        });
     }
-
-    // Compare the OTPs
-    if (user.otp !== otpString) {
-        return res.status(400).json({ message: "Invalid OTP" });
-    }
-
-    // Check if OTP is expired
-    if (user.otpExpire < new Date()) {
-        return res.status(400).json({ message: "OTP expired" });
-    }
-
-    // Update user info
-    user.otp = null;
-    user.otpExpire = null;
-    user.deviceid = deviceid || null;
-    user.fcm = fcm || null;
-
-    await user.save();
-    
-    res.status(200).json({
-        success: true,
-        message: "Login successful",
-        user_id: user._id,           // ✅ MongoDB ObjectId as user_id
-        mongodb_id: user._id,        // ✅ Explicit MongoDB ID
-        userId: user._id,            // ✅ Keep for backward compatibility
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        username: user.username,
-        role: user.role,
-        theme: user.theme,
-        theme_color: user.theme_color,
-        join_date: user.join_date,
-        last_login: user.last_login,
-        status: "success",
-        profile_picture: user.profile_picture,
-        deviceid: user.deviceid,
-        fcm: user.fcm,
-        versioncode: user.versioncode
-    });
 };
 
 

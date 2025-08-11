@@ -27,8 +27,38 @@ app.set('trust proxy', 1);
 // Connect to MongoDB
 connectDB();
 
-// Middleware
-app.use(express.json({ limit: "10kb" }));
+// Middleware with enhanced error handling
+app.use(express.json({ 
+  limit: "10kb",
+  verify: (req, res, buf, encoding) => {
+    try {
+      JSON.parse(buf);
+    } catch (err) {
+      console.error("❌ JSON Parse Error:", err.message);
+      res.status(400).json({
+        success: false,
+        message: "Invalid JSON format. Please check your request body.",
+        error: "JSON syntax error"
+      });
+      return;
+    }
+  }
+}));
+
+// Global error handler for JSON parsing errors
+app.use((err, req, res, next) => {
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    console.error("❌ JSON Parse Error:", err.message);
+    return res.status(400).json({
+      success: false,
+      message: "Invalid JSON format. Please check your request body.",
+      error: "JSON syntax error",
+      details: err.message
+    });
+  }
+  next();
+});
+
 app.use(apiKeyMiddleware); // Apply API key check to all incoming requests
 
 // Session and Passport setup
