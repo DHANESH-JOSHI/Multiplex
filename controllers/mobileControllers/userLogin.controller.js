@@ -33,27 +33,22 @@ exports.login = async (req, res) => {
         const { email, phone } = req.body;
         const mobile = phone;
             
-        if (!mobile) {
+        // Either email OR phone is required, not both
+        if (!mobile && !email) {
             return res.status(400).json({ 
                 success: false,
-                message: "Mobile number is required" 
+                message: "Either mobile number or email is required" 
             });
         }
 
-        if (!email) {
-            return res.status(400).json({ 
-                success: false,
-                message: "Email is required" 
-            });
-        }
-
-        // Extract name from email before the '@' symbol
-        const extractedName = email.split('@')[0];
+        // Extract name from email before the '@' symbol, or use phone if email not provided
+        const extractedName = email ? email.split('@')[0] : `user_${mobile || Math.floor(Math.random() * 10000)}`;
 
         const otp = generateOtp();
         const otpExpire = new Date(Date.now() + 5 * 60 * 1000);
 
-        let user = await User.findOne({ phone: mobile });
+        // Find user by phone or email (whichever is provided)
+        let user = mobile ? await User.findOne({ phone: mobile }) : await User.findOne({ email });
 
         if (user) {
             // User already exists, update OTP
@@ -75,7 +70,7 @@ exports.login = async (req, res) => {
                 name: extractedName,    // ✅ Fixed: Use extracted name from email
                 slug: newUserId,
                 username: newUserId,
-                email,
+                email: email || "",
                 is_password_set: 0,
                 password: "25f9e794323b453885f5181f1b624d0b",  // Example hash for default password
                 gender: 1,
@@ -87,7 +82,7 @@ exports.login = async (req, res) => {
                 last_login: new Date(),
                 deactivate_reason: "",
                 status: 1,
-                phone: mobile,
+                phone: mobile || "",
                 firebase_auth_uid: "",
                 otp: otp,
                 otpExpire: otpExpire,
@@ -100,13 +95,15 @@ exports.login = async (req, res) => {
             });
         }
 
-        // Send OTP to the mobile number
-        await sendOtp(mobile, otp);
+        // Send OTP to the mobile number (only if mobile is provided)
+        if (mobile) {
+            await sendOtp(mobile, otp);
+        }
         // console.log(otp);
         // Send response with the user data and OTP message
         res.status(200).json({
             success: true,
-            message: "OTP sent successfully",
+            message: mobile ? "OTP sent successfully" : "User logged in with email",
             user: {
                 user_id: user._id,           // ✅ MongoDB ObjectId as user_id
                 mongodb_id: user._id,        // ✅ Explicit MongoDB ID
@@ -124,7 +121,7 @@ exports.login = async (req, res) => {
                 theme_color: user.theme_color,
                 profile_picture: user.profile_picture
             },
-            otpMessage: `Your OTP is ${otp}`
+            ...(mobile && { otpMessage: `Your OTP is ${otp}` })
         });
 
     } catch (err) {
