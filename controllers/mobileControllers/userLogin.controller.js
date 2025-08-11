@@ -244,7 +244,10 @@ exports.firebaseAuth = async (req, res) => {
             user = await User.findOne({ email });
             if (!user) {
                 const lastUser = await User.findOne().sort({ user_id: -1 });
-                const newUserId = lastUser ? lastUser.user_id + 1 : 1;
+                let newUserId = 1;
+                if (lastUser && lastUser.user_id && !isNaN(lastUser.user_id)) {
+                    newUserId = parseInt(lastUser.user_id) + 1;
+                }
 
                 user = await User.create({
                     user_id: newUserId,
@@ -284,7 +287,10 @@ exports.firebaseAuth = async (req, res) => {
                 await user.save();
             } else {
                 const lastUser = await User.findOne().sort({ user_id: -1 });
-                const newUserId = lastUser ? lastUser.user_id + 1 : 1;
+                let newUserId = 1;
+                if (lastUser && lastUser.user_id && !isNaN(lastUser.user_id)) {
+                    newUserId = parseInt(lastUser.user_id) + 1;
+                }
                 const extractedName = email?.split('@')[0] || `user${newUserId}`;
 
                 user = await User.create({
@@ -317,7 +323,10 @@ exports.firebaseAuth = async (req, res) => {
             user = await User.findOne({ email });
             if (!user) {
                 const lastUser = await User.findOne().sort({ user_id: -1 });
-                const newUserId = lastUser ? lastUser.user_id + 1 : 1;
+                let newUserId = 1;
+                if (lastUser && lastUser.user_id && !isNaN(lastUser.user_id)) {
+                    newUserId = parseInt(lastUser.user_id) + 1;
+                }
 
                 user = await User.create({
                     user_id: newUserId,
