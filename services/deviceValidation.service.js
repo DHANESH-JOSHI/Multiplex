@@ -1,4 +1,5 @@
 const User = require('../models/user.model');
+const mongoose = require('mongoose');
 
 const DeviceValidationService = {
   
@@ -18,8 +19,15 @@ const DeviceValidationService = {
         };
       }
 
-      // Find user by user_id
-      const user = await User.findOne({ user_id: userId });
+      // Find user by appropriate field based on ID type
+      let user;
+      if (mongoose.Types.ObjectId.isValid(userId)) {
+        // If it's ObjectId, search by _id
+        user = await User.findById(userId);
+      } else {
+        // If it's number, search by user_id
+        user = await User.findOne({ user_id: parseInt(userId) });
+      }
       
       if (!user) {
         return {
@@ -48,10 +56,20 @@ const DeviceValidationService = {
       }
 
       // Check for concurrent sessions (same device used by multiple accounts)
-      const concurrentUsers = await User.find({ 
-        deviceid: deviceId,
-        user_id: { $ne: userId }
-      });
+      let concurrentQuery;
+      if (mongoose.Types.ObjectId.isValid(userId)) {
+        concurrentQuery = { 
+          deviceid: deviceId,
+          _id: { $ne: userId }
+        };
+      } else {
+        concurrentQuery = { 
+          deviceid: deviceId,
+          user_id: { $ne: parseInt(userId) }
+        };
+      }
+      
+      const concurrentUsers = await User.find(concurrentQuery);
 
       if (concurrentUsers.length > 0) {
         return {
@@ -107,9 +125,16 @@ const DeviceValidationService = {
         return false;
       }
 
-      // Update user's device
+      // Update user's device based on ID type
+      let updateQuery;
+      if (mongoose.Types.ObjectId.isValid(userId)) {
+        updateQuery = { _id: userId };
+      } else {
+        updateQuery = { user_id: parseInt(userId) };
+      }
+      
       const result = await User.updateOne(
-        { user_id: userId },
+        updateQuery,
         { $set: { deviceid: newDeviceId, last_login: new Date() } }
       );
 
@@ -135,9 +160,13 @@ const DeviceValidationService = {
    */
   async checkDeviceConflict(deviceId, excludeUserId = null) {
     try {
-      const query = { deviceid: deviceId };
+      let query = { deviceid: deviceId };
       if (excludeUserId) {
-        query.user_id = { $ne: excludeUserId };
+        if (mongoose.Types.ObjectId.isValid(excludeUserId)) {
+          query._id = { $ne: excludeUserId };
+        } else {
+          query.user_id = { $ne: parseInt(excludeUserId) };
+        }
       }
 
       const conflictingUser = await User.findOne(query);
@@ -172,8 +201,15 @@ const DeviceValidationService = {
    */
   async forceDeviceLogout(userId) {
     try {
+      let query;
+      if (mongoose.Types.ObjectId.isValid(userId)) {
+        query = { _id: userId };
+      } else {
+        query = { user_id: parseInt(userId) };
+      }
+      
       const result = await User.updateOne(
-        { user_id: userId },
+        query,
         { $unset: { deviceid: 1, token: 1 } }
       );
 

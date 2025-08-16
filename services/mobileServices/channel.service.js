@@ -12,6 +12,7 @@ const { subscribe } = require('../../routes/indexRoutes');
 const subscriptionModel = require('../../models/subscription.model');
 const subcribeModel = require('../../models/subcribe.model');
 const channelModel = require('../../models/channel.model');
+const userModel = require('../../models/user.model');
 
 dayjs.extend(relativeTime);
 
@@ -234,12 +235,11 @@ const getMovieDetailsBychannels = async (uid) => {
     console.log('GetMovieDetailsByChannels Hitted');
     // Filter videos: only isChannel:true and must have valid ObjectId channel_id, sorted by creation date (latest first)
     const videos = await Video.find({
-      isChannel: true
-      // ,                                        // Only show channel videos
-      //channel_id: {
-      //  $exists: true,                                        // Must exist
-       // $type: "objectId"                                     // Must be valid ObjectId (not string, not null)
-      // }
+      isChannel: true,                                        // Only show channel videos
+      channel_id: {
+       $exists: true,                                        // Must exist
+       $type: "objectId"                                     // Must be valid ObjectId (not string, not null)
+      }
       }).sort({
       cre: -1
     });
@@ -254,15 +254,15 @@ const getMovieDetailsBychannels = async (uid) => {
     const result = await Promise.all(
       videos.map(async (video) => {
         
-        const channel = await Channel.findById(video.channel_id);
-
-        if(!video.isChannel === false) {
+        const channel = await Channel.findOne({ user_id: new mongoose.Types.ObjectId(video.channel_id) });
+        // console.log(channel);
+        // if(!video.isChannel === false ) {
           // Skip this video if channel not found - don't show data at all
-          // if (!channel) {
+          if (!channel) {
             console.warn(`⚠️ Channel not found for video ${video._id}, skipping...`);
             return null;
           }
-          
+
         const isSubscribed = subscribedChannels.some(
           (sub) => sub.channel_id.toString() === video.channel_id.toString()
         );
