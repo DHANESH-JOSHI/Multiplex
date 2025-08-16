@@ -8,6 +8,7 @@ const webseriesRoutes = require("../routes/adminRoutes/webseries.routes");
 const favoriteRoutes = require("./mobileRoutes/favorite.routes");
 const genreRoutes = require("./adminRoutes/genre.routes");
 const userLoginRoutes = require("./mobileRoutes/userLogin.routes");
+const firebaseAuthRoutes = require("./mobileRoutes/firebase_auth.routes");
 const homeContentRoutes = require("./mobileRoutes/homeContent.routes");
 const channelRoutes = require("./adminRoutes/channel.routes");
 const planRoutes = require("./adminRoutes/plan.routes");
@@ -28,6 +29,7 @@ router.use("/webseries", webseriesRoutes);
 router.use("/favorite", favoriteRoutes);
 router.use("/genres", genreRoutes);
 router.use("/reguser", userLoginRoutes);
+router.use("/firebase_auth", firebaseAuthRoutes);
 router.use("/home_content_for_android", homeContentRoutes);
 router.use("/channel", channelRoutes);
 router.use("/all_package", planRoutes);
@@ -57,6 +59,7 @@ router.use("/adminbanner", addBannerRoutes);                            // CURD 
 // Import Web Routes modules
 
 const webAuthRoutes = require("./webRoutes/auth.routes");
+const { firebaseAuth } = require("../controllers/mobileControllers/userLogin.controller");
 
 // Web Routes
 

@@ -2,6 +2,8 @@ const Channel = require('../../models/channel.model');
 const Video = require('../../models/videos.model');
 const videoSchema = require('../../models/videos.model');
 const Subscription = require('../../models/subcribe.model');
+const ViewTrackingService = require('../viewTracking.service');
+const DeviceValidationService = require('../deviceValidation.service');
 const mongoose = require('mongoose');
 
 const dayjs = require('dayjs');
@@ -106,11 +108,11 @@ const getChannelInfoService = async (channel_id, uid) => {
 
     // Step 2: Fetch the channel by _id
     const channel = await Channel.findById(objectChannelId);
-    
+    const channel_user_id = new mongoose.Types.ObjectId(channel.user_id);
     if (!channel) {
       throw new Error("Channel not found.");
     }
-
+  
     // Step 3: Check subscription
     let subscriptionStatus;
     if (objectUserId) {
@@ -124,24 +126,43 @@ const getChannelInfoService = async (channel_id, uid) => {
         subscriptionStatus = channel.subscribers;
       }
     }
-
-    // Step 4: Get total views from videos under this channel
-    const totalViewsResult = await videoSchema.aggregate([
-      { $match: { channel_id: objectChannelId } },
-      { $group: { _id: null, total_view: { $sum: "$total_view" } } }
+  
+    // Step 4: Get total views and video count from all videos under this channel
+    const channelStatsResult = await videoSchema.aggregate([
+      { $match: { channel_id: channel_user_id } },
+      { 
+        $group: { 
+          _id: null, 
+          total_views: { $sum: "$total_view" },
+          today_views: { $sum: "$today_view" },
+          weekly_views: { $sum: "$weekly_view" },
+          monthly_views: { $sum: "$monthly_view" },
+          video_count: { $sum: 1 }
+        } 
+      }
     ]);
-
-    const totalViewCount = totalViewsResult.length > 0 ? totalViewsResult[0].total_view : 0;
+    
+    const channelStats = channelStatsResult.length > 0 ? channelStatsResult[0] : {
+      total_views: 0,
+      today_views: 0, 
+      weekly_views: 0,
+      monthly_views: 0,
+      video_count: 0
+    };
+    
+    console.log("📊 Channel Stats:", channelStats, "for channel_user_id:", channel_user_id);
 
     // Step 5: Count of subscribers
     
      const subscriberCount = await subscriptionModel.countDocuments({ c_id: objectChannelId });
 
-    // Step 6: Related Movies
+    // Step 6: Related Movies - Only show isChannel=true and is_movie=true
     const relatedMovies = await videoSchema.aggregate([
       {
         $match: {
           channel_id: objectChannelId,
+          isChannel: true,
+          is_movie: true
         }
       },
     ]);
@@ -162,15 +183,23 @@ const getChannelInfoService = async (channel_id, uid) => {
 
 
 
-    // Step 7: Prepare response
+    // Step 7: Prepare response with detailed channel statistics
     const response = {
       channel_name: channel.channel_name,
       channel_id: String(channel._id),
       channel_img: channel.img || 'https://multiplexplay.com/office/uploads/default_image/poster.jpg',
       subcribe: totalSubscribers,
       userSubscribed: userSubscribed,
-      view: totalViewCount,
+      view: channelStats.total_views,           // Total views of all channel videos
       count: String(subscriberCount),
+      // Detailed channel statistics
+      channel_stats: {
+        total_videos: channelStats.video_count,
+        total_views: channelStats.total_views,
+        today_views: channelStats.today_views,
+        weekly_views: channelStats.weekly_views,
+        monthly_views: channelStats.monthly_views
+      },
       related_movie: relatedMovies.map(video => ({
         videos_id: String(video._id || ''),
         genre: video.genre || null,
@@ -220,17 +249,8 @@ const getMovieDetailsBychannels = async (uid) => {
         );
         let subscribeCount = channelModel.findOne({ _id: video.channel_id });
         console.log(subscribeCount);
-        await Video.updateOne(
-          { _id: video._id },
-          {
-            $inc: {
-              today_view: 1,
-              weekly_view: 1,
-              monthly_view: 1,
-              total_view: 1,
-            },
-          }
-        );
+        // Views are now tracked separately via ViewTrackingService
+        // Remove automatic view increment from listing API
 
         return {
           videos_id: video._id,
@@ -311,18 +331,8 @@ const channel = await Channel.findById(video.channel_id);
       if (sub) subscribed = 1;
     }
 
-    // Step 5: Update view counts
-    await Video.updateOne(
-      { _id: objectVideoId },
-      {
-        $inc: {
-          today_view: 1,
-          weekly_view: 1,
-          monthly_view: 1,
-          total_view: 1
-        }
-      }
-    );
+    // Step 5: Track view when video is accessed by ID (backend handled)
+    await ViewTrackingService.trackView(id, uid, 'backend-access');
 
     // Step 6: Prepare and return movie details
     return {

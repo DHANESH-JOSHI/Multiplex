@@ -1,4 +1,6 @@
 const webseriesService = require('../../services/mobileServices/webseries.service');
+const ViewTrackingService = require('../../services/viewTracking.service');
+const DeviceValidationService = require('../../services/deviceValidation.service');
 
 /**
  * Get all web series
@@ -25,7 +27,41 @@ const getAllWebseries = async (req, res) => {
  */
 const getWebseriesById = async (req, res) => {
   try {
-    const webseries = await webseriesService.getWebseriesById(req.params.id);
+    const { id } = req.params;
+    const userId = req.user?.id || req.query.uid || null;
+    const deviceId = req.query.device_id || req.headers['x-device-id'] || null;
+    
+    // Device validation for web series access
+    if (userId && deviceId) {
+      const deviceValidation = await DeviceValidationService.validateDeviceAccess(userId, deviceId);
+      if (!deviceValidation.isValid) {
+        return res.status(403).json({
+          status: 'error',
+          message: deviceValidation.message,
+          errorCode: deviceValidation.errorCode
+        });
+      }
+    }
+    
+    const webseries = await webseriesService.getWebseriesById(id);
+    
+    // Track view for web series access
+    if (id && userId) {
+      const ipAddress = req.ip || req.connection.remoteAddress;
+      await ViewTrackingService.trackView(id, userId, ipAddress);
+      console.log(`📺 View tracked for web series: ${id}`);
+      
+      // Get updated view statistics
+      const viewStats = await ViewTrackingService.getViewStats(id);
+      webseries.view_stats = {
+        today_view: viewStats.today_view,
+        weekly_view: viewStats.weekly_view, 
+        monthly_view: viewStats.monthly_view,
+        total_view: viewStats.total_view
+      };
+      webseries.total_view = viewStats.total_view; // For backward compatibility
+    }
+    
     res.status(200).json({
       status: 'success',
       data: webseries

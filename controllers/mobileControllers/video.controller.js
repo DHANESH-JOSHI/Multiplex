@@ -1,4 +1,6 @@
 const videoService = require('../../services/mobileServices/video.service');
+const ViewTrackingService = require('../../services/viewTracking.service');
+const DeviceValidationService = require('../../services/deviceValidation.service');
 
 /**
  * GET /api/videos
@@ -43,10 +45,31 @@ exports.createVideo = async (req, res) => {
 exports.getVideoById = async (req, res) => {
   try {
     const { id } = req.params;
+    const userId = req.user?.id || req.query.uid || null;
+    const deviceId = req.query.device_id || req.headers['x-device-id'] || null;
+    
+    // Device validation for video access
+    if (userId && deviceId) {
+      const deviceValidation = await DeviceValidationService.validateDeviceAccess(userId, deviceId);
+      if (!deviceValidation.isValid) {
+        return res.status(403).json({
+          status: 'error',
+          message: deviceValidation.message,
+          errorCode: deviceValidation.errorCode
+        });
+      }
+    }
+    
     const video = await videoService.getVideoById(id);
     if (!video) {
       return res.status(404).json({ status: 'error', message: 'Video not found' });
     }
+
+    // Track view when video is accessed by ID
+    const ipAddress = req.ip || req.connection.remoteAddress;
+    await ViewTrackingService.trackView(id, userId, ipAddress);
+    console.log(`📹 View tracked for video: ${id}`);
+
     return res.status(200).json({
       status: 'success',
       data: video

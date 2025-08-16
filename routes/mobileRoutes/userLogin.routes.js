@@ -4,6 +4,6 @@ const { login, verifyOtp, firebaseAuth } = require("../../controllers/mobileCont
 
 router.post("/", login);
 router.post('/verify-otp', verifyOtp);
-router.post('/firebase_auth', firebaseAuth); // ✅ Enhanced Firebase Auth (Google + Phone)
+router.post('/firebase_auth', firebaseAuth);
 
 module.exports = router;

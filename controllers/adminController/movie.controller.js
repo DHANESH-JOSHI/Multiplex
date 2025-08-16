@@ -3,6 +3,8 @@ const subscriptionModel = require("../../models/subscription.model");
 const videosModel = require("../../models/videos.model");
 const channelSubscribeModel = require("../../models/subcribe.model");
 const MovieService = require("../../services/adminServices/movie.service");
+const ViewTrackingService = require("../../services/viewTracking.service");
+const DeviceValidationService = require("../../services/deviceValidation.service");
 
 class MovieController {
 
@@ -127,6 +129,21 @@ async addMovie(req, res) {
 
     if (vId) {
       const movieId = vId;
+      const userId = req.user?.id || user_id || null;
+      const deviceId = req.query.device_id || req.headers['x-device-id'] || null;
+      
+      // Device validation for video access
+      if (userId && deviceId) {
+        const deviceValidation = await DeviceValidationService.validateDeviceAccess(userId, deviceId);
+        if (!deviceValidation.isValid) {
+          return res.status(403).json({
+            success: false,
+            message: deviceValidation.message,
+            errorCode: deviceValidation.errorCode
+          });
+        }
+      }
+      
       const country  = req.query.country; //|| req.headers['x-country'] ||
       const fieldAliases = { video_id: "videos_id", vid: "videos_id" };
       const rawField = req.query.fieldKey;
@@ -134,9 +151,36 @@ async addMovie(req, res) {
       const populate = req.query.populate?.split(",") || [];
 
       result = await MovieService.getMovieById(movieId, fieldName, populate, country);
+
+      // Track view when movie is accessed by vId in getAllMovies
+      if (result) {
+        const ipAddress = req.ip || req.connection.remoteAddress;
+        await ViewTrackingService.trackView(movieId, userId, ipAddress);
+        console.log(`📹 View tracked in getAllMovies for vId: ${movieId}`);
+        
+        // Get updated view statistics after tracking
+        const viewStats = await ViewTrackingService.getViewStats(movieId);
+        
+        // Add view statistics to result
+        if (result.data && result.data[0]) {
+          result.data[0].view_stats = {
+            today_view: viewStats.today_view,
+            weekly_view: viewStats.weekly_view, 
+            monthly_view: viewStats.monthly_view,
+            total_view: viewStats.total_view
+          };
+          result.data[0].total_view = viewStats.total_view; // For backward compatibility
+        }
+      }
       if (result?.data?.[0]) {
         const isMovie = result.data[0].is_movie;
-        const relatedVideos = await videosModel.find({ is_movie: isMovie }).lean();
+        const isChannelVideo = result.data[0].isChannel;
+        
+        // Dynamic related videos based on current video's isChannel property
+        const relatedVideos = await videosModel.find({ 
+          is_movie: true,              // Only show movies
+          isChannel: isChannelVideo    // Show same type as current video
+        }).lean();
         const userSubscribe = await channelSubscribeModel.find({
           user: user_id,
           channel: channel_id,
@@ -258,6 +302,21 @@ async addMovie(req, res) {
   async getMovieById(req, res) {
     try {
       const movieId = req.query.vId;
+      const userId = req.user?.id || req.query.uid || null; // Get user ID from auth or query
+      const deviceId = req.query.device_id || req.headers['x-device-id'] || null;
+      
+      // Device validation for video access
+      if (userId && deviceId) {
+        const deviceValidation = await DeviceValidationService.validateDeviceAccess(userId, deviceId);
+        if (!deviceValidation.isValid) {
+          return res.status(403).json({
+            success: false,
+            message: deviceValidation.message,
+            errorCode: deviceValidation.errorCode
+          });
+        }
+      }
+      
       const country  = req.query.country; //|| req.headers['x-country'] ||
       console.log(country);
       const fieldAliases = { video_id: "videos_id", vid: "videos_id" };
@@ -266,6 +325,27 @@ async addMovie(req, res) {
       const populate = req.query.populate?.split(",") || [];
 
       const result = await MovieService.getMovieById(movieId, fieldName, populate, country);
+
+      // Track view when movie is accessed by ID
+      if (movieId && result) {
+        const ipAddress = req.ip || req.connection.remoteAddress;
+        await ViewTrackingService.trackView(movieId, userId, ipAddress);
+        console.log(`📹 View tracked for movie: ${movieId}`);
+        
+        // Get updated view statistics after tracking
+        const viewStats = await ViewTrackingService.getViewStats(movieId);
+        
+        // Add view statistics to result
+        if (result.data && result.data[0]) {
+          result.data[0].view_stats = {
+            today_view: viewStats.today_view,
+            weekly_view: viewStats.weekly_view, 
+            monthly_view: viewStats.monthly_view,
+            total_view: viewStats.total_view
+          };
+          result.data[0].total_view = viewStats.total_view; // For backward compatibility
+        }
+      }
 
       res.status(200).json(result);
     } catch (error) {

@@ -2,6 +2,8 @@ const { default: mongoose } = require("mongoose");
 const subscriptionModel = require("../../models/subscription.model");
 const WebSeriesService = require("../../services/adminServices/webSeries.service");
 const webseriesModel = require("../../models/webseries.model");
+const ViewTrackingService = require("../../services/viewTracking.service");
+const DeviceValidationService = require("../../services/deviceValidation.service");
 
 class WebSeriesController {
   // Add a new WebSeries with Seasons and Episodes
@@ -77,6 +79,7 @@ class WebSeriesController {
     async getWebSeriesById(req, res) {
   try {
     const { id, field, user_id, channel_id, country } = req.query;
+    const deviceId = req.query.device_id || req.headers['x-device-id'] || null;
 
     // Step 1: Validate query params
     if (!id || !field || !user_id) {
@@ -85,6 +88,20 @@ class WebSeriesController {
         subscribed: false,
         data: []
       });
+    }
+
+    // Step 1.5: Device validation for web series access
+    if (user_id && deviceId) {
+      const deviceValidation = await DeviceValidationService.validateDeviceAccess(user_id, deviceId);
+      if (!deviceValidation.isValid) {
+        return res.status(403).json({
+          success: false,
+          message: deviceValidation.message,
+          errorCode: deviceValidation.errorCode,
+          subscribed: false,
+          data: []
+        });
+      }
     }
 
     // Step 2: Create query based on ID type
@@ -166,7 +183,24 @@ class WebSeriesController {
       });
     }
 
-    // Step 6: Return response with isSubscribed flag
+    // Step 6: Track view for web series access
+    if (id) {
+      const ipAddress = req.ip || req.connection.remoteAddress;
+      await ViewTrackingService.trackView(id, user_id, ipAddress);
+      console.log(`📺 View tracked for web series: ${id}`);
+      
+      // Get updated view statistics
+      const viewStats = await ViewTrackingService.getViewStats(id);
+      webSeriesObj.view_stats = {
+        today_view: viewStats.today_view,
+        weekly_view: viewStats.weekly_view, 
+        monthly_view: viewStats.monthly_view,
+        total_view: viewStats.total_view
+      };
+      webSeriesObj.total_view = viewStats.total_view; // For backward compatibility
+    }
+
+    // Step 7: Return response with isSubscribed flag
     webSeriesObj.isSubscribed = isSubscribed;
 
     res.status(200).json({
