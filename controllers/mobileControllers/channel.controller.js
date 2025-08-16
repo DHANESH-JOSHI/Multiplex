@@ -16,10 +16,15 @@ const { getChannelList,
 const getChannelListController = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 0;
-    let channel;
-    channel = await getChannelList();
+    const platform = req.query.platform || null;
+    const userCountry = req.query.country || req.headers['x-country'] || null;
+    
+    console.log("🔍 GetChannelListController params:", { limit, platform, userCountry });
+    
+    let channels = await getChannelList(limit, platform, userCountry);
 
-    res.json(channel);
+    console.log(`📊 Channels after country filtering: ${channels.length}`);
+    res.json(channels);
   } catch (error) {
     console.error('Error fetching channel list:', error);
     res.status(500).json({ error: 'Internal Server Error' });
@@ -116,8 +121,8 @@ const getChannelInfoController = async (req, res) => {
     const countryCode = country || req.headers['x-country'] || null;
     let uid = user_id;
     
-    // Call the service method
-    const response = await getChannelInfoService(channel_id, uid);
+    // Call the service method with country
+    const response = await getChannelInfoService(channel_id, uid, countryCode);
 
     // Apply country filtering to related movies if present
     if (countryCode && response.related_movie && response.related_movie.length > 0) {
@@ -146,7 +151,7 @@ const getChannelVideo = async (req, res) => {
     const countryCode = country || req.headers['x-country'] || null;
     console.log(id, uid);
     
-    const data = await getMovieDetailsBychannels(id, uid);
+    const data = await getMovieDetailsBychannels(uid, countryCode);
     
     // Apply country filtering to video data
     if (countryCode && data && Array.isArray(data)) {

@@ -4,6 +4,7 @@ const videoSchema = require('../../models/videos.model');
 const Subscription = require('../../models/subcribe.model');
 const ViewTrackingService = require('../viewTracking.service');
 const DeviceValidationService = require('../deviceValidation.service');
+const CountryFilteringService = require('../countryFiltering.service');
 const mongoose = require('mongoose');
 
 const dayjs = require('dayjs');
@@ -16,7 +17,7 @@ const userModel = require('../../models/user.model');
 
 dayjs.extend(relativeTime);
 
-const getChannelList = async (limit, platform = null) => {
+const getChannelList = async (limit, platform = null, userCountry = null) => {
   try {
     console.log('GetChannelList Hitted');
     // Step 1: Build query to get approved movie channels
@@ -62,7 +63,34 @@ const getChannelList = async (limit, platform = null) => {
     );
 
     // Step 4: Filter out nulls (channels with no videos)
-    return result.filter(item => item !== null);
+    let filteredResult = result.filter(item => item !== null);
+    
+    // Step 5: Apply country filtering to channel videos
+    if (userCountry && filteredResult.length > 0) {
+      console.log("🌍 Applying country filtering to channel list...");
+      
+      const countryFilteredResult = [];
+      
+      for (const channelData of filteredResult) {
+        const availability = await CountryFilteringService.checkContentAvailability(channelData, userCountry);
+        
+        if (availability.isAvailable) {
+          // Add country-specific pricing info
+          channelData.country_price = availability.price;
+          channelData.user_currency = availability.currency;
+          channelData.currency_symbol = availability.currencySymbol;
+          
+          countryFilteredResult.push(channelData);
+          console.log(`✅ Channel allowed: ${channelData.channel_name} - ${availability.reason}`);
+        } else {
+          console.log(`🚫 Channel blocked: ${channelData.channel_name} - ${availability.reason}`);
+        }
+      }
+      
+      return countryFilteredResult;
+    }
+    
+    return filteredResult;
 
   } catch (error) {
     console.error('❌ Error fetching channel list:', error);
@@ -95,7 +123,7 @@ const getChannelInfo = async (channelId, userId) => {
 
 
 
-const getChannelInfoService = async (channel_id, uid) => {
+const getChannelInfoService = async (channel_id, uid, userCountry = null) => {
   try {
 
     let  userSubscribed = false;
@@ -201,7 +229,8 @@ const getChannelInfoService = async (channel_id, uid) => {
         weekly_views: channelStats.weekly_views,
         monthly_views: channelStats.monthly_views
       },
-      related_movie: relatedMovies.map(video => ({
+      related_movie: await CountryFilteringService.filterContentArray(
+        relatedMovies.map(video => ({
         videos_id: String(video._id || ''),
         genre: video.genre || null,
         country: video.country || null,
@@ -219,7 +248,7 @@ const getChannelInfoService = async (channel_id, uid) => {
         video_quality: video.video_quality || 'HD',
         thumbnail_url: video.thumbnail_url || '',
         poster_url: video.poster_url || ''
-      }))
+      })), userCountry)
     };
 
     return response;
@@ -230,7 +259,7 @@ const getChannelInfoService = async (channel_id, uid) => {
   }
 };
 
-const getMovieDetailsBychannels = async (uid) => {
+const getMovieDetailsBychannels = async (uid, userCountry = null) => {
   try {
     console.log('GetMovieDetailsByChannels Hitted');
     // Filter videos: only isChannel:true and must have valid ObjectId channel_id, sorted by creation date (latest first)
@@ -306,8 +335,16 @@ const getMovieDetailsBychannels = async (uid) => {
       })
     );
 
-    // Filter out null values (videos where channel was not found)
-    return result.filter(item => item !== null);
+    // Filter out null values (videos where channel was not found)  
+    let filteredResult = result.filter(item => item !== null);
+    
+    // Apply country filtering to videos
+    if (userCountry && filteredResult.length > 0) {
+      console.log("🌍 Applying country filtering to GetMovieDetailsByChannels...");
+      filteredResult = await CountryFilteringService.filterContentArray(filteredResult, userCountry);
+    }
+    
+    return filteredResult;
 
   } catch (error) {
     console.error("Error in getMovieDetailsBychannels:", error.message);
