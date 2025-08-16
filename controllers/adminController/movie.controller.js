@@ -7,6 +7,7 @@ const Currency = require("../../models/currency.model");
 const MovieService = require("../../services/adminServices/movie.service");
 const ViewTrackingService = require("../../services/viewTracking.service");
 const DeviceValidationService = require("../../services/deviceValidation.service");
+const CountryFilteringService = require("../../services/countryFiltering.service");
 
 class MovieController {
 
@@ -241,71 +242,13 @@ async addMovie(req, res) {
         console.log("📋 Related videos query:", relatedVideosQuery);
         let relatedVideos = await videosModel.find(relatedVideosQuery).lean();
         
-        // Apply country filtering to related videos (single pass)
+        // Apply country filtering to related videos using CountryFilteringService
         if (userCountry && relatedVideos.length > 0) {
-          const userCurrency = await Currency.findOne({ country: userCountry });
           console.log("🔍 Related videos before filtering:", relatedVideos.length);
-          console.log("💰 User currency:", userCurrency?.iso_code);
-          
-          const filteredRelatedVideos = [];
-          
-          for (const video of relatedVideos) {
-            let includeVideo = false;
-            
-            console.log("🎬 Filtering related video:", {
-              title: video.title,
-              use_global_price: video.use_global_price,
-              is_paid: video.is_paid,
-              country: video.country,
-              pricing: video.pricing
-            });
-            
-            // Always allow global content
-            if (video.use_global_price === true) {
-              includeVideo = true;
-              console.log("✅ Allowed: Global content");
-            }
-            // Priority 1: Check pricing array if present (country-specific pricing)
-            else if (video.pricing && Array.isArray(video.pricing) && video.pricing.length > 0) {
-              includeVideo = video.pricing.some(p => p.country === userCurrency?.iso_code);
-              console.log("💰 Pricing array check:", {
-                videoPricing: video.pricing,
-                userCurrency: userCurrency?.iso_code,
-                match: includeVideo
-              });
-            }
-            // Priority 2: Check country ObjectIds if no pricing array (use normal price)
-            else if (video.country && Array.isArray(video.country) && video.country.length > 0) {
-              const videoCountryCurrencies = await Currency.find({ 
-                _id: { $in: video.country } 
-              }).select('country');
-              
-              const resolvedCountries = videoCountryCurrencies.map(c => c.country);
-              includeVideo = resolvedCountries.includes(userCountry);
-              
-              console.log("🌍 Country ObjectId check (no pricing):", {
-                videoCountryIds: video.country,
-                resolvedCountries,
-                userCountry,
-                normalPrice: video.price,
-                match: includeVideo
-              });
-            }
-            // Priority 3: Allow content with no restrictions
-            else {
-              includeVideo = true;
-              console.log("✅ Allowed: No geo restrictions");
-            }
-            
-            if (includeVideo) {
-              filteredRelatedVideos.push(video);
-            }
-          }
-          
-          relatedVideos = filteredRelatedVideos;
+          const filteredResult = await CountryFilteringService.applyCountryFilter(userCountry, relatedVideos);
+          relatedVideos = filteredResult.content;
+          console.log("📊 Related videos (after country filter):", relatedVideos.length);
         }
-        
-        console.log("📊 Related videos (after country filter):", relatedVideos.length);
         
         // Debug: Check all videos in same channel
         const debugChannelVideos = await videosModel.find({ 
@@ -507,81 +450,24 @@ async addMovie(req, res) {
 
       const result = await MovieService.getMovieById(movieId, fieldName, populate, country);
       
-      // Country-based content filtering with currency ObjectId resolution
+      // Apply country filtering using CountryFilteringService
       if (result?.data?.[0] && country) {
         const video = result.data[0];
-        const userCountry = country; // "IN"
+        const filteredResult = await CountryFilteringService.applyCountryFilter(country, video);
         
-        // Get user's currency based on country
-        const userCurrency = await Currency.findOne({ country: userCountry });
-        
-        // Check if video is available for user's country
-        let isAvailableInUserCountry = false;
-        let countrySpecificPrice = null;
-        
-        // Check global pricing (use_global_price: true)
-        if (video.use_global_price === true) {
-          isAvailableInUserCountry = true;
-          countrySpecificPrice = video.price; // Use global price
-        } 
-        // Check country ObjectIds in video.country array
-        else if (video.country && Array.isArray(video.country) && userCurrency) {
-          // Resolve country ObjectIds to check if user's country is included
-          const videoCountryCurrencies = await Currency.find({ 
-            _id: { $in: video.country } 
-          }).select('country iso_code');
-          
-          const isUserCountryIncluded = videoCountryCurrencies.some(curr => curr.country === userCountry);
-          
-          console.log("🌍 Country ObjectId resolution:", {
-            userCountry,
-            videoCountryObjectIds: video.country,
-            resolvedCountries: videoCountryCurrencies.map(c => c.country),
-            isUserCountryIncluded
-          });
-          
-          if (isUserCountryIncluded) {
-            isAvailableInUserCountry = true;
-            // Look for country-specific pricing
-            const countryPricing = video.pricing?.find(p => p.country === userCurrency.iso_code);
-            countrySpecificPrice = countryPricing?.price || video.price;
-          }
-        }
-        // Check country-specific pricing array
-        else if (video.pricing && Array.isArray(video.pricing) && userCurrency) {
-          const countryPricing = video.pricing.find(p => p.country === userCurrency.iso_code);
-          if (countryPricing) {
-            isAvailableInUserCountry = true;
-            countrySpecificPrice = countryPricing.price;
-          }
-        }
-        
-        console.log("🌍 Final country filtering result:", {
-          userCountry,
-          userCurrencyCode: userCurrency?.iso_code,
-          videoPricing: video.pricing,
-          useGlobalPrice: video.use_global_price,
-          isAvailableInUserCountry,
-          countrySpecificPrice
-        });
-        
-        // If content not available in user's country, return empty result
-        if (!isAvailableInUserCountry) {
+        if (filteredResult.isBlocked) {
           return res.status(403).json({
-            message: "Content not available in your region",
-            country: userCountry,
+            message: filteredResult.message,
+            reason: filteredResult.reason,
+            country: filteredResult.country,
             isSubscribed: false,
             userSubscribed: false,
             data: []
           });
         }
         
-        // Update price based on user's country
-        if (countrySpecificPrice !== null) {
-          result.data[0].country_price = countrySpecificPrice;
-          result.data[0].user_currency = userCurrency?.iso_code;
-          result.data[0].currency_symbol = userCurrency?.symbol;
-        }
+        // Update video with country-specific pricing
+        Object.assign(result.data[0], filteredResult.content);
       }
 
       // Track view when movie is accessed by ID

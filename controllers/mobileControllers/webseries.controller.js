@@ -1,6 +1,7 @@
 const webseriesService = require('../../services/mobileServices/webseries.service');
 const ViewTrackingService = require('../../services/viewTracking.service');
 const DeviceValidationService = require('../../services/deviceValidation.service');
+const CountryFilteringService = require('../../services/countryFiltering.service');
 
 /**
  * Get all web series
@@ -9,7 +10,22 @@ const DeviceValidationService = require('../../services/deviceValidation.service
  */
 const getAllWebseries = async (req, res) => {
   try {
+    const country = req.query.country || req.headers['x-country'] || null;
     const webseries = await webseriesService.getAllWebseries();
+    
+    // Apply country filtering to web series
+    if (country && webseries && webseries.length > 0) {
+      const filteredResult = await CountryFilteringService.applyCountryFilter(country, webseries);
+      return res.status(200).json({
+        status: 'success',
+        data: filteredResult.content,
+        message: filteredResult.message,
+        filtered: true,
+        originalCount: filteredResult.originalCount,
+        filteredCount: filteredResult.filteredCount
+      });
+    }
+    
     res.status(200).json({
       status: 'success',
       data: webseries
@@ -30,6 +46,7 @@ const getWebseriesById = async (req, res) => {
     const { id } = req.params;
     const userId = req.user?.id || req.query.uid || null;
     const deviceId = req.query.device_id || req.headers['x-device-id'] || null;
+    const country = req.query.country || req.headers['x-country'] || null;
     
     // Device validation for web series access
     if (userId && deviceId) {
@@ -44,6 +61,21 @@ const getWebseriesById = async (req, res) => {
     }
     
     const webseries = await webseriesService.getWebseriesById(id);
+    
+    // Apply country filtering to web series
+    if (country) {
+      const filteredResult = await CountryFilteringService.applyCountryFilter(country, webseries);
+      if (filteredResult.isBlocked) {
+        return res.status(403).json({
+          status: 'error',
+          message: filteredResult.message,
+          reason: filteredResult.reason,
+          country: filteredResult.country
+        });
+      }
+      // Update webseries with country-specific pricing
+      Object.assign(webseries, filteredResult.content);
+    }
     
     // Track view for web series access
     if (id && userId) {

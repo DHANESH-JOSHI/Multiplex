@@ -1,6 +1,7 @@
 const videoService = require('../../services/mobileServices/video.service');
 const ViewTrackingService = require('../../services/viewTracking.service');
 const DeviceValidationService = require('../../services/deviceValidation.service');
+const CountryFilteringService = require('../../services/countryFiltering.service');
 
 /**
  * GET /api/videos
@@ -8,7 +9,22 @@ const DeviceValidationService = require('../../services/deviceValidation.service
  */
 exports.getAllVideos = async (req, res) => {
   try {
+    const country = req.query.country || req.headers['x-country'] || null;
     const videos = await videoService.getAllVideos();
+    
+    // Apply country filtering to videos
+    if (country && videos && videos.length > 0) {
+      const filteredResult = await CountryFilteringService.applyCountryFilter(country, videos);
+      return res.status(200).json({
+        status: 'success',
+        data: filteredResult.content,
+        message: filteredResult.message,
+        filtered: true,
+        originalCount: filteredResult.originalCount,
+        filteredCount: filteredResult.filteredCount
+      });
+    }
+    
     return res.status(200).json({
       status: 'success',
       data: videos
@@ -47,6 +63,7 @@ exports.getVideoById = async (req, res) => {
     const { id } = req.params;
     const userId = req.user?.id || req.query.uid || null;
     const deviceId = req.query.device_id || req.headers['x-device-id'] || null;
+    const country = req.query.country || req.headers['x-country'] || null;
     
     // Device validation for video access
     if (userId && deviceId) {
@@ -63,6 +80,21 @@ exports.getVideoById = async (req, res) => {
     const video = await videoService.getVideoById(id);
     if (!video) {
       return res.status(404).json({ status: 'error', message: 'Video not found' });
+    }
+
+    // Apply country filtering to single video
+    if (country) {
+      const filteredResult = await CountryFilteringService.applyCountryFilter(country, video);
+      if (filteredResult.isBlocked) {
+        return res.status(403).json({
+          status: 'error',
+          message: filteredResult.message,
+          reason: filteredResult.reason,
+          country: filteredResult.country
+        });
+      }
+      // Update video with country-specific pricing
+      Object.assign(video, filteredResult.content);
     }
 
     // Track view when video is accessed by ID

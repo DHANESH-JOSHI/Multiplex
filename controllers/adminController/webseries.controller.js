@@ -4,6 +4,7 @@ const WebSeriesService = require("../../services/adminServices/webSeries.service
 const webseriesModel = require("../../models/webseries.model");
 const ViewTrackingService = require("../../services/viewTracking.service");
 const DeviceValidationService = require("../../services/deviceValidation.service");
+const CountryFilteringService = require("../../services/countryFiltering.service");
 
 class WebSeriesController {
   // Add a new WebSeries with Seasons and Episodes
@@ -68,7 +69,21 @@ class WebSeriesController {
   // Get all WebSeries
     async getAllWebSeries(req, res) {
       try {
+        const country = req.query.country || req.headers['x-country'] || null;
         const result = await WebSeriesService.getAllWebSeries();
+        
+        // Apply country filtering to web series
+        if (country && result && Array.isArray(result)) {
+          const filteredResult = await CountryFilteringService.applyCountryFilter(country, result);
+          return res.status(200).json({
+            data: filteredResult.content,
+            message: filteredResult.message,
+            filtered: true,
+            originalCount: filteredResult.originalCount,
+            filteredCount: filteredResult.filteredCount
+          });
+        }
+        
         res.status(200).json(result);
       } catch (error) {
         res.status(400).json({ message: error.message });
@@ -131,6 +146,22 @@ class WebSeriesController {
     }
 
     const webSeriesObj = webSeries.toObject();
+
+    // Apply country filtering to web series
+    if (country) {
+      const filteredResult = await CountryFilteringService.applyCountryFilter(country, webSeriesObj);
+      if (filteredResult.isBlocked) {
+        return res.status(403).json({
+          message: filteredResult.message,
+          reason: filteredResult.reason,
+          country: filteredResult.country,
+          subscribed: false,
+          data: []
+        });
+      }
+      // Update webseries with country-specific pricing
+      Object.assign(webSeriesObj, filteredResult.content);
+    }
 
     // Step 4: Check if user has active subscription for this web series
     let isSubscribed = false;

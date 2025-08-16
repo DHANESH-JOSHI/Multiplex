@@ -7,6 +7,7 @@ const webseriesModel = require('../../models/webseries.model.js');
 const episodesModel = require('../../models/episodes.model.js');
 const channelModel = require('../../models/channel.model.js');
 const subscriptionModel = require('../../models/subscription.model.js');
+const CountryFilteringService = require('../countryFiltering.service');
 
 const getHomeContent = async (country, channel_id, user_id) => {
   
@@ -103,19 +104,14 @@ const getHomeContent = async (country, channel_id, user_id) => {
   const webseriesFilter = channel_id ? { channel_id } : {};
   const latestWebseries = await webseriesModel.find(webseriesFilter).sort({ cre: -1 }).lean();
 
-  const allVideos = [...latestMovies, ...latestWebseries];
-  function getPriceByCountry(v, country) {
-        if (!country) return v.use_global_price ? v.price : 0;
-
-        const entry = Array.isArray(v.pricing)
-          ? v.pricing.find(p => p.country === country)
-          : null;
-
-        if (entry) return entry.price;
-        if (!v.use_global_price) return 0;
-
-        return v.price ?? 0;
-      }
+  let allVideos = [...latestMovies, ...latestWebseries];
+  
+  // Apply country filtering to all videos
+  if (country && allVideos.length > 0) {
+    const filteredResult = await CountryFilteringService.applyCountryFilter(country, allVideos);
+    allVideos = filteredResult.content;
+  }
+  
   const latest_movies = allVideos.map((v, index) => {
     if (!v._id || !v.title) {
       console.warn(`Content at index ${index} is missing ID or title`, v);
@@ -142,7 +138,7 @@ const getHomeContent = async (country, channel_id, user_id) => {
       slug: v.slug ?? "",
       release: v.release ? v.release.toString() : "",
       is_paid: (v.is_paid ?? 0).toString(),
-      price: getPriceByCountry(v, country) ?? 0,
+      price: v.country_price || v.price || 0, // Use country-specific price from filtering service
       pricing: v.pricing ?? [ { "country": "null", "price": 0 },],
       use_global_price: v.use_global_price ?? true,
       runtime: v.runtime ?? 0,
@@ -214,7 +210,7 @@ const getHomeContent = async (country, channel_id, user_id) => {
       .lean();
 
     // Merge both arrays
-    const mergedVideos = [
+    let mergedVideos = [
       ...(videos || []).map(v => ({
         videos_id: v._id.toString(),
         title: v.title,
@@ -224,7 +220,12 @@ const getHomeContent = async (country, channel_id, user_id) => {
         is_paid: v.is_paid?.toString() || "1",
         video_quality: v.video_quality,
         thumbnail_url: v.thumbnail_url || "https://multiplexplay.com/office/uploads/default_image/thumbnail.jpg",
-        poster_url: v.poster_url || "https://multiplexplay.com/office/uploads/default_image/poster.jpg"
+        poster_url: v.poster_url || "https://multiplexplay.com/office/uploads/default_image/poster.jpg",
+        // Include filtering fields
+        use_global_price: v.use_global_price,
+        pricing: v.pricing,
+        country: v.country,
+        price: v.price
       })),
       ...(webseriess || []).map(w => ({
         videos_id: w._id.toString(), // Use _id as videos_id if needed
@@ -235,9 +236,20 @@ const getHomeContent = async (country, channel_id, user_id) => {
         is_paid: w.is_paid?.toString() || "1",
         video_quality: w.video_quality || "HD", // Default/fallback
         thumbnail_url: w.thumbnail_url || "https://multiplexplay.com/office/uploads/default_image/thumbnail.jpg",
-        poster_url: w.poster_url || "https://multiplexplay.com/office/uploads/default_image/poster.jpg"
+        poster_url: w.poster_url || "https://multiplexplay.com/office/uploads/default_image/poster.jpg",
+        // Include filtering fields
+        use_global_price: w.use_global_price,
+        pricing: w.pricing,
+        country: w.country,
+        price: w.price
       }))
     ];
+
+    // Apply country filtering to genre videos
+    if (country && mergedVideos.length > 0) {
+      const filteredResult = await CountryFilteringService.applyCountryFilter(country, mergedVideos);
+      mergedVideos = filteredResult.content;
+    }
 
     // ✅ Skip if merged list is empty
     if (mergedVideos.length === 0) return null;

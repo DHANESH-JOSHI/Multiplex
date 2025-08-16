@@ -1,5 +1,6 @@
 const { default: mongoose } = require('mongoose');
 const userModel = require('../../models/user.model');
+const CountryFilteringService = require('../../services/countryFiltering.service');
 const { getChannelList,
    getChannelInfoService,
     createChannel,
@@ -111,10 +112,23 @@ const getChannelListController = async (req, res) => {
 const getChannelInfoController = async (req, res) => {
   try {
     console.log('GetChannelInfoController Hitted');
-    const { channel_id, user_id }  = req.query;
+    const { channel_id, user_id, country }  = req.query;
+    const countryCode = country || req.headers['x-country'] || null;
     let uid = user_id;
+    
     // Call the service method
     const response = await getChannelInfoService(channel_id, uid);
+
+    // Apply country filtering to related movies if present
+    if (countryCode && response.related_movie && response.related_movie.length > 0) {
+      const filteredResult = await CountryFilteringService.applyCountryFilter(countryCode, response.related_movie);
+      response.related_movie = filteredResult.content;
+      response.filtered_info = {
+        originalCount: filteredResult.originalCount,
+        filteredCount: filteredResult.filteredCount,
+        filtered: true
+      };
+    }
 
     // Return the response from the service
     res.status(200).json(response);
@@ -128,10 +142,25 @@ const getChannelInfoController = async (req, res) => {
 
 const getChannelVideo = async (req, res) => {
   try {
-    const { id, uid } = req.query;
+    const { id, uid, country } = req.query;
+    const countryCode = country || req.headers['x-country'] || null;
     console.log(id, uid);
+    
     const data = await getMovieDetailsBychannels(id, uid);
-      res.status(200).json({
+    
+    // Apply country filtering to video data
+    if (countryCode && data && Array.isArray(data)) {
+      const filteredResult = await CountryFilteringService.applyCountryFilter(countryCode, data);
+      return res.status(200).json({
+        message: "Records fetched successfully",
+        data: filteredResult.content,
+        filtered: true,
+        originalCount: filteredResult.originalCount,
+        filteredCount: filteredResult.filteredCount
+      });
+    }
+    
+    res.status(200).json({
       message: "Records fetched successfully",
       data
     });
