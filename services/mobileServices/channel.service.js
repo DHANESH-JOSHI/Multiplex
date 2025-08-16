@@ -234,11 +234,12 @@ const getMovieDetailsBychannels = async (uid) => {
     console.log('GetMovieDetailsByChannels Hitted');
     // Filter videos: only isChannel:true and must have valid ObjectId channel_id, sorted by creation date (latest first)
     const videos = await Video.find({
-      isChannel: true,                                        // Only show channel videos
-      channel_id: {
-        $exists: true,                                        // Must exist
-        $type: "objectId"                                     // Must be valid ObjectId (not string, not null)
-      }
+      isChannel: true
+      // ,                                        // Only show channel videos
+      //channel_id: {
+      //  $exists: true,                                        // Must exist
+       // $type: "objectId"                                     // Must be valid ObjectId (not string, not null)
+      // }
       }).sort({
       cre: -1
     });
@@ -252,14 +253,16 @@ const getMovieDetailsBychannels = async (uid) => {
 
     const result = await Promise.all(
       videos.map(async (video) => {
+        
         const channel = await Channel.findById(video.channel_id);
-        
-        // Skip this video if channel not found - don't show data at all
-        if (!channel) {
-          console.warn(`⚠️ Channel not found for video ${video._id}, skipping...`);
-          return null;
-        }
-        
+
+        if(!video.isChannel === false) {
+          // Skip this video if channel not found - don't show data at all
+          // if (!channel) {
+            console.warn(`⚠️ Channel not found for video ${video._id}, skipping...`);
+            return null;
+          }
+          
         const isSubscribed = subscribedChannels.some(
           (sub) => sub.channel_id.toString() === video.channel_id.toString()
         );
@@ -277,9 +280,9 @@ const getMovieDetailsBychannels = async (uid) => {
           release: video.release || '',
           runtime: video.runtime || '',
           video_quality: video.video_quality || '',
-          channel_name: channel.channel_name || '',
-          channel_id: channel._id || null,
-          channel_img: channel.img || '',
+          channel_name: channel?.channel_name || '',
+          channel_id: channel?._id || null,
+          channel_img: channel?.img || '',
           is_tvseries: String(video.is_tvseries || '0'),
           is_paid: video.is_paid,
           enable_download: video.enable_download,

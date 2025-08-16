@@ -236,7 +236,7 @@ exports.firebaseAuth = async (req, res) => {
         let user = null;
 
         // 🌐 GOOGLE AUTH - Allow empty phone for Google auth
-        if (email && name && image_url && deviceid && fcm && versioncode) {
+        // if (email && name && image_url && deviceid && fcm && versioncode) {
             if (!validateEmail(email)) {
                 return res.status(400).json({ message: "Invalid email format" });
             }
@@ -276,78 +276,79 @@ exports.firebaseAuth = async (req, res) => {
             }
 
         // ☎️ PHONE AUTH - Only if phone has actual value (not empty)
-        } else if (phone && phone.trim() !== '') {
-            user = await User.findOne({ phone });
-            const otp = generateOtp();
-            const otpExpire = new Date(Date.now() + 5 * 60 * 1000);
+        // } 
+        // else if (phone && phone.trim() !== '') {
+        //     user = await User.findOne({ phone });
+        //     const otp = generateOtp();
+        //     const otpExpire = new Date(Date.now() + 5 * 60 * 1000);
 
-            if (user) {
-                user.otp = otp;
-                user.otpExpire = otpExpire;
-                await user.save();
-            } else {
-                const lastUser = await User.findOne().sort({ user_id: -1 });
-                let newUserId = 1;
-                if (lastUser && lastUser.user_id && !isNaN(lastUser.user_id)) {
-                    newUserId = parseInt(lastUser.user_id) + 1;
-                }
-                const extractedName = email?.split('@')[0] || `user${newUserId}`;
+        //     if (user) {
+        //         user.otp = otp;
+        //         user.otpExpire = otpExpire;
+        //         await user.save();
+        //     } else {
+        //         const lastUser = await User.findOne().sort({ user_id: -1 });
+        //         let newUserId = 1;
+        //         if (lastUser && lastUser.user_id && !isNaN(lastUser.user_id)) {
+        //             newUserId = parseInt(lastUser.user_id) + 1;
+        //         }
+        //         const extractedName = email?.split('@')[0] || `user${newUserId}`;
 
-                user = await User.create({
-                    user_id: newUserId,
-                    name: extractedName,
-                    slug: newUserId,
-                    username: newUserId,
-                    email: email || '',
-                    phone,
-                    firebase_auth_uid: uid,
-                    otp,
-                    otpExpire,
-                    role: 'user',
-                    theme: 'default',
-                    theme_color: '#16163F',
-                    is_password_set: 0,
-                    password: "25f9e794323b453885f5181f1b624d0b",
-                    join_date: new Date(),
-                    last_login: new Date(),
-                    status: 1,
-                    vstatus: 1
-                });
-            }
+        //         user = await User.create({
+        //             user_id: newUserId,
+        //             name: extractedName,
+        //             slug: newUserId,
+        //             username: newUserId,
+        //             email: email || '',
+        //             phone,
+        //             firebase_auth_uid: uid,
+        //             otp,
+        //             otpExpire,
+        //             role: 'user',
+        //             theme: 'default',
+        //             theme_color: '#16163F',
+        //             is_password_set: 0,
+        //             password: "25f9e794323b453885f5181f1b624d0b",
+        //             join_date: new Date(),
+        //             last_login: new Date(),
+        //             status: 1,
+        //             vstatus: 1
+        //         });
+        //     }
 
-            await sendOtp(phone, otp); // Send OTP
-        }
+        //     await sendOtp(phone, otp); // Send OTP
+        // }
 
-        // 🌍 FACEBOOK AUTH
-        else if (email && name && image_url) {
-            user = await User.findOne({ email });
-            if (!user) {
-                const lastUser = await User.findOne().sort({ user_id: -1 });
-                let newUserId = 1;
-                if (lastUser && lastUser.user_id && !isNaN(lastUser.user_id)) {
-                    newUserId = parseInt(lastUser.user_id) + 1;
-                }
+        // // 🌍 FACEBOOK AUTH
+        // else if (email && name && image_url) {
+        //     user = await User.findOne({ email });
+        //     if (!user) {
+        //         const lastUser = await User.findOne().sort({ user_id: -1 });
+        //         let newUserId = 1;
+        //         if (lastUser && lastUser.user_id && !isNaN(lastUser.user_id)) {
+        //             newUserId = parseInt(lastUser.user_id) + 1;
+        //         }
 
-                user = await User.create({
-                    user_id: newUserId,
-                    name,
-                    slug: newUserId,
-                    username: newUserId,
-                    email,
-                    firebase_auth_uid: uid,
-                    profile_picture: image_url,
-                    role: 'user',
-                    theme: 'default',
-                    theme_color: '#16163F',
-                    is_password_set: 0,
-                    password: "buildVersion ",
-                    join_date: new Date(),
-                    last_login: new Date(),
-                    status: 1,
-                    vstatus: 1
-                });
-            }
-        }
+        //         user = await User.create({
+        //             user_id: newUserId,
+        //             name,
+        //             slug: newUserId,
+        //             username: newUserId,
+        //             email,
+        //             firebase_auth_uid: uid,
+        //             profile_picture: image_url,
+        //             role: 'user',
+        //             theme: 'default',
+        //             theme_color: '#16163F',
+        //             is_password_set: 0,
+        //             password: "buildVersion ",
+        //             join_date: new Date(),
+        //             last_login: new Date(),
+        //             status: 1,
+        //             vstatus: 1
+        //         });
+        //     }
+        // }
 
         if (!user) {
             return res.status(400).json({ message: "Invalid request parameters" });
