@@ -160,7 +160,7 @@ const getChannelInfoService = async (channel_id, uid) => {
     const relatedMovies = await videoSchema.aggregate([
       {
         $match: {
-          channel_id: objectChannelId,
+          channel_id: channel_user_id,
           isChannel: true,
           is_movie: true
         }
@@ -186,7 +186,7 @@ const getChannelInfoService = async (channel_id, uid) => {
     // Step 7: Prepare response with detailed channel statistics
     const response = {
       channel_name: channel.channel_name,
-      channel_id: String(channel._id),
+      channel_id: String(channel.user_id),  // Use user_id instead of _id
       channel_img: channel.img || 'https://multiplexplay.com/office/uploads/default_image/poster.jpg',
       subcribe: totalSubscribers,
       userSubscribed: userSubscribed,
@@ -205,10 +205,10 @@ const getChannelInfoService = async (channel_id, uid) => {
         genre: video.genre || null,
         country: video.country || null,
         channel_name: channel.channel_name,
-        channel_id: String(channel._id),
+        channel_id: String(channel.user_id),  // Use user_id instead of _id in related_movie too
         channel_img: channel.img,
         title: video.title || '',
-        view: String(video.total_view || 0),
+        view: video.total_view || 0,
         description: video.description || '',
         slug: `-${video.videos_id || ''}`,
         is_paid: String(video.is_paid || 0),
@@ -232,7 +232,17 @@ const getChannelInfoService = async (channel_id, uid) => {
 const getMovieDetailsBychannels = async (uid) => {
   try {
     console.log('GetMovieDetailsByChannels Hitted');
-    const videos = await Video.find({});
+    // Filter videos: only isChannel:true and must have valid ObjectId channel_id, sorted by creation date (latest first)
+    const videos = await Video.find({
+      isChannel: true,                                        // Only show channel videos
+      channel_id: {
+        $exists: true,                                        // Must exist
+        $type: "objectId"                                     // Must be valid ObjectId (not string, not null)
+      }
+      }).sort({
+      cre: -1
+    });
+
     if (!videos.length) return [];
 
     let subscribedChannels = [];
@@ -243,12 +253,17 @@ const getMovieDetailsBychannels = async (uid) => {
     const result = await Promise.all(
       videos.map(async (video) => {
         const channel = await Channel.findById(video.channel_id);
-        // console.log(channel);
+        
+        // Skip this video if channel not found - don't show data at all
+        if (!channel) {
+          console.warn(`⚠️ Channel not found for video ${video._id}, skipping...`);
+          return null;
+        }
+        
         const isSubscribed = subscribedChannels.some(
           (sub) => sub.channel_id.toString() === video.channel_id.toString()
         );
         let subscribeCount = channelModel.findOne({ _id: video.channel_id });
-        console.log(subscribeCount);
         // Views are now tracked separately via ViewTrackingService
         // Remove automatic view increment from listing API
 
@@ -262,9 +277,9 @@ const getMovieDetailsBychannels = async (uid) => {
           release: video.release || '',
           runtime: video.runtime || '',
           video_quality: video.video_quality || '',
-          channel_name: channel?.channel_name || '',
-          channel_id: channel?._id || '',
-          channel_img: channel?.img || '',
+          channel_name: channel.channel_name || '',
+          channel_id: channel._id || null,
+          channel_img: channel.img || '',
           is_tvseries: String(video.is_tvseries || '0'),
           is_paid: video.is_paid,
           enable_download: video.enable_download,
@@ -288,7 +303,8 @@ const getMovieDetailsBychannels = async (uid) => {
       })
     );
 
-    return result;
+    // Filter out null values (videos where channel was not found)
+    return result.filter(item => item !== null);
 
   } catch (error) {
     console.error("Error in getMovieDetailsBychannels:", error.message);
