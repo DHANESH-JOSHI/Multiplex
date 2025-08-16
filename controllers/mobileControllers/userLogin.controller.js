@@ -235,8 +235,8 @@ exports.firebaseAuth = async (req, res) => {
 
         let user = null;
 
-        // 🌐 GOOGLE AUTH
-        if (email && name && image_url && phone && deviceid && fcm && versioncode) {
+        // 🌐 GOOGLE AUTH - Allow empty phone for Google auth
+        if (email && name && image_url && deviceid && fcm && versioncode) {
             if (!validateEmail(email)) {
                 return res.status(400).json({ message: "Invalid email format" });
             }
@@ -275,8 +275,8 @@ exports.firebaseAuth = async (req, res) => {
                 });
             }
 
-        // ☎️ PHONE AUTH
-        } else if (phone) {
+        // ☎️ PHONE AUTH - Only if phone has actual value (not empty)
+        } else if (phone && phone.trim() !== '') {
             user = await User.findOne({ phone });
             const otp = generateOtp();
             const otpExpire = new Date(Date.now() + 5 * 60 * 1000);
