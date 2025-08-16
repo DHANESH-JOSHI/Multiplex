@@ -175,12 +175,25 @@ async addMovie(req, res) {
       if (result?.data?.[0]) {
         const isMovie = result.data[0].is_movie;
         const isChannelVideo = result.data[0].isChannel;
-        
         // Dynamic related videos based on current video's isChannel property
-        const relatedVideos = await videosModel.find({ 
-          is_movie: true,              // Only show movies
-          isChannel: isChannelVideo    // Show same type as current video
-        }).lean();
+        let relatedVideosQuery;
+        
+        if (isChannelVideo === true) {
+          // For channel videos: show is_movie=true and isChannel=true
+          relatedVideosQuery = {
+            isChannel: true
+          };
+        } else {
+          // For non-channel videos: show same channel_id and isChannel=false
+          relatedVideosQuery = {
+            channel_id: result.data[0].channel_id,
+            isChannel: false
+          };
+        }
+        
+        const relatedVideos = await videosModel.find(relatedVideosQuery).lean();
+        
+        // console.log("Related videos query:", relatedVideosQuery);
         const userSubscribe = await channelSubscribeModel.find({
           user: user_id,
           channel: channel_id,
