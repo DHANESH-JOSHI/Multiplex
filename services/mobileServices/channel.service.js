@@ -15,6 +15,7 @@ dayjs.extend(relativeTime);
 
 const getChannelList = async (limit, platform = null) => {
   try {
+    console.log('GetChannelList Hitted');
     // Step 1: Build query to get approved movie channels
     const query = { status: 'approve' };
     if (platform) {
@@ -201,6 +202,7 @@ const getChannelInfoService = async (channel_id, uid) => {
 
 const getMovieDetailsBychannels = async (uid) => {
   try {
+    console.log('GetMovieDetailsByChannels Hitted');
     const videos = await Video.find({});
     if (!videos.length) return [];
 

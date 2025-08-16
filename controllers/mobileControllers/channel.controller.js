@@ -110,6 +110,7 @@ const getChannelListController = async (req, res) => {
 // };
 const getChannelInfoController = async (req, res) => {
   try {
+    console.log('GetChannelInfoController Hitted');
     const { channel_id, user_id }  = req.query;
     let uid = user_id;
     // Call the service method
