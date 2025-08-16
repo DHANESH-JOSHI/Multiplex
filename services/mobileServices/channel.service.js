@@ -29,67 +29,70 @@ const getChannelList = async (limit, platform = null, userCountry = null) => {
     // Step 2: Fetch channels
     const channels = await Channel.find(query).limit(limit).lean();
 
-    // Step 3: Fetch latest video per channel
+    // Step 3: Fetch latest video per channel (country-filtered)
     const result = await Promise.all(
       channels.map(async (channel) => {
-        const video = await Video.findOne({
+        // Get all videos for this channel, sorted by latest
+        const channelVideos = await Video.find({
           channel_id: new mongoose.Types.ObjectId(channel.user_id),
           is_movie: true,
-          isChannel:true
+          isChannel: true
         })
-          .sort({ cre: -1 }) // Assuming 'cre' is creation date
+          .sort({ cre: -1 }) // Latest first
           .lean();
 
-        // ❌ Skip if no valid video found
-        if (!video || !video.videos_id) return null;
+        // Find first video available in user's country
+        let availableVideo = null;
+        
+        if (userCountry) {
+          for (const video of channelVideos) {
+            const availability = await CountryFilteringService.checkContentAvailability(video, userCountry);
+            if (availability.isAvailable) {
+              availableVideo = video;
+              availableVideo.country_price = availability.price;
+              availableVideo.user_currency = availability.currency;
+              availableVideo.currency_symbol = availability.currencySymbol;
+              console.log(`✅ Channel video available: ${channel.channel_name} - ${video.title} - ${availability.reason}`);
+              break;
+            }
+          }
+        } else {
+          // If no country specified, use first video
+          availableVideo = channelVideos[0];
+        }
 
-        // ✅ Construct and return formatted response
+        // ❌ Skip channel if no available video found
+        if (!availableVideo || !availableVideo.videos_id) {
+          console.log(`🚫 Channel skipped - no available videos: ${channel.channel_name}`);
+          return null;
+        }
+
+        // ✅ Construct and return formatted response with available video
         return {
           channel_name: channel.channel_name,
           channel_img: channel.img,
           channel_id: channel._id.toString(),
-          videos_id: video.videos_id.toString(),
-          title: video.title || '',
-          description: video.description || '',
-          release: video.cre ? dayjs(video.cre).fromNow() : '',
-          runtime: video.runtime || '',
-          video_quality: video.video_quality || '',
-          view: video.total_view || 0,
-          thumbnail_url: video.thumbnail_url || 'https://multiplexplay.com/storage/banners/1752765686_logo1.png',
-          poster_url: video.poster_url || 'https://multiplexplay.com/storage/banners/1752765686_logo1.png',
-          slug: `${(video.title || 'video').toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '')}-${video.videos_id}`
+          videos_id: availableVideo.videos_id.toString(),
+          title: availableVideo.title || '',
+          description: availableVideo.description || '',
+          release: availableVideo.cre ? dayjs(availableVideo.cre).fromNow() : '',
+          runtime: availableVideo.runtime || '',
+          video_quality: availableVideo.video_quality || '',
+          view: availableVideo.total_view || 0,
+          country_price: availableVideo.country_price || null,
+          user_currency: availableVideo.user_currency || null,
+          currency_symbol: availableVideo.currency_symbol || null,
+          thumbnail_url: availableVideo.thumbnail_url || 'https://multiplexplay.com/storage/banners/1752765686_logo1.png',
+          poster_url: availableVideo.poster_url || 'https://multiplexplay.com/storage/banners/1752765686_logo1.png',
+          slug: `${(availableVideo.title || 'video').toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '')}-${availableVideo.videos_id}`
         };
       })
     );
 
-    // Step 4: Filter out nulls (channels with no videos)
-    let filteredResult = result.filter(item => item !== null);
+    // Step 4: Filter out nulls (channels with no available videos for user's country)
+    const filteredResult = result.filter(item => item !== null);
     
-    // Step 5: Apply country filtering to channel videos
-    if (userCountry && filteredResult.length > 0) {
-      console.log("🌍 Applying country filtering to channel list...");
-      
-      const countryFilteredResult = [];
-      
-      for (const channelData of filteredResult) {
-        const availability = await CountryFilteringService.checkContentAvailability(channelData, userCountry);
-        
-        if (availability.isAvailable) {
-          // Add country-specific pricing info
-          channelData.country_price = availability.price;
-          channelData.user_currency = availability.currency;
-          channelData.currency_symbol = availability.currencySymbol;
-          
-          countryFilteredResult.push(channelData);
-          console.log(`✅ Channel allowed: ${channelData.channel_name} - ${availability.reason}`);
-        } else {
-          console.log(`🚫 Channel blocked: ${channelData.channel_name} - ${availability.reason}`);
-        }
-      }
-      
-      return countryFilteredResult;
-    }
-    
+    console.log(`📊 Final channel list: ${filteredResult.length} channels with available content`);
     return filteredResult;
 
   } catch (error) {
