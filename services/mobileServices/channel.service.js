@@ -169,7 +169,7 @@ const getChannelInfoService = async (channel_id, uid) => {
       channel_img: channel.img || 'https://multiplexplay.com/office/uploads/default_image/poster.jpg',
       subcribe: totalSubscribers,
       userSubscribed: userSubscribed,
-      view: String(totalViewCount),
+      view: totalViewCount,
       count: String(subscriberCount),
       related_movie: relatedMovies.map(video => ({
         videos_id: String(video._id || ''),
