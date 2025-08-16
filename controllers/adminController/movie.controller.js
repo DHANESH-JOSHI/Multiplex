@@ -174,26 +174,76 @@ async addMovie(req, res) {
       }
       if (result?.data?.[0]) {
         const isMovie = result.data[0].is_movie;
-        const isChannelVideo = result.data[0].isChannel;
+        // Direct access from full data object since console shows it's there
+        const videoData = result.data[0];
+        
+        // Method 1: Try direct property access
+        let isChannelVideo = videoData.isChannel;
+        
+        // Method 2: If still undefined, get all property names and find it
+        if (isChannelVideo === undefined) {
+          const keys = Object.keys(videoData);
+          const channelKeys = keys.filter(k => k.toLowerCase().includes('channel'));
+          console.log("🔧 Available channel-related keys:", channelKeys);
+          
+          // Try each possible key
+          for (const key of channelKeys) {
+            if (key.toLowerCase() === 'ischannel') {
+              isChannelVideo = videoData[key];
+              break;
+            }
+          }
+        }
+        
+        // Method 3: Last resort - parse from JSON string if needed
+        if (isChannelVideo === undefined) {
+          const jsonStr = JSON.stringify(videoData);
+          const match = jsonStr.match(/"isChannel":\s*(true|false)/);
+          isChannelVideo = match ? match[1] === 'true' : false;
+        }
+        
         // Dynamic related videos based on current video's isChannel property
+        const currentChannelId = result.data[0].channel_id;
+        const currentVideoId = result.data[0]._id;
+        
+        // console.log("🔍 Debug info:", {
+        //   originalIsChannel: result.data[0].isChannel,
+        //   finalIsChannelVideo: isChannelVideo,
+        //   currentChannelId: currentChannelId,
+        //   currentChannelIdType: typeof currentChannelId,
+        //   currentVideoId: currentVideoId,
+        //   is_movie: result.data[0].is_movie,
+        //   fullData: result.data[0] // Show complete object
+        // });
+        
         let relatedVideosQuery;
         
         if (isChannelVideo === true) {
-          // For channel videos: show is_movie=true and isChannel=true
+          // For channel videos: show same channel's is_movie=true and isChannel=true
           relatedVideosQuery = {
-            isChannel: true
+            channel_id: currentChannelId,           // Same channel restriction
+            is_movie: true,
+            isChannel: true,
+            _id: { $ne: currentVideoId }           // Exclude current video
           };
         } else {
           // For non-channel videos: show same channel_id and isChannel=false
           relatedVideosQuery = {
-            channel_id: result.data[0].channel_id,
-            isChannel: false
+            channel_id: currentChannelId,
+            isChannel: false,
+            _id: { $ne: currentVideoId }           // Exclude current video
           };
         }
         
+        // console.log("📋 Related videos query:", relatedVideosQuery);
         const relatedVideos = await videosModel.find(relatedVideosQuery).lean();
+        // console.log("📊 Related videos found:", relatedVideos.length);
         
-        // console.log("Related videos query:", relatedVideosQuery);
+        // Debug: Check all videos in same channel
+        const debugChannelVideos = await videosModel.find({ 
+          channel_id: currentChannelId 
+        }).select('_id title isChannel is_movie').lean();
+        console.log("🔧 All videos in channel:", debugChannelVideos);
         const userSubscribe = await channelSubscribeModel.find({
           user: user_id,
           channel: channel_id,
