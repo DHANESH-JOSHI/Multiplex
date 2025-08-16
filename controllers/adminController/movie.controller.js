@@ -2,6 +2,7 @@ const CloudflareStreamService = require("../../config/cloudFlareCDN");
 const subscriptionModel = require("../../models/subscription.model");
 const videosModel = require("../../models/videos.model");
 const channelSubscribeModel = require("../../models/subcribe.model");
+const Channel = require("../../models/channel.model");
 const MovieService = require("../../services/adminServices/movie.service");
 const ViewTrackingService = require("../../services/viewTracking.service");
 const DeviceValidationService = require("../../services/deviceValidation.service");
@@ -244,13 +245,63 @@ async addMovie(req, res) {
           channel_id: currentChannelId 
         }).select('_id title isChannel is_movie').lean();
         console.log("🔧 All videos in channel:", debugChannelVideos);
-        const userSubscribe = await channelSubscribeModel.find({
-          user: user_id,
-          channel: channel_id,
-        });
-        if (userSubscribe.length > 0) {
-           userSubscribed = true;
+        // Check channel subscription (not plan subscription)
+        let userChannelSubscribed = false;
+        if (user_id && currentChannelId) {
+          const channelSubscription = await channelSubscribeModel.findOne({
+            user: user_id,
+            channel: currentChannelId,  // Use video's channel_id
+          });
+          
+          if (channelSubscription) {
+            userChannelSubscribed = true;
+          }
         }
+        
+        console.log("📝 Channel subscription check:", {
+          user_id,
+          currentChannelId,
+          userChannelSubscribed
+        });
+        
+        // Check channel subscription like in channel service
+        let channelSubscribedStatus = false;
+        if (user_id && currentChannelId) {
+          // Find the channel document first
+          const channelDoc = await Channel.findOne({ user_id: currentChannelId });
+          
+          console.log("🔍 Channel document search:", {
+            searchBy_user_id: currentChannelId,
+            channelFound: !!channelDoc,
+            channelDoc_id: channelDoc?._id
+          });
+          
+          if (channelDoc) {
+            const userSubscribe = await channelSubscribeModel.findOne({
+              user: user_id,
+              channel: channelDoc._id,  // Use channel's _id, not user_id
+            });
+            
+            console.log("🔍 Subscription search:", {
+              user: user_id,
+              channel: channelDoc._id,
+              subscriptionFound: !!userSubscribe
+            });
+            
+            if (userSubscribe) {
+              channelSubscribedStatus = true;
+            }
+          }
+        }
+        
+        console.log("📝 Final channel subscription result:", {
+          user_id,
+          currentChannelId,
+          channelSubscribedStatus
+        });
+        
+        // Update the global userSubscribed variable with channel subscription
+        userSubscribed = channelSubscribedStatus;
         // console.log("data",userSubscribe);
         // result = result.data
         // result.data.userSubscribed = userSubscribe.length > 0;
