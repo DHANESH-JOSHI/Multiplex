@@ -550,6 +550,7 @@ async addMovie(req, res) {
 
     const finalResponse = {
       message: result.message,
+      channel_img: result.channel_img || '',
       isSubscribed,
       userSubscribed,
       allowVideoAccess,
