@@ -108,8 +108,7 @@ class WebSeriesController {
     // Step 1.5: Device validation for web series access
     let allowVideoAccess = true;
     if (user_id && deviceId) {
-      const deviceValidation = await DeviceValidationService.validateDeviceAccessStrict(user_id, deviceId);
-      
+      const deviceValidation = await DeviceValidationService.validateDeviceAccess(user_id, deviceId);
       if (!deviceValidation.isValid) {
         return res.status(403).json({
           success: false,
@@ -120,11 +119,11 @@ class WebSeriesController {
         });
       }
       
-      // Check if video access is allowed based on device
-      allowVideoAccess = deviceValidation.allowVideoAccess !== false;
-      
-      if (!allowVideoAccess) {
-        console.log(`⚠️ Video access restricted due to device change for user ${user_id}`);
+      // Check if current device_id is different from user's registered device_id
+      const user = deviceValidation.user;
+      if (user && user.deviceid !== deviceId) {
+        allowVideoAccess = false;
+        console.log(`⚠️ Different device detected for user ${user_id}: registered=${user.deviceid}, current=${deviceId}`);
       }
     }
 
@@ -214,7 +213,7 @@ class WebSeriesController {
       }
     }
 
-    // Step 5: If not subscribed or video access not allowed due to location, nullify video_url in each episode
+    // Step 5: If not subscribed or device already registered, nullify video_url in each episode
     if (!isSubscribed || !allowVideoAccess) {
       webSeriesObj.seasonsId.forEach(season => {
         season.episodesId.forEach(episode => {
@@ -223,7 +222,7 @@ class WebSeriesController {
       });
       
       if (!allowVideoAccess) {
-        console.log(`❌ Video URLs nullified due to device change for user ${user_id}`);
+        console.log(`❌ Video URLs nullified due to different device detected`);
       }
     }
 
