@@ -49,9 +49,6 @@ const getChannelList = async (limit, platform = null, userCountry = null) => {
             const availability = await CountryFilteringService.checkContentAvailability(video, userCountry);
             if (availability.isAvailable) {
               availableVideo = video;
-              availableVideo.country_price = availability.price;
-              availableVideo.user_currency = availability.currency;
-              availableVideo.currency_symbol = availability.currencySymbol;
               console.log(`✅ Channel video available: ${channel.channel_name} - ${video.title} - ${availability.reason}`);
               break;
             }
@@ -79,9 +76,6 @@ const getChannelList = async (limit, platform = null, userCountry = null) => {
           runtime: availableVideo.runtime || '',
           video_quality: availableVideo.video_quality || '',
           view: availableVideo.total_view || 0,
-          country_price: availableVideo.country_price || null,
-          user_currency: availableVideo.user_currency || null,
-          currency_symbol: availableVideo.currency_symbol || null,
           thumbnail_url: availableVideo.thumbnail_url || 'https://multiplexplay.com/storage/banners/1752765686_logo1.png',
           poster_url: availableVideo.poster_url || 'https://multiplexplay.com/storage/banners/1752765686_logo1.png',
           slug: `${(availableVideo.title || 'video').toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '')}-${availableVideo.videos_id}`
