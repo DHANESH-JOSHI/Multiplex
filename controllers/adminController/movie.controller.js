@@ -127,6 +127,7 @@ async addMovie(req, res) {
     let result;
     let isSubscribed = false; // Default
     let userSubscribed = false;
+    let allowVideoAccess = true; // Default
     console.log(req.query);
     const { vId, user_id, channel_id } = req.query;
 
@@ -144,6 +145,27 @@ async addMovie(req, res) {
             message: deviceValidation.message,
             errorCode: deviceValidation.errorCode
           });
+        }
+        
+        // Check if current device_id is different from user's registered device_id
+        const user = deviceValidation.user;
+        if (user && user.deviceid !== deviceId) {
+          // Check if the new device is already being used by another user
+          const deviceConflict = await DeviceValidationService.checkDeviceConflict(deviceId, userId);
+          if (deviceConflict.hasConflict) {
+            allowVideoAccess = false;
+            console.log(`❌ Device ${deviceId} is already registered to another user: ${deviceConflict.conflictingUserId}`);
+          } else {
+            // Reset device_id to the new device (this will block the previous device)
+            const deviceUpdated = await DeviceValidationService.updateUserDevice(userId, deviceId);
+            if (deviceUpdated) {
+              console.log(`✅ Device reset for user ${userId}: ${user.deviceid} → ${deviceId} (previous device blocked)`);
+              allowVideoAccess = true; // Grant access after device reset
+            } else {
+              allowVideoAccess = false;
+              console.log(`❌ Failed to reset device for user ${userId}`);
+            }
+          }
         }
       }
       
@@ -394,16 +416,71 @@ async addMovie(req, res) {
           }
         }
       }
+
+      // Step 4: Apply country-based pricing and video access restrictions
+      if (result?.data?.[0] && country) {
+        const movieData = result.data[0];
+        
+        // Check if country matches any pricing entry
+        let countryPricing = null;
+        if (movieData.pricing && movieData.pricing.length > 0) {
+          // Convert country codes properly (INR → IN)
+          countryPricing = movieData.pricing.find(p => {
+            let priceCountry = p.country;
+            // Convert INR to IN, USD to US, etc.
+            if (priceCountry === 'INR') priceCountry = 'IN';
+            if (priceCountry === 'USD') priceCountry = 'US';
+            if (priceCountry === 'EUR') priceCountry = 'EU';
+            return priceCountry === country;
+          });
+        }
+        
+        // If country not supported, block video access
+        if (!countryPricing) {
+          allowVideoAccess = false;
+          console.log(`❌ Country ${country} not supported for video ${movieId}`);
+        } else {
+          // Update the pricing data with correct country code
+          movieData.country_price = countryPricing.price;
+          movieData.country_code = country; // Use proper country code (IN, not INR)
+        }
+      }
+
+      // Step 5: Apply is_paid logic for video_url visibility
+      if (result?.data?.[0]) {
+        const movieData = result.data[0];
+        const isPaid = movieData.is_paid === 1 || movieData.is_paid === true;
+        
+        // is_paid = 0 (free) → always show video_url
+        // is_paid = 1 (paid) → only show video_url if subscribed
+        if (isPaid && !isSubscribed) {
+          allowVideoAccess = false;
+          console.log(`❌ Paid content requires subscription for video ${movieId}`);
+        }
+        
+        // Apply all restrictions to video_url and download_url
+        if (!allowVideoAccess) {
+          if (movieData.video_url) {
+            movieData.video_url = null;
+            console.log(`❌ Video URL nullified due to access restrictions`);
+          }
+          if (movieData.download_url) {
+            movieData.download_url = null;
+            console.log(`❌ Download URL nullified due to access restrictions`);
+          }
+        }
+      }
     } else {
       // If no vId, fetch all movies
       result = await MovieService.getAllMovies(req.query);
     }
 
-    // Step 3: Format Final Response
+    // Step 6: Format Final Response
     const finalResponse = {
       message: result.message,
       isSubscribed,
       userSubscribed,
+      allowVideoAccess,
       data: result.data,
       related_movie: result.related_movie
     };
