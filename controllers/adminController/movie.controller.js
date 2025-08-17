@@ -550,7 +550,7 @@ async addMovie(req, res) {
 
     const finalResponse = {
       message: result.message,
-      channel_img: result.channel_img || '',
+      channel_img: result.channel_img || 'https://multiplexplay.com/storage/profile_images/1755426016_world-collapse-doomsday-scene-digital-painting.jpg',
       isSubscribed,
       userSubscribed,
       allowVideoAccess,
