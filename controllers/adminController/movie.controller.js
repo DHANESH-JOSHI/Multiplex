@@ -298,11 +298,11 @@ async addMovie(req, res) {
         
         // Check channel subscription like in channel service
         let channelSubscribedStatus = false;
-        let channelImg = '';
+        var channelImg = '';
         if (user_id && currentChannelId) {
           // Find the channel document first
           const channelDoc = await Channel.findOne({ user_id: currentChannelId });
-          
+
           console.log("🔍 Channel document search:", {
             searchBy_user_id: currentChannelId,
             channelFound: !!channelDoc,
@@ -343,6 +343,50 @@ async addMovie(req, res) {
         // result.data.userSubscribed = userSubscribe.length > 0;
 
         result.related_movie = relatedVideos;
+        
+        // Add channel_img to result.data if available
+        console.log("🖼️ Debug channel_img:", {
+          channelImg,
+          hasResultData: !!result?.data?.[0],
+          currentChannelId,
+          resultDataLength: result?.data?.length
+        });
+        
+        if (channelImg && result?.data?.[0]) {
+          result.data[0].channel_img = channelImg;
+          console.log("✅ Added channel_img to result.data[0]");
+        } else if (result?.data?.[0]) {
+          // Try to get channel image from current result data
+          const currentChannelId = result.data[0].channel_id;
+          console.log("🔍 Trying fallback channel lookup with channel_id:", currentChannelId);
+          
+          if (currentChannelId) {
+            try {
+              const channelDoc = await Channel.findOne({ user_id: currentChannelId });
+              console.log("📺 Channel found:", {
+                channelId: currentChannelId,
+                channelDoc: !!channelDoc,
+                channelImg: channelDoc?.img,
+                channelName: channelDoc?.channel_name
+              });
+              
+              if (channelDoc) {
+                // Try different possible field names for image
+                const channelImage = channelDoc.img || channelDoc.image || channelDoc.channel_img || '';
+                result.data[0].channel_img = channelImage;
+                console.log("✅ Added channel_img from direct lookup:", channelImage);
+              } else {
+                console.log("❌ Channel not found for user_id:", currentChannelId);
+                result.data[0].channel_img = '';
+              }
+            } catch (error) {
+              console.warn("⚠️ Error fetching channel for img:", error.message);
+              result.data[0].channel_img = '';
+            }
+          } else {
+            result.data[0].channel_img = '';
+          }
+        }
       }
 
       
@@ -455,11 +499,6 @@ async addMovie(req, res) {
         const movieData = result.data[0];
         const isPaid = movieData.is_paid === 1 || movieData.is_paid === true;
         
-        // Add channel_img to movie data if available
-        if (channelImg) {
-          movieData.channel_img = channelImg;
-        }
-        
         // is_paid = 0 (free) → always show video_url
         // is_paid = 1 (paid) → only show video_url if subscribed
         if (isPaid && !isSubscribed) {
@@ -485,12 +524,36 @@ async addMovie(req, res) {
     }
 
     // Step 6: Format Final Response
+
+    let formattedData = [];
+
+    if (Array.isArray(result?.data)) {
+      formattedData = await Promise.all(result.data.map(async (item) => {
+        // agar mongoose document hai toObject() use karo
+        const plainItem = item.toObject ? item.toObject() : (item._doc ? item._doc : item);
+
+        // Channel image inject
+        let channelImage = plainItem.channel_img || '';
+        if (!channelImage && plainItem.channel_id) {
+          const channelDoc = await Channel.findOne({ user_id: plainItem.channel_id }).lean();
+          if (channelDoc) {
+            channelImage = channelDoc.img || channelDoc.image || channelDoc.channel_img || '';
+          }
+        }
+
+        return {
+          ...plainItem,
+          channel_img: channelImage
+        };
+      }));
+    }
+
     const finalResponse = {
       message: result.message,
       isSubscribed,
       userSubscribed,
       allowVideoAccess,
-      data: result.data,
+      data: formattedData,
       related_movie: result.related_movie
     };
 
@@ -569,7 +632,7 @@ async addMovie(req, res) {
         if (result.data && result.data[0]) {
           result.data[0].view_stats = {
             today_view: viewStats.today_view,
-            weekly_view: viewStats.weekly_view, 
+            weekly_view: viewStats.weekly_view,
             monthly_view: viewStats.monthly_view,
             total_view: viewStats.total_view
           };
