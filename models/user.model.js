@@ -10,7 +10,7 @@ const userSchema = new mongoose.Schema({
   email:  String,
   is_password_set: { type: Number, required: true, default: 0 },
   password: { type: String, required: true },
-  gender: { type: Number, default: 1 },
+  gender: { type: String, default: 1 },
   role: String,
   token: String,
   theme: { type: String, default: 'default' },
