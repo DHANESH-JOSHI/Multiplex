@@ -578,24 +578,86 @@ async addMovie(req, res) {
           console.log(`✅ CHECK 3 PASSED: Free content - no subscription required`);
         }
 
+        // Check 4: Download access validation (same country logic)
+        let allowDownloadAccess = true;
+        let downloadRestrictions = [];
+        
+        if (country && movieData.download_url) {
+          console.log(`🔍 DOWNLOAD ACCESS: Checking country validation for downloads`);
+          
+          // First check pricing array for download access
+          let downloadCountryPricing = null;
+          if (movieData.pricing && movieData.pricing.length > 0) {
+            downloadCountryPricing = movieData.pricing.find(p => {
+              let priceCountry = p.country;
+              if (priceCountry === 'INR') priceCountry = 'IN';
+              if (priceCountry === 'USD') priceCountry = 'US';
+              if (priceCountry === 'EUR') priceCountry = 'EU';
+              return priceCountry === country;
+            });
+          }
+          
+          if (!downloadCountryPricing) {
+            // Fallback: Check country ObjectIds for download access
+            if (movieData.country && Array.isArray(movieData.country) && movieData.country.length > 0) {
+              try {
+                const Currency = require('../../models/currency.model');
+                const countryDocs = await Currency.find({ 
+                  _id: { $in: movieData.country } 
+                }).select('country iso_code');
+                
+                const matchingCountry = countryDocs.find(c => c.country === country);
+                
+                if (!matchingCountry) {
+                  downloadRestrictions.push(`Download not available in ${country}`);
+                  allowDownloadAccess = false;
+                  console.log(`❌ DOWNLOAD RESTRICTION: Country ${country} not supported for downloads`);
+                } else {
+                  console.log(`✅ DOWNLOAD CHECK PASSED: Country ${country} supports downloads`);
+                }
+              } catch (error) {
+                downloadRestrictions.push(`Download country validation failed`);
+                allowDownloadAccess = false;
+                console.log(`❌ DOWNLOAD RESTRICTION: Country validation failed for downloads`);
+              }
+            } else {
+              downloadRestrictions.push(`Download not available in ${country}`);
+              allowDownloadAccess = false;
+              console.log(`❌ DOWNLOAD RESTRICTION: No country data for download validation`);
+            }
+          } else {
+            console.log(`✅ DOWNLOAD CHECK PASSED: Country ${country} supports downloads`);
+          }
+        }
+
         // Final decision and URL nullification
-        console.log(`🎯 FINAL ACCESS DECISION:`, {
+        console.log(`🎯 FINAL ACCESS DECISIONS:`, {
           allowVideoAccess,
-          restrictionReasons: accessRestrictions,
-          totalRestrictions: accessRestrictions.length
+          allowDownloadAccess,
+          videoRestrictions: accessRestrictions,
+          downloadRestrictions: downloadRestrictions,
+          totalVideoRestrictions: accessRestrictions.length,
+          totalDownloadRestrictions: downloadRestrictions.length
         });
 
+        // Apply video access restrictions
         if (!allowVideoAccess) {
           if (movieData.video_url) {
             movieData.video_url = null;
             console.log(`🚫 Video URL nullified due to access restrictions:`, accessRestrictions.join(', '));
           }
+        } else {
+          console.log(`✅ VIDEO ACCESS GRANTED!`);
+        }
+        
+        // Apply download access restrictions (separate from video access)
+        if (!allowDownloadAccess) {
           if (movieData.download_url) {
             movieData.download_url = null;
-            console.log(`🚫 Download URL nullified due to access restrictions:`, accessRestrictions.join(', '));
+            console.log(`🚫 Download URL nullified due to download restrictions:`, downloadRestrictions.join(', '));
           }
-        } else {
-          console.log(`✅ ALL CHECKS PASSED - Video access granted!`);
+        } else if (movieData.download_url) {
+          console.log(`✅ DOWNLOAD ACCESS GRANTED!`);
         }
       }
     } else {
