@@ -122,8 +122,22 @@ class WebSeriesController {
       // Check if current device_id is different from user's registered device_id
       const user = deviceValidation.user;
       if (user && user.deviceid !== deviceId) {
-        allowVideoAccess = false;
-        console.log(`⚠️ Different device detected for user ${user_id}: registered=${user.deviceid}, current=${deviceId}`);
+        // Check if the new device is already being used by another user
+        const deviceConflict = await DeviceValidationService.checkDeviceConflict(deviceId, user_id);
+        if (deviceConflict.hasConflict) {
+          allowVideoAccess = false;
+          console.log(`❌ Device ${deviceId} is already registered to another user: ${deviceConflict.conflictingUserId}`);
+        } else {
+          // Reset device_id to the new device (this will block the previous device)
+          const deviceUpdated = await DeviceValidationService.updateUserDevice(user_id, deviceId);
+          if (deviceUpdated) {
+            console.log(`✅ Device reset for user ${user_id}: ${user.deviceid} → ${deviceId} (previous device blocked)`);
+            allowVideoAccess = true; // Grant access after device reset
+          } else {
+            allowVideoAccess = false;
+            console.log(`❌ Failed to reset device for user ${user_id}`);
+          }
+        }
       }
     }
 
@@ -222,7 +236,7 @@ class WebSeriesController {
       });
       
       if (!allowVideoAccess) {
-        console.log(`❌ Video URLs nullified due to different device detected`);
+        console.log(`❌ Video URLs nullified due to device conflict or reset failure`);
       }
     }
 
