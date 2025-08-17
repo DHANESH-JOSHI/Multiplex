@@ -7,9 +7,10 @@ const DeviceValidationService = {
    * Validate if user can access content from their registered device
    * @param {string} userId - User ID 
    * @param {string} deviceId - Current device ID
+   * @param {string} currentIp - Current IP address
    * @returns {Promise<Object>} - Validation result
    */
-  async validateDeviceAccess(userId, deviceId) {
+  async validateDeviceAccess(userId, deviceId, currentIp = null) {
     try {
       if (!userId || !deviceId) {
         return {
@@ -79,6 +80,26 @@ const DeviceValidationService = {
         };
       }
 
+      // Check for location-based access if IP is provided
+      if (currentIp && user.last_login_ip && user.last_login_ip !== currentIp) {
+        // Allow some flexibility for mobile networks, but track suspicious activity
+        console.warn(`⚠️ Location change detected for user ${user.user_id}: ${user.last_login_ip} → ${currentIp}`);
+        
+        // You can implement stricter location validation here if needed
+        // For now, just log the change but allow access
+        return {
+          isValid: true,
+          message: 'Device access authorized',
+          locationChanged: true,
+          user: {
+            user_id: user.user_id,
+            name: user.name,
+            email: user.email,
+            deviceid: user.deviceid
+          }
+        };
+      }
+
       return {
         isValid: true,
         message: 'Device access authorized',
@@ -105,9 +126,10 @@ const DeviceValidationService = {
    * Update user's device ID (during login)
    * @param {string} userId - User ID
    * @param {string} newDeviceId - New device ID
+   * @param {string} ipAddress - Login IP address
    * @returns {Promise<boolean>} - Update success
    */
-  async updateUserDevice(userId, newDeviceId) {
+  async updateUserDevice(userId, newDeviceId, ipAddress = null) {
     try {
       if (!userId || !newDeviceId) {
         console.warn('❌ Missing userId or deviceId for update');
@@ -133,10 +155,16 @@ const DeviceValidationService = {
         updateQuery = { user_id: parseInt(userId) };
       }
       
-      const result = await User.updateOne(
-        updateQuery,
-        { $set: { deviceid: newDeviceId, last_login: new Date() } }
-      );
+      const updateData = { 
+        deviceid: newDeviceId, 
+        last_login: new Date() 
+      };
+      
+      if (ipAddress) {
+        updateData.last_login_ip = ipAddress;
+      }
+      
+      const result = await User.updateOne(updateQuery, { $set: updateData });
 
       if (result.modifiedCount > 0) {
         console.log(`✅ Device updated for user ${userId}: ${newDeviceId}`);
@@ -189,6 +217,100 @@ const DeviceValidationService = {
       return {
         hasConflict: true,
         message: 'Error checking device availability',
+        error: error.message
+      };
+    }
+  },
+
+  /**
+   * Validate device access with strict device checking for video content
+   * @param {string} userId - User ID 
+   * @param {string} deviceId - Current device ID
+   * @returns {Promise<Object>} - Validation result with video access flag
+   */
+  async validateDeviceAccessStrict(userId, deviceId) {
+    try {
+      if (!userId || !deviceId) {
+        return {
+          isValid: false,
+          allowVideoAccess: false,
+          message: 'User ID and Device ID are required',
+          errorCode: 'MISSING_CREDENTIALS'
+        };
+      }
+
+      // Find user by appropriate field based on ID type
+      let user;
+      if (mongoose.Types.ObjectId.isValid(userId)) {
+        user = await User.findById(userId);
+      } else {
+        user = await User.findOne({ user_id: parseInt(userId) });
+      }
+      
+      if (!user) {
+        return {
+          isValid: false,
+          allowVideoAccess: false,
+          message: 'User not found',
+          errorCode: 'USER_NOT_FOUND'
+        };
+      }
+
+      // Check if user has registered device
+      if (!user.deviceid) {
+        return {
+          isValid: false,
+          allowVideoAccess: false,
+          message: 'No device registered for this user. Please login again.',
+          errorCode: 'NO_DEVICE_REGISTERED'
+        };
+      }
+
+      // Check if device_id has changed
+      const deviceChanged = user.deviceid !== deviceId;
+      
+      // If device changed, restrict video access
+      if (deviceChanged) {
+        console.warn(`⚠️ Device changed for user ${user.user_id}: ${user.deviceid} → ${deviceId}`);
+        
+        return {
+          isValid: true,
+          allowVideoAccess: false,
+          message: 'Device changed. Video access restricted.',
+          errorCode: 'DEVICE_CHANGED',
+          user: {
+            user_id: user.user_id,
+            name: user.name,
+            email: user.email,
+            deviceid: user.deviceid
+          }
+        };
+      }
+
+      // Continue with normal device validation
+      const baseValidation = await this.validateDeviceAccess(userId, deviceId);
+      
+      if (!baseValidation.isValid) {
+        return {
+          ...baseValidation,
+          allowVideoAccess: false
+        };
+      }
+
+      return {
+        isValid: true,
+        allowVideoAccess: true,
+        message: 'Device authorized',
+        user: baseValidation.user
+      };
+
+    } catch (error) {
+      console.error('❌ Strict device validation error:', error);
+      return {
+        isValid: false,
+        allowVideoAccess: false,
+        message: 'Device validation failed',
+        errorCode: 'VALIDATION_ERROR',
         error: error.message
       };
     }
