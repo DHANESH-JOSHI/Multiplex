@@ -34,7 +34,7 @@ const CountryFilteringService = {
       }
       // Priority 2: Country-specific pricing
       else if (content.pricing && Array.isArray(content.pricing) && content.pricing.length > 0) {
-        const countryPricing = content.pricing.find(p => p.country === userCurrency.iso_code);
+        const countryPricing = content.pricing.find(p => p.country === userCountry);
         if (countryPricing) {
           isAvailable = true;
           price = countryPricing.price;

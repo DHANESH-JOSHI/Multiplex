@@ -219,7 +219,7 @@ const getChannelInfoService = async (channel_id, uid, userCountry = null) => {
     const response = {
       channel_name: channel.channel_name,
       channel_id: String(channel.user_id),  // Use user_id instead of _id
-      channel_img: channel.img || 'https://multiplexplay.com/office/uploads/default_image/poster.jpg',
+      channel_img: channel.img || '',
       subcribe: totalSubscribers,
       userSubscribed: userSubscribed,
       view: channelStats.total_views,           // Total views of all channel videos
