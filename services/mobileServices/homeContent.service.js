@@ -64,12 +64,12 @@ const getHomeContent = async (country, channel_id, user_id) => {
   // };
 
   // 2. Popular stars
-  // const popularStars = await Star.find({  }).sort({ view: -1 }).lean();
-  // const popular_stars = popularStars.map(star => ({
-  //   star_id: star.star_id,
-  //   star_name: star.star_name,
-  //   image_url: star.image_url || "https://multiplexplay.com/office/uploads/star_image/default.jpg"
-  // }));
+  const popularStars = await Star.find({  }).sort({ view: -1 }).lean();
+  const popular_stars = popularStars.map(star => ({
+    star_id: star.star_id,
+    star_name: star.star_name,
+    image_url: star.image_url || "https://multiplexplay.com/office/uploads/star_image/default.jpg"
+  }));
 
   // 3. All countries
   // const allCountries = await Country.find({ }).lean();
@@ -94,98 +94,98 @@ const getHomeContent = async (country, channel_id, user_id) => {
   }));
 
   // 5. Featured TV channels (if available)
-//   const featured_tv_channel = await channelModel.find({ }).sort({ cre: -1 }).lean() || [] ; // For now, leave empty or implement as needed
-//   // const movies = 
-// //country: { $in: country }
-//   // 6. Latest movies (filter by channel_id if provided)
-//   const movieFilter = channel_id ? { channel_id } : {};
-//   const latestMovies = await Video.find(movieFilter).sort({ cre: -1 }).lean();
+  const featured_tv_channel = await channelModel.find({ }).sort({ cre: -1 }).lean() || [] ; // For now, leave empty or implement as needed
+  // const movies = 
+//country: { $in: country }
+  // 6. Latest movies (filter by channel_id if provided)
+  const movieFilter = channel_id ? { channel_id } : {};
+  const latestMovies = await Video.find(movieFilter).sort({ cre: -1 }).lean();
   
-//   const webseriesFilter = channel_id ? { channel_id } : {};
-//   const latestWebseries = await webseriesModel.find(webseriesFilter).sort({ cre: -1 }).lean();
+  const webseriesFilter = channel_id ? { channel_id } : {};
+  const latestWebseries = await webseriesModel.find(webseriesFilter).sort({ cre: -1 }).lean();
 
-//   let allVideos = [...latestMovies, ...latestWebseries];
+  let allVideos = [...latestMovies, ...latestWebseries];
   
-//   // Apply country filtering to all videos
-//   if (country && allVideos.length > 0) {
-//     const filteredResult = await CountryFilteringService.applyCountryFilter(country, allVideos);
-//     allVideos = filteredResult.content;
-//   }
+  // Apply country filtering to all videos
+  if (country && allVideos.length > 0) {
+    const filteredResult = await CountryFilteringService.applyCountryFilter(country, allVideos);
+    allVideos = filteredResult.content;
+  }
   
-//   const latest_movies = allVideos.map((v, index) => {
-//     if (!v._id || !v.title) {
-//       console.warn(`Content at index ${index} is missing ID or title`, v);
-//     }
+  const latest_movies = allVideos.map((v, index) => {
+    if (!v._id || !v.title) {
+      console.warn(`Content at index ${index} is missing ID or title`, v);
+    }
 
-//     // Determine subscription status for this content
-//     let isSubscribed = false;
-//     if (userHasAdminSubscription) {
-//       // Admin subscription gives access to all content
-//       isSubscribed = true;
-//     } else if (user_id && channel_id) {
-//       // Check for individual content subscription
-//       // This would need to be checked against subscription table
-//       // For now, defaulting to false unless admin subscription
-//       isSubscribed = false;
-//     }
+    // Determine subscription status for this content
+    let isSubscribed = false;
+    if (userHasAdminSubscription) {
+      // Admin subscription gives access to all content
+      isSubscribed = true;
+    } else if (user_id && channel_id) {
+      // Check for individual content subscription
+      // This would need to be checked against subscription table
+      // For now, defaulting to false unless admin subscription
+      isSubscribed = false;
+    }
     
-//     return {
-//       videos_id: v._id,
-//       numeric_videos_id: v.videos_id ?? "",
-//       channel_id: v.channel_id,
-//       title: v.title,
-//       description: v.description ?? "",
-//       slug: v.slug ?? "",
-//       release: v.release ? v.release.toString() : "",
-//       is_paid: (v.is_paid ?? 0).toString(),
-//       price: v.country_price || v.price || 0, // Use country-specific price from filtering service
-//       pricing: v.pricing ?? [ { "country": "null", "price": 0 },],
-//       use_global_price: v.use_global_price ?? true,
-//       runtime: v.runtime ?? 0,
-//       video_quality: v.video_quality ?? "HD",
-//       video_url: isSubscribed ? v.video_url ?? "" : "", // Hide video_url if not subscribed
-//       trailer: v.trailer ?? "",
-//       download_link: isSubscribed ? v.download_link ?? "" : "", // Hide download if not subscribed
-//       enable_download: v.enable_download ?? "0",
-//       is_tvseries: v.is_tvseries ?? 1,
-//       videoContent_id: v.videoContent_id ?? "",
-//       stars: v.stars ?? "",
-//       director: v.director ?? [],
-//       writer: v.writer ?? [],
-//       rating: v.rating ?? "0",
-//       country: v.country ?? [],
-//       genre: v.genre ?? [],
-//       language: v.language ?? [],
-//       total_rating: v.total_rating ?? 0,
-//       today_view: v.today_view ?? 0,
-//       weekly_view: v.weekly_view ?? 0,
-//       monthly_view: v.monthly_view ?? 0,
-//       total_view: v.total_view ?? 0,
-//       last_ep_added: v.last_ep_added ?? "",
-//       created_at: v.cre ?? "",
-//       thumbnail_url: v.thumbnail_url || fallbackThumb,
-//       poster_url: v.poster_url || fallbackPoster,
-//       isSubscribed: isSubscribed, // Add subscription status
-//       __v: v.__v ?? 0,
-//     };
-// });
+    return {
+      videos_id: v._id,
+      numeric_videos_id: v.videos_id ?? "",
+      channel_id: v.channel_id,
+      title: v.title,
+      description: v.description ?? "",
+      slug: v.slug ?? "",
+      release: v.release ? v.release.toString() : "",
+      is_paid: (v.is_paid ?? 0).toString(),
+      price: v.country_price || v.price || 0, // Use country-specific price from filtering service
+      pricing: v.pricing ?? [ { "country": "null", "price": 0 },],
+      use_global_price: v.use_global_price ?? true,
+      runtime: v.runtime ?? 0,
+      video_quality: v.video_quality ?? "HD",
+      video_url: isSubscribed ? v.video_url ?? "" : "", // Hide video_url if not subscribed
+      trailer: v.trailer ?? "",
+      download_link: isSubscribed ? v.download_link ?? "" : "", // Hide download if not subscribed
+      enable_download: v.enable_download ?? "0",
+      is_tvseries: v.is_tvseries ?? 1,
+      videoContent_id: v.videoContent_id ?? "",
+      stars: v.stars ?? "",
+      director: v.director ?? [],
+      writer: v.writer ?? [],
+      rating: v.rating ?? "0",
+      country: v.country ?? [],
+      genre: v.genre ?? [],
+      language: v.language ?? [],
+      total_rating: v.total_rating ?? 0,
+      today_view: v.today_view ?? 0,
+      weekly_view: v.weekly_view ?? 0,
+      monthly_view: v.monthly_view ?? 0,
+      total_view: v.total_view ?? 0,
+      last_ep_added: v.last_ep_added ?? "",
+      created_at: v.cre ?? "",
+      thumbnail_url: v.thumbnail_url || fallbackThumb,
+      poster_url: v.poster_url || fallbackPoster,
+      isSubscribed: isSubscribed, // Add subscription status
+      __v: v.__v ?? 0,
+    };
+});
 
 
 // 7. Latest TV series (filter by channel_id if provided)
-  // const tvseriesFilter = channel_id ? { channel_id } : {};
-  // const latestTvseries = await Video.find(tvseriesFilter).sort({ cre: -1 }).lean();
-  // const latest_tvseries = latestTvseries.map(v => ({
-  //   videos_id: v.videos_id,
-  //   title: v.title,
-  //   description: v.description,
-  //   slug: v.slug,
-  //   is_paid: v.is_paid?.toString() || "1",
-  //   release: v.release ? v.release.toString() : "",
-  //   runtime: v.runtime,
-  //   video_quality: v.video_quality,
-  //   thumbnail_url: v.thumbnail_url || "https://multiplexplay.com/office/uploads/default_image/thumbnail.jpg",
-  //   poster_url: v.poster_url || "https://multiplexplay.com/office/uploads/default_image/poster.jpg"
-  // }));
+  const tvseriesFilter = channel_id ? { channel_id } : {};
+  const latestTvseries = await Video.find(tvseriesFilter).sort({ cre: -1 }).lean();
+  const latest_tvseries = latestTvseries.map(v => ({
+    videos_id: v.videos_id,
+    title: v.title,
+    description: v.description,
+    slug: v.slug,
+    is_paid: v.is_paid?.toString() || "1",
+    release: v.release ? v.release.toString() : "",
+    runtime: v.runtime,
+    video_quality: v.video_quality,
+    thumbnail_url: v.thumbnail_url || "https://multiplexplay.com/office/uploads/default_image/thumbnail.jpg",
+    poster_url: v.poster_url || "https://multiplexplay.com/office/uploads/default_image/poster.jpg"
+  }));
 
   // 8. Featured Genre and Movie – for each genre, fetch a list of videos matching that genre
  const features_genre_and_movie = await Promise.all(
@@ -271,10 +271,10 @@ const filtered_features = features_genre_and_movie.filter(Boolean);
 
 
   return {
-    // all_genre,
-    // featured_tv_channel,
-    // latest_movies,
-    // latest_tvseries,
+    all_genre,
+    featured_tv_channel,
+    latest_movies,
+    latest_tvseries,
     features_genre_and_movie: filtered_features
   };
 };
