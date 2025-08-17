@@ -298,6 +298,7 @@ async addMovie(req, res) {
         
         // Check channel subscription like in channel service
         let channelSubscribedStatus = false;
+        let channelImg = '';
         if (user_id && currentChannelId) {
           // Find the channel document first
           const channelDoc = await Channel.findOne({ user_id: currentChannelId });
@@ -309,6 +310,9 @@ async addMovie(req, res) {
           });
           
           if (channelDoc) {
+            // Store channel image
+            channelImg = channelDoc.img || '';
+            
             const userSubscribe = await channelSubscribeModel.findOne({
               user: user_id,
               channel: channelDoc._id,  // Use channel's _id, not user_id
@@ -450,6 +454,11 @@ async addMovie(req, res) {
       if (result?.data?.[0]) {
         const movieData = result.data[0];
         const isPaid = movieData.is_paid === 1 || movieData.is_paid === true;
+        
+        // Add channel_img to movie data if available
+        if (channelImg) {
+          movieData.channel_img = channelImg;
+        }
         
         // is_paid = 0 (free) → always show video_url
         // is_paid = 1 (paid) → only show video_url if subscribed

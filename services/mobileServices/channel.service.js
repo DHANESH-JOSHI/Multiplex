@@ -58,13 +58,13 @@ const getChannelList = async (limit, platform = null, userCountry = null) => {
           availableVideo = channelVideos[0];
         }
 
-        // ❌ Skip channel if no available video found
+        // Skip channel if no available video found
         if (!availableVideo || !availableVideo.videos_id) {
           console.log(`🚫 Channel skipped - no available videos: ${channel.channel_name}`);
           return null;
         }
 
-        // ✅ Construct and return formatted response with available video
+        // Construct and return formatted response with available video
         return {
           channel_name: channel.channel_name,
           channel_img: channel.img,
@@ -178,46 +178,44 @@ const getChannelInfoService = async (channel_id, uid, userCountry = null) => {
     
     console.log("📊 Channel Stats:", channelStats, "for channel_user_id:", channel_user_id);
 
-    // Step 5: Count of subscribers
-    
-     const subscriberCount = await subscriptionModel.countDocuments({ c_id: objectChannelId });
+    // Step 5: Count of subscribers (use channel.user_id consistently)
+    const totalSubscribers = await subcribeModel.countDocuments({ channel: channel.user_id });
+    console.log("📊 Total Subscribers:", totalSubscribers, "for channel.user_id:", channel.user_id);
 
     // Step 6: Related Movies - Only show isChannel=true and is_movie=true
     const relatedMovies = await videoSchema.aggregate([
-      {
-        $match: {
-          channel_id: channel_user_id,
-          isChannel: true,
-          is_movie: true
-        }
-      },
+    {
+    $match: {
+    channel_id: channel_user_id,
+    isChannel: true,
+    is_movie: true
+    }
+    },
     ]);
-    // console.log(relatedMovies);
-   const totalSubscribers = await subcribeModel.countDocuments({ channel: channel._id });
 
-    // 2. Check if the current user is subscribed
-    if (uid) {
+     // Step 7: Check if the current user is subscribed
+     if (uid) {
       const userSubscribe = await subcribeModel.findOne({
         user: uid,
-        channel: channel._id,
-      });
+      channel: channel.user_id,  // Use channel.user_id consistently
+    });
 
-      if (userSubscribe) {
+    if (userSubscribe) {
         userSubscribed = true;
-      }
+    }
     }
 
 
 
-    // Step 7: Prepare response with detailed channel statistics
+    // Step 8: Prepare response with detailed channel statistics
     const response = {
       channel_name: channel.channel_name,
       channel_id: String(channel.user_id),  // Use user_id instead of _id
       channel_img: channel.img || '',
-      subcribe: totalSubscribers,
+      subcribe: totalSubscribers,           // Use totalSubscribers from subcribeModel
       userSubscribed: userSubscribed,
-      view: channelStats.total_views,           // Total views of all channel videos
-      count: String(subscriberCount),
+      view: channelStats.total_views,       // Total views of all channel videos
+      count: String(totalSubscribers),      // Show same count as subcribe field
       // Detailed channel statistics
       channel_stats: {
         total_videos: channelStats.video_count,
@@ -464,9 +462,9 @@ const getChannelById = async (channelId) => {
 const subscribeToChannel = async (channelId, userId = null) => {
   try {
     const channelObjectId = channelId;
-
+    
     // 1. Check if the channel exists
-    const channel = await Channel.findById(channelObjectId);
+    const channel = await Channel.findOne({ user_id: channelId });
     if (!channel) {
       return { message: 'Channel not found. Please provide a valid channel.' };
     }
@@ -482,38 +480,69 @@ const subscribeToChannel = async (channelId, userId = null) => {
 
     const userObjectId = userId;
 
-    // 2. Check if already subscribed
+    // 2. Check if already subscribed (use channel.user_id as the channel reference)
     const subscription = await subcribeModel.findOne({
-      channel: channelObjectId,
+      channel: channel.user_id,
       user: userObjectId,
     });
 
     if (subscription) {
       return {
         message: 'You are already subscribed to this channel.',
-        subscribers: channel.subscribers,
-        isSubscribed: true,
+        subscribers: channel.subscribers || 0,
+        userSubscribed: true,
       };
     }
 
-    // 3. Create a new subscription
+    // 3. Create a new subscription (use channel.user_id as the channel_id)
     const newSubscription = new subcribeModel({
-      channel: channelObjectId,
+      channel: channel.user_id,  // Use user_id from channel table as channel_id in subscription
       user: userObjectId,
     });
     await newSubscription.save();
 
-    // 4. Increment subscribers count and return updated channel
-    const updatedChannel = await Channel.findByIdAndUpdate(
+    // 4. Ensure channel has subscribers field, then increment
+    console.log("🔍 About to update channel:", {
       channelObjectId,
+      channelId: channel._id,
+      currentSubscribers: channel.subscribers
+    });
+    
+    // First ensure the subscribers field exists
+    if (typeof channel.subscribers !== 'number') {
+      console.log("⚠️ Initializing subscribers field to 0");
+      await Channel.findByIdAndUpdate(
+        channel._id,
+        { $set: { subscribers: 0 } }
+      );
+    }
+    
+    // Now increment the subscribers count
+    const updatedChannel = await Channel.findByIdAndUpdate(
+      channel._id,  // Use the channel's actual _id instead of channelObjectId
       { $inc: { subscribers: 1 } },
       { new: true }
     );
-
+    
+    console.log("Updated Channel:", updatedChannel);
+    
+    if (!updatedChannel) {
+      console.error("❌ Failed to update channel subscribers count");
+      // Manual fallback - get current subscriber count and add 1
+      const currentCount = await Channel.findById(channel._id).select('subscribers');
+      const fallbackCount = (currentCount?.subscribers || 0) + 1;
+      
+      return {
+        message: 'Subscription created but failed to update subscriber count.',
+        subscribers: fallbackCount,
+        userSubscribed: true,
+      };
+    }
+    
     return {
       message: 'Subscription successful.',
       subscribers: updatedChannel.subscribers,
-      isSubscribed: true,
+      userSubscribed: true,
     };
   } catch (error) {
     console.error('Subscription Error:', error);

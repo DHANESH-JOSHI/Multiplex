@@ -185,7 +185,23 @@ class WebSeriesController {
       Object.assign(webSeriesObj, filteredResult.content);
     }
 
-    // Step 4: Check if user has active subscription for this web series
+    // Step 4: Get channel information for webseries
+    let channelImg = '';
+    if (channel_id) {
+      try {
+        const channelDoc = await require('../../models/channel.model').findOne({ 
+          user_id: channel_id 
+        });
+        if (channelDoc) {
+          channelImg = channelDoc.img || '';
+          console.log("📺 Channel image found:", channelImg);
+        }
+      } catch (error) {
+        console.warn("⚠️ Error fetching channel image:", error.message);
+      }
+    }
+
+    // Step 5: Check if user has active subscription for this web series
     let isSubscribed = false;
     if (user_id && channel_id) {
       const now = Date.now();
@@ -257,8 +273,11 @@ class WebSeriesController {
       webSeriesObj.total_view = viewStats.total_view; // For backward compatibility
     }
 
-    // Step 7: Return response with isSubscribed flag
+    // Step 7: Add channel_img to webseries data and return response
     webSeriesObj.isSubscribed = isSubscribed;
+    if (channelImg) {
+      webSeriesObj.channel_img = channelImg;
+    }
 
     res.status(200).json({
       message: "Web series fetched successfully",
