@@ -526,6 +526,7 @@ async addMovie(req, res) {
     // Step 6: Format Final Response
 
     let formattedData = [];
+    let channelImage = ''; 
 
     if (Array.isArray(result?.data)) {
       formattedData = await Promise.all(result.data.map(async (item) => {
@@ -533,17 +534,22 @@ async addMovie(req, res) {
         const plainItem = item.toObject ? item.toObject() : (item._doc ? item._doc : item);
 
         // Channel image inject
-        let channelImage = plainItem.channel_img || '';
-        if (!channelImage && plainItem.channel_id) {
+        let itemChannelImage = plainItem.channel_img || '';
+        if (!itemChannelImage && plainItem.channel_id) {
           const channelDoc = await Channel.findOne({ user_id: plainItem.channel_id }).lean();
           if (channelDoc) {
-            channelImage = channelDoc.img || channelDoc.image || channelDoc.channel_img || '';
+            itemChannelImage = channelDoc.img || channelDoc.image || channelDoc.channel_img || '';
           }
+        }
+
+        // 👇 Agar global channelImage empty hai to set kar do ek baar
+        if (!channelImage && itemChannelImage) {
+          channelImage = itemChannelImage;
         }
 
         return {
           ...plainItem,
-          channel_img: channelImage
+          channel_img: itemChannelImage
         };
       }));
     }
@@ -557,6 +563,7 @@ async addMovie(req, res) {
       data: formattedData,
       related_movie: result.related_movie
     };
+
 
     res.status(200).json(finalResponse);
   } catch (error) {
