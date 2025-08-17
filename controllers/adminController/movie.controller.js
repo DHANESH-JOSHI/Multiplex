@@ -163,7 +163,7 @@ async addMovie(req, res) {
               allowVideoAccess = true; // Grant access after device reset
             } else {
               allowVideoAccess = false;
-              console.log(`❌ Failed to reset device for user ${userId}`);
+              console.log(`❌ Failed to reset device for user ${userId} - VIDEO ACCESS BLOCKED`);
             }
           }
         }
@@ -465,57 +465,137 @@ async addMovie(req, res) {
         }
       }
 
-      // Step 4: Apply country-based pricing and video access restrictions
-      if (result?.data?.[0] && country) {
-        const movieData = result.data[0];
-        
-        // Check if country matches any pricing entry
-        let countryPricing = null;
-        if (movieData.pricing && movieData.pricing.length > 0) {
-          // Convert country codes properly (INR → IN)
-          countryPricing = movieData.pricing.find(p => {
-            let priceCountry = p.country;
-            // Convert INR to IN, USD to US, etc.
-            if (priceCountry === 'INR') priceCountry = 'IN';
-            if (priceCountry === 'USD') priceCountry = 'US';
-            if (priceCountry === 'EUR') priceCountry = 'EU';
-            return priceCountry === country;
-          });
-        }
-        
-        // If country not supported, block video access
-        if (!countryPricing) {
-          allowVideoAccess = false;
-          console.log(`❌ Country ${country} not supported for video ${movieId}`);
-        } else {
-          // Update the pricing data with correct country code
-          movieData.country_price = countryPricing.price;
-          movieData.country_code = country; // Use proper country code (IN, not INR)
-        }
-      }
-
-      // Step 5: Apply is_paid logic for video_url visibility
+      // Step 4: Comprehensive Video Access Validation
+      let accessRestrictions = [];
+      
       if (result?.data?.[0]) {
         const movieData = result.data[0];
         const isPaid = movieData.is_paid === 1 || movieData.is_paid === true;
         
-        // is_paid = 0 (free) → always show video_url
-        // is_paid = 1 (paid) → only show video_url if subscribed
-        if (isPaid && !isSubscribed) {
-          allowVideoAccess = false;
-          console.log(`❌ Paid content requires subscription for video ${movieId}`);
+        console.log(`🔍 Starting comprehensive video access check for ${movieId}:`, {
+          isPaid,
+          isSubscribed,
+          allowVideoAccess,
+          country,
+          hasCountryInUrl: !!country
+        });
+
+        // Check 1: Country-based pricing validation
+        if (country) {
+          console.log(`🔍 DEBUGGING PRICING DATA:`, {
+            hasPricing: !!movieData.pricing,
+            pricingLength: movieData.pricing?.length,
+            pricingData: movieData.pricing,
+            requestedCountry: country
+          });
+          
+          let countryPricing = null;
+          if (movieData.pricing && movieData.pricing.length > 0) {
+            console.log(`🔍 SEARCHING FOR COUNTRY ${country} in pricing:`, 
+              movieData.pricing.map(p => `${p.country} (original: ${p.country})`));
+            
+            // Convert country codes properly (INR → IN)
+            countryPricing = movieData.pricing.find(p => {
+              let priceCountry = p.country;
+              console.log(`🔍 Checking pricing entry:`, { originalCountry: p.country, convertedCountry: priceCountry, requestedCountry: country });
+              
+              // Convert INR to IN, USD to US, etc.
+              if (priceCountry === 'INR') priceCountry = 'IN';
+              if (priceCountry === 'USD') priceCountry = 'US';
+              if (priceCountry === 'EUR') priceCountry = 'EU';
+              
+              const match = priceCountry === country;
+              console.log(`🔍 Match result:`, { priceCountry, country, match });
+              return match;
+            });
+          }
+          
+          console.log(`🔍 COUNTRY PRICING RESULT:`, { countryPricing, found: !!countryPricing });
+          
+          if (!countryPricing) {
+            // Fallback: Check country ObjectIds if pricing didn't match
+            console.log(`🔍 FALLBACK: Checking country ObjectIds array:`, movieData.country);
+            
+            if (movieData.country && Array.isArray(movieData.country) && movieData.country.length > 0) {
+              try {
+                const Currency = require('../../models/currency.model');
+                const countryDocs = await Currency.find({ 
+                  _id: { $in: movieData.country } 
+                }).select('country iso_code');
+                
+                console.log(`🔍 RESOLVED COUNTRIES:`, countryDocs.map(c => ({ country: c.country, iso: c.iso_code })));
+                
+                const matchingCountry = countryDocs.find(c => c.country === country);
+                
+                if (matchingCountry) {
+                  console.log(`✅ CHECK 1 PASSED (FALLBACK): Country ${country} found in ObjectId array`);
+                  movieData.country_price = movieData.price || 0;
+                  movieData.country_code = country;
+                } else {
+                  accessRestrictions.push(`Country ${country} not supported`);
+                  allowVideoAccess = false;
+                  console.log(`❌ RESTRICTION 1: Country ${country} not supported. Available in pricing: ${movieData.pricing?.map(p => p.country) || 'None'}, Available in ObjectIds: ${countryDocs.map(c => c.country) || 'None'}`);
+                }
+              } catch (error) {
+                console.warn(`⚠️ Error resolving country ObjectIds:`, error.message);
+                accessRestrictions.push(`Country ${country} not supported`);
+                allowVideoAccess = false;
+                console.log(`❌ RESTRICTION 1: Country ${country} not supported (ObjectId lookup failed)`);
+              }
+            } else {
+              accessRestrictions.push(`Country ${country} not supported`);
+              allowVideoAccess = false;
+              console.log(`❌ RESTRICTION 1: Country ${country} not supported. Available countries:`, 
+                movieData.pricing?.map(p => p.country) || 'No pricing data');
+            }
+          } else {
+            // Update the pricing data with correct country code
+            movieData.country_price = countryPricing.price;
+            movieData.country_code = country;
+            console.log(`✅ CHECK 1 PASSED: Country ${country} supported - Price: ${countryPricing.price}`);
+          }
+        } else {
+          console.log(`⚠️ CHECK 1 SKIPPED: No country provided`);
         }
-        
-        // Apply all restrictions to video_url and download_url
+
+        // Check 2: Device validation (already done above, just log the result)
+        if (!allowVideoAccess && accessRestrictions.length === 0) {
+          // This means device validation failed
+          accessRestrictions.push('Device validation failed');
+          console.log(`❌ RESTRICTION 2: Device validation failed`);
+        } else if (allowVideoAccess) {
+          console.log(`✅ CHECK 2 PASSED: Device validation successful`);
+        }
+
+        // Check 3: Subscription validation for paid content
+        if (isPaid && !isSubscribed && allowVideoAccess) {
+          accessRestrictions.push('Paid content requires subscription');
+          allowVideoAccess = false;
+          console.log(`❌ RESTRICTION 3: Paid content requires subscription`);
+        } else if (isPaid && isSubscribed) {
+          console.log(`✅ CHECK 3 PASSED: Paid content - user has subscription`);
+        } else if (!isPaid) {
+          console.log(`✅ CHECK 3 PASSED: Free content - no subscription required`);
+        }
+
+        // Final decision and URL nullification
+        console.log(`🎯 FINAL ACCESS DECISION:`, {
+          allowVideoAccess,
+          restrictionReasons: accessRestrictions,
+          totalRestrictions: accessRestrictions.length
+        });
+
         if (!allowVideoAccess) {
           if (movieData.video_url) {
             movieData.video_url = null;
-            console.log(`❌ Video URL nullified due to access restrictions`);
+            console.log(`🚫 Video URL nullified due to access restrictions:`, accessRestrictions.join(', '));
           }
           if (movieData.download_url) {
             movieData.download_url = null;
-            console.log(`❌ Download URL nullified due to access restrictions`);
+            console.log(`🚫 Download URL nullified due to access restrictions:`, accessRestrictions.join(', '));
           }
+        } else {
+          console.log(`✅ ALL CHECKS PASSED - Video access granted!`);
         }
       }
     } else {
