@@ -550,7 +550,7 @@ async addMovie(req, res) {
 
     const finalResponse = {
       message: result.message,
-      channel_img: channelImage,
+      channel_img: channelImage || 'https://multiplexplay.com/storage/banners/1752765686_logo1.png',
       isSubscribed,
       userSubscribed,
       allowVideoAccess,
