@@ -273,6 +273,21 @@ exports.firebaseAuth = async (req, res) => {
                     status: 1,
                     vstatus: 1
                 });
+                console.log("✅ New user created via Firebase auth:", user.email);
+            } else {
+                // Update existing user data (device ID, FCM, last login)
+                console.log("🔄 Updating existing user data:", user.email);
+                
+                user.deviceid = deviceid || user.deviceid;          // Update device ID
+                user.fcm = fcm || user.fcm;                        // Update FCM token
+                user.versioncode = versioncode || user.versioncode; // Update version code
+                user.last_login = new Date();                      // Update last login
+                user.firebase_auth_uid = uid;                      // Ensure Firebase UID is set
+                user.profile_picture = image_url || user.profile_picture; // Update profile picture
+                user.name = name || user.name;                     // Update name if provided
+                
+                await user.save();
+                console.log("✅ User data updated - Device ID:", user.deviceid, "FCM:", user.fcm?.substring(0, 20) + "...");
             }
 
         // ☎️ PHONE AUTH - Only if phone has actual value (not empty)
