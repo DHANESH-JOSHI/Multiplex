@@ -12,23 +12,38 @@ const instance = new razorpay({
 // Service to create Razorpay order with multiple currencies (auto-capture enabled)
 const createRazorpayOrder = async (amount, currencyCode) => {
   try {
-    console.log("🔍 Currency lookup:", { currencyCode });
+    // Set default currency if not provided
+    const finalCurrencyCode = currencyCode || 'INR';
+    console.log("🔍 Currency lookup:", { originalCurrencyCode: currencyCode, finalCurrencyCode });
     
-    // Get the exchange rate for the provided currency
-    const currency = await currencySchema.findOne({ iso_code: currencyCode });
-    
+    // First try to find the requested currency
+    let currency = await currencySchema.findOne({ iso_code: finalCurrencyCode });
     console.log("💰 Currency found:", currency ? { iso_code: currency.iso_code, status: currency.status } : "null");
 
+    // If INR not found, try to find USD as fallback
+    if (!currency && finalCurrencyCode === 'INR') {
+      console.log("⚠️  INR not found, trying USD as fallback...");
+      currency = await currencySchema.findOne({ iso_code: 'USD' });
+      console.log("💰 USD fallback found:", currency ? { iso_code: currency.iso_code, status: currency.status } : "null");
+    }
+
     if (!currency) {
-      console.log("❌ Currency not found in database for:", currencyCode);
-      // Check what currencies are available
-      const availableCurrencies = await currencySchema.find({}, { iso_code: 1, status: 1 });
-      console.log("📋 Available currencies:", availableCurrencies);
-      throw new Error(`Currency not supported: ${currencyCode}`);
+      console.log("❌ Currency not found in database for:", finalCurrencyCode);
+      // Check what currencies are available (first 10)
+      const availableCurrencies = await currencySchema.find({}, { iso_code: 1, status: 1 }).limit(10);
+      console.log("📋 Available currencies (first 10):", availableCurrencies);
+      
+      // Use the first available currency as final fallback
+      if (availableCurrencies.length > 0) {
+        currency = availableCurrencies[0];
+        console.log("🔄 Using fallback currency:", currency.iso_code);
+      } else {
+        throw new Error(`No currencies found in database`);
+      }
     }
     
     if (currency.status !== 1) {
-      throw new Error(`Currency is inactive: ${currencyCode}`);
+      throw new Error(`Currency is inactive: ${currency.iso_code}`);
     }
 
     // Convert the amount (you can apply exchange logic here if needed)
