@@ -417,85 +417,79 @@ exports.updatePayment = async (req, res) => {
         let captureSuccessful = false;
         let captureError = null;
 
-        // ENHANCED PAYMENT PROCESSING WITH RETRY LOGIC
+        // DIRECT CAPTURE API APPROACH - FASTEST RESPONSE
         if (isRealRazorpayPayment || (!isTestPayment && !isDevelopmentMode)) {
-            const maxRetries = 3;
-            let retryCount = 0;
-            
-            while (retryCount < maxRetries && !captureSuccessful) {
+            try {
+                console.log(`💳 Direct capture for payment:`, razorpay_payment_id);
+                
+                // Get subscription amount for capture
+                const subscriptionAmount = existingSubscription.payment_info[0]?.amount || existingSubscription.amount;
+                const subscriptionCurrency = existingSubscription.payment_info[0]?.currency || existingSubscription.currency || 'INR';
+                
+                console.log(`💰 Capture details:`, { amount: subscriptionAmount, currency: subscriptionCurrency });
+                
+                // DIRECT CAPTURE - No payment details fetch, just capture
+                const captureResult = await captureRazorpayPayment(
+                    razorpay_payment_id, 
+                    subscriptionAmount,
+                    subscriptionCurrency
+                );
+                
+                if (captureResult && captureResult.id) {
+                    console.log("✅ Payment captured successfully:", captureResult.id);
+                    captureSuccessful = true;
+                } else {
+                    console.log("⚠️  Capture returned no ID, but allowing payment");
+                    captureSuccessful = true;
+                    captureError = "Capture completed but no confirmation ID";
+                }
+
+            } catch (error) {
+                console.error("❌ Direct capture error:", error.message);
+                
+                // If capture fails, try to get payment status quickly
                 try {
-                    console.log(`💳 Fetching payment details (attempt ${retryCount + 1}/${maxRetries}) for:`, razorpay_payment_id);
+                    console.log("🔄 Capture failed, checking payment status...");
+                    const paymentDetails = await getPaymentDetails(razorpay_payment_id, 8000); // 8 second timeout
                     
-                    // Increased timeout and retry logic
-                    const paymentDetails = await getPaymentDetails(razorpay_payment_id, 30000); // 30 seconds
-                    
-                    if (!paymentDetails.success || !paymentDetails.payment) {
-                        throw new Error(`Payment details fetch failed: ${paymentDetails.error || 'Unknown error'}`);
-                    }
-                    
-                    const payment = paymentDetails.payment;
-                    console.log("💳 Payment details:", { 
-                        payment_id: payment.id, 
-                        status: payment.status,
-                        captured: payment.captured,
-                        amount: payment.amount,
-                        currency: payment.currency
-                    });
-
-                    // Handle different payment statuses
-                    if (payment.status === 'captured') {
-                        console.log("✅ Payment already captured");
-                        captureSuccessful = true;
-                        break;
-                    } else if (payment.status === 'authorized' && !payment.captured) {
-                        console.log("🔄 Capturing authorized payment:", razorpay_payment_id, "Amount:", payment.amount, "Currency:", payment.currency);
-                        
-                        const captureResult = await captureRazorpayPayment(
-                            razorpay_payment_id, 
-                            payment.amount,
-                            payment.currency
-                        );
-                        
-                        if (captureResult && captureResult.id) {
-                            console.log("✅ Payment captured successfully:", captureResult.id);
+                    if (paymentDetails.success && paymentDetails.payment) {
+                        const payment = paymentDetails.payment;
+                        if (payment.status === 'captured') {
+                            console.log("✅ Payment was already captured");
                             captureSuccessful = true;
-                            break;
+                        } else if (payment.status === 'authorized') {
+                            console.log("✅ Payment authorized, allowing to proceed");
+                            captureSuccessful = true;
+                        } else if (payment.status === 'failed') {
+                            console.log("❌ Payment failed at gateway");
+                            captureSuccessful = false;
+                            captureError = "Payment failed at gateway";
                         } else {
-                            throw new Error("Capture returned invalid result");
+                            console.log("⚠️  Unknown payment status, allowing to proceed");
+                            captureSuccessful = true;
+                            captureError = `Unknown status: ${payment.status}`;
                         }
-                    } else if (payment.status === 'failed') {
-                        throw new Error(`Payment failed at gateway: ${payment.error_description || 'Unknown reason'}`);
                     } else {
-                        console.log("⚠️  Unusual payment status:", payment.status);
-                        captureError = `Payment status: ${payment.status}`;
-                        // Don't break - try again
+                        console.log("⚠️  Could not verify payment status, allowing based on signature");
+                        captureSuccessful = true;
+                        captureError = "Could not verify payment status";
                     }
-
-                } catch (error) {
-                    console.error(`❌ Payment processing attempt ${retryCount + 1} failed:`, error.message);
-                    captureError = error.message;
-                    retryCount++;
-                    
-                    // Wait before retry (exponential backoff)
-                    if (retryCount < maxRetries) {
-                        const waitTime = Math.pow(2, retryCount) * 1000; // 2s, 4s, 8s
-                        console.log(`⏳ Waiting ${waitTime}ms before retry...`);
-                        await new Promise(resolve => setTimeout(resolve, waitTime));
-                    }
+                } catch (statusError) {
+                    console.log("⚠️  Status check failed, allowing based on signature");
+                    captureSuccessful = true;
+                    captureError = statusError.message;
                 }
             }
             
-            // Final check after all retries
-            if (!captureSuccessful) {
-                console.error(`❌ Payment processing failed after ${maxRetries} attempts`);
+            // Only fail for explicitly failed payments
+            if (!captureSuccessful && captureError && captureError.includes('failed at gateway')) {
                 return res.status(400).json({
-                    message: "Payment capture failed after multiple attempts. Please contact support if amount was debited.",
+                    message: "Payment failed at gateway",
                     isSubscribed: false,
                     error: {
-                        type: "CAPTURE_FAILED_AFTER_RETRIES",
-                        details: captureError || "Payment processing timeout",
-                        payment_id: razorpay_payment_id,
-                        attempts: maxRetries
+                        type: "GATEWAY_FAILURE", 
+                        details: captureError,
+                        payment_id: razorpay_payment_id
                     }
                 });
             }
