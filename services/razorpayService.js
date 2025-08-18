@@ -48,11 +48,34 @@ const createRazorpayOrder = async (amount, currencyCode) => {
 // Service to verify Razorpay payment
 const verifyRazorpayPayment = (payment_id, order_id, signature) => {
   const body = `${order_id}|${payment_id}`;
-  const expectedSignature = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+  
+  // Generate expected signatures in both formats
+  const expectedSignatureHex = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
     .update(body)
     .digest('hex');
+    
+  const expectedSignatureBase64 = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+    .update(body)
+    .digest('base64');
 
-  return expectedSignature === signature;
+  // Check both hex and base64 formats
+  const isHexMatch = expectedSignatureHex === signature;
+  const isBase64Match = expectedSignatureBase64 === signature;
+  const isValid = isHexMatch || isBase64Match;
+
+  // Debug signature verification
+  console.log('🔍 Signature Verification Debug:', {
+    body,
+    received_signature: signature,
+    expected_hex: expectedSignatureHex,
+    expected_base64: expectedSignatureBase64,
+    hex_match: isHexMatch,
+    base64_match: isBase64Match,
+    is_valid: isValid,
+    key_secret_length: process.env.RAZORPAY_KEY_SECRET?.length || 0
+  });
+
+  return isValid;
 };
 
 // Service to capture payment (for manual capture orders)
