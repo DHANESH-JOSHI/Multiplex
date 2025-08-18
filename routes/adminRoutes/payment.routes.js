@@ -8,17 +8,28 @@ const { addSubscription,
         deleteSubscription,
         checkVideoSubscription,
         grantManualSubscription,
-        addSingleVideoPurchase
+        addSingleVideoPurchase,
+        processFreeContent,
+        processCashPayment,
+        manualRefundSubscription,
+        getSubscriptionPaymentDetails
          } = require("../../controllers/adminController/payment.controller");
 
+// Existing routes
 router.post("/", addSubscription);
 router.post("/single", addSingleVideoPurchase);
 router.post("/manual", grantManualSubscription);
-router.post("/receipt", updatePayment)
+router.post("/receipt", updatePayment); // ENHANCED: Now with automatic capture
 router.get("/", getAllSubscriptions);
 router.get("/check_user_subscription", getSubscriptionById);
 router.get("/check_video_subscription", checkVideoSubscription);
 router.put("/:id", updateSubscription);
 router.delete("/:id", deleteSubscription);
+
+// NEW ENHANCED ROUTES for 4 Business Cases
+router.post("/free", processFreeContent);        // Case 3: Free Content
+router.post("/cash", processCashPayment);        // Case 4: Cash Payment
+router.post("/refund", manualRefundSubscription); // Enhanced refund
+router.get("/details/:subscription_id", getSubscriptionPaymentDetails); // Payment details
 
 module.exports = router;

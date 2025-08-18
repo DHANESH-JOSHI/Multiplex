@@ -290,78 +290,80 @@ exports.grantManualSubscription = async (req, res) => {
 };
 
 
-// Update payment info after Razorpay payment is done with verification
+// ENHANCED: Update payment info with automatic Razorpay capture
 exports.updatePayment = async (req, res) => {
+    const enhancedPaymentService = require('../../services/enhancedPaymentService');
+    
     try {
-        const { razorpay_order_id, razorpay_payment_id, razorpay_signature, status } = req.body;
+        const { 
+            razorpay_order_id, 
+            razorpay_payment_id, 
+            razorpay_signature, 
+            user_id, 
+            plan_id, 
+            video_id, 
+            channel_id,
+            price_amount,
+            paid_amount,
+            currencyCode
+        } = req.body;
+
+        // Validate required parameters
         if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
             return res.status(400).json({ 
-                message: "Missing payment parameters",
+                message: "Missing payment parameters: razorpay_order_id, razorpay_payment_id, razorpay_signature required",
                 isSubscribed: false 
             });
         }
 
-        // Step 1: Verify payment with Razorpay (BYPASSED FOR TESTING)
-        console.log("🔍 Payment verification request:", { razorpay_order_id, razorpay_payment_id });
-        
-        // Always bypass for testing
-        const verificationResult = { success: true, isValid: true, message: "Test mode - verification bypassed" };
-        console.log("✅ TESTING MODE: Payment verification bypassed");
-
-        // Step 2: Find subscription by order_id
-        console.log("🔍 Looking for subscription with order_id:", razorpay_order_id);
-        
-        const existingSubscription = await SubscriptionSchema.findOne({
-            "payment_info.0.razorpay_order_id": razorpay_order_id
+        console.log(`🔄 Processing payment update with automatic capture:`, { 
+            razorpay_order_id, 
+            razorpay_payment_id: razorpay_payment_id.substr(0, 8) + '...' 
         });
-        
-        console.log("📋 Found subscription:", !!existingSubscription);
-        
-        if (!existingSubscription) {
-            return res.status(404).json({
-                message: "Subscription not found for this order_id",
-                isSubscribed: false,
-                debug: { order_id: razorpay_order_id }
-            });
-        }
 
-        // Step 3: Update subscription if verification successful
-        const updated = await SubscriptionSchema.findOneAndUpdate(
-            { "payment_info.0.razorpay_order_id": razorpay_order_id },
-            {
-                $set: {
-                    "payment_info.0.razorpay_payment_id": razorpay_payment_id,
-                    "payment_info.0.razorpay_signature": razorpay_signature,
-                    "payment_info.0.status": "paid",
-                    ispayment: 1,
-                    is_active: 1,
-                    status: 1,
-                }
-            },
-            { new: true }
-        );
+        // Process payment with automatic capture using Enhanced Payment Service
+        const result = await enhancedPaymentService.processRazorpayPayment({
+            user_id,
+            plan_id,
+            video_id,
+            channel_id,
+            razorpay_order_id,
+            razorpay_payment_id,
+            razorpay_signature,
+            price_amount,
+            paid_amount,
+            currencyCode
+        });
 
-        console.log("💾 Subscription updated:", !!updated);
-
-        if (!updated) {
-            return res.status(404).json({ 
-                message: "Subscription not found for this order_id",
-                isSubscribed: false 
+        if (result.alreadyProcessed) {
+            return res.status(200).json({
+                message: result.message,
+                isSubscribed: true,
+                data: result.subscription,
+                correlationId: result.correlationId
             });
         }
 
         return res.status(200).json({
-            message: "Payment verified and subscription activated successfully",
+            message: "Payment captured and subscription activated successfully",
             isSubscribed: true,
-            data: updated
+            data: result.subscription,
+            paymentDetails: {
+                captured: true,
+                payment_id: result.paymentDetails?.id,
+                amount: result.paymentDetails?.amount,
+                currency: result.paymentDetails?.currency,
+                status: result.paymentDetails?.status
+            },
+            correlationId: result.correlationId
         });
 
-    } catch (err) {
-        console.error(err);
+    } catch (error) {
+        console.error("❌ Enhanced payment update failed:", error.message);
         return res.status(500).json({ 
-            message: "Error updating payment", 
+            message: `Payment processing failed: ${error.message}`, 
             isSubscribed: false,
-            error: err.message 
+            error: error.message 
         });
     }
 };
@@ -477,6 +479,106 @@ exports.checkVideoSubscription = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             message: "Error checking video subscription",
+            isSubscribed: false,
+            error: error.message
+        });
+    }
+};
+
+// ENHANCED: Handle Free Content (Case 3)
+exports.processFreeContent = async (req, res) => {
+    const enhancedPaymentService = require('../../services/enhancedPaymentService');
+    
+    try {
+        const { 
+            user_id, 
+            channel_id, 
+            video_id, 
+            plan_id,
+            custom_duration 
+        } = req.body;
+
+        if (!user_id || !channel_id || (!video_id && !plan_id)) {
+            return res.status(400).json({
+                message: "Missing required parameters: user_id, channel_id, and either video_id or plan_id",
+                isSubscribed: false
+            });
+        }
+
+        console.log(`🆓 Processing free content access:`, { user_id, channel_id, video_id, plan_id });
+
+        const result = await enhancedPaymentService.processFreeContent({
+            user_id,
+            channel_id,
+            video_id,
+            plan_id,
+            custom_duration
+        });
+
+        return res.status(201).json({
+            message: result.message,
+            isSubscribed: true,
+            data: result.subscription,
+            correlationId: result.correlationId
+        });
+
+    } catch (error) {
+        console.error("❌ Free content processing failed:", error.message);
+        return res.status(500).json({
+            message: `Free content processing failed: ${error.message}`,
+            isSubscribed: false,
+            error: error.message
+        });
+    }
+};
+
+// ENHANCED: Handle Cash Payment (Case 4)
+exports.processCashPayment = async (req, res) => {
+    const enhancedPaymentService = require('../../services/enhancedPaymentService');
+    
+    try {
+        const {
+            user_id,
+            channel_id,
+            video_id,
+            plan_id,
+            price_amount,
+            paid_amount,
+            custom_duration,
+            admin_note
+        } = req.body;
+
+        if (!user_id || !channel_id || (!video_id && !plan_id) || !custom_duration || !paid_amount) {
+            return res.status(400).json({
+                message: "Missing required parameters: user_id, channel_id, (video_id or plan_id), custom_duration, paid_amount",
+                isSubscribed: false
+            });
+        }
+
+        console.log(`💰 Processing cash payment:`, { user_id, channel_id, video_id, plan_id, paid_amount, custom_duration });
+
+        const result = await enhancedPaymentService.processCashPayment({
+            user_id,
+            channel_id,
+            video_id,
+            plan_id,
+            price_amount,
+            paid_amount,
+            custom_duration,
+            admin_note
+        });
+
+        return res.status(201).json({
+            message: result.message,
+            isSubscribed: true,
+            data: result.subscription,
+            correlationId: result.correlationId
+        });
+
+    } catch (error) {
+        console.error("❌ Cash payment processing failed:", error.message);
+        return res.status(500).json({
+            message: `Cash payment processing failed: ${error.message}`,
             isSubscribed: false,
             error: error.message
         });
