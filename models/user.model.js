@@ -5,7 +5,7 @@ const userSchema = new mongoose.Schema(
   {
     user_id: {
       type: mongoose.Schema.Types.ObjectId,
-      required: true,
+      unique: true
     },
     name: String,
     slug: { type: String, required: false },
@@ -42,8 +42,16 @@ const userSchema = new mongoose.Schema(
   { collection: "user" }
 );
 
+// Pre-save hook to automatically set user_id to _id
+userSchema.pre('save', function(next) {
+  if (!this.user_id) {
+    this.user_id = this._id;
+  }
+  next();
+});
+
 // userSchema.plugin(mongooseSequence, {
-//   inc_field: "user_id",
-// });
+//   inc_field: "user_id", 
+// }); // Not needed since user_id = _id
 
 module.exports = mongoose.model("User", userSchema);

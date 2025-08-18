@@ -56,20 +56,14 @@ exports.login = async (req, res) => {
             user.otpExpire = otpExpire;
             await user.save();
         } else {
-            // New user create
-            const lastUser = await User.findOne().sort({ user_id: -1 });
-            let newUserId = 1;
-            if (lastUser && lastUser.user_id && !isNaN(lastUser.user_id)) {
-                newUserId = parseInt(lastUser.user_id) + 1;
-            }
-            
-            console.log("Creating new user with ID:", newUserId);
+            // New user create - mongoose-sequence will auto-generate user_id
+            console.log("Creating new user...");
 
             user = await User.create({
-                user_id: newUserId,
+                // user_id will be auto-set to _id by pre-save hook
                 name: extractedName,    // ✅ Fixed: Use extracted name from email
-                slug: newUserId,
-                username: newUserId,
+                slug: extractedName || "user",
+                username: extractedName || "user",
                 email: email || "",
                 is_password_set: 0,
                 password: "25f9e794323b453885f5181f1b624d0b",  // Example hash for default password
