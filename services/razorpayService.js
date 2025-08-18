@@ -12,11 +12,23 @@ const instance = new razorpay({
 // Service to create Razorpay order with multiple currencies (auto-capture enabled)
 const createRazorpayOrder = async (amount, currencyCode) => {
   try {
+    console.log("🔍 Currency lookup:", { currencyCode });
+    
     // Get the exchange rate for the provided currency
     const currency = await currencySchema.findOne({ iso_code: currencyCode });
+    
+    console.log("💰 Currency found:", currency ? { iso_code: currency.iso_code, status: currency.status } : "null");
 
     if (!currency) {
-      throw new Error("Currency not supported");
+      console.log("❌ Currency not found in database for:", currencyCode);
+      // Check what currencies are available
+      const availableCurrencies = await currencySchema.find({}, { iso_code: 1, status: 1 });
+      console.log("📋 Available currencies:", availableCurrencies);
+      throw new Error(`Currency not supported: ${currencyCode}`);
+    }
+    
+    if (currency.status !== 1) {
+      throw new Error(`Currency is inactive: ${currencyCode}`);
     }
 
     // Convert the amount (you can apply exchange logic here if needed)
