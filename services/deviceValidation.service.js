@@ -70,13 +70,31 @@ const DeviceValidationService = {
       }
       
       const concurrentUsers = await User.find(concurrentQuery);
-
+      
+      // Log for debugging
+      console.log(`🔍 Device validation for user ${userId}, device ${deviceId}`);
+      console.log(`📱 Current user device ID: ${user.deviceid}`);
+      console.log(`🔄 Concurrent users with same device: ${concurrentUsers.length}`);
+      
       if (concurrentUsers.length > 0) {
-        return {
-          isValid: false,
-          message: 'Device is being used by another account. Multiple sessions not allowed.',
-          errorCode: 'CONCURRENT_SESSION'
-        };
+        console.log(`❌ Concurrent users found:`, concurrentUsers.map(u => ({
+          id: u._id, 
+          user_id: u.user_id, 
+          email: u.email, 
+          deviceid: u.deviceid
+        })));
+        
+        // Clean up: Remove device ID from other users to fix the issue
+        console.log(`🔧 Cleaning up duplicate device IDs...`);
+        for (const duplicateUser of concurrentUsers) {
+          await User.updateOne(
+            { _id: duplicateUser._id },
+            { $unset: { deviceid: 1 } }
+          );
+          console.log(`✅ Removed device ID from user: ${duplicateUser.email || duplicateUser.user_id}`);
+        }
+        
+        console.log(`✅ Device cleanup completed. Access granted.`);
       }
 
       return {

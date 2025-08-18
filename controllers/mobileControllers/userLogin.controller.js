@@ -243,17 +243,12 @@ exports.firebaseAuth = async (req, res) => {
 
             user = await User.findOne({ email });
             if (!user) {
-                const lastUser = await User.findOne().sort({ user_id: -1 });
-                let newUserId = 1;
-                if (lastUser && lastUser.user_id && !isNaN(lastUser.user_id)) {
-                    newUserId = parseInt(lastUser.user_id) + 1;
-                }
+                // No need for incremental user_id, will set to ObjectId after creation
 
                 user = await User.create({
-                    user_id: newUserId,
                     name,
-                    slug: newUserId,
-                    username: newUserId,
+                    slug: name?.toLowerCase().replace(/\s+/g, '') || 'user',
+                    username: name?.toLowerCase().replace(/\s+/g, '') || 'user',
                     email,
                     phone,
                     google_id: uid,
@@ -273,7 +268,11 @@ exports.firebaseAuth = async (req, res) => {
                     status: 1,
                     vstatus: 1
                 });
-                console.log("✅ New user created via Firebase auth:", user.email);
+                // Set user_id to be same as _id (ObjectId)
+                user.user_id = user._id;
+                await user.save();
+                
+                console.log("✅ New user created via Firebase auth:", user.email, "user_id:", user.user_id);
             } else {
                 // Update existing user data (device ID, FCM, last login)
                 console.log("🔄 Updating existing user data:", user.email);
