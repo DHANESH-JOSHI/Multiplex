@@ -1,34 +1,33 @@
-const razorpay = require('razorpay');
-const crypto = require('crypto');
-const dotenv = require('dotenv');
-const currencySchema = require('../models/currency.model');
+const razorpay = require("razorpay");
+const crypto = require("crypto");
+const dotenv = require("dotenv");
+const currencySchema = require("../models/currency.model");
 dotenv.config();
 
 const instance = new razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
-// Service to create Razorpay order with multiple currencies
+// Service to create Razorpay order with multiple currencies (auto-capture enabled)
 const createRazorpayOrder = async (amount, currencyCode) => {
   try {
     // Get the exchange rate for the provided currency
-
     const currency = await currencySchema.findOne({ iso_code: currencyCode });
 
     if (!currency) {
-      throw new Error('Currency not supported');  
+      throw new Error("Currency not supported");
     }
 
-    // Convert the amount to the desired currency
-    const convertedAmount = amount ;
+    // Convert the amount (you can apply exchange logic here if needed)
+    const convertedAmount = amount;
 
-    // Create Razorpay order
+    // Create Razorpay order with auto-capture
     const options = {
-      amount: convertedAmount, // Razorpay expects amount in paise
-      currency: currency.iso_code,  // Currency from the database (e.g., INR, USD)
+      amount: convertedAmount, // amount in smallest unit (paise for INR, cents for USD, etc.)
+      currency: currency.iso_code,
       receipt: `receipt_${Date.now()}`,
-      payment_capture: 1 // Auto capture payment
+      payment_capture: 1, // Auto-capture ✅
     };
 
     return new Promise((resolve, reject) => {
@@ -41,30 +40,29 @@ const createRazorpayOrder = async (amount, currencyCode) => {
     });
   } catch (error) {
     console.error(error);
-    throw new Error('Error creating Razorpay order');
+    throw new Error("Error creating Razorpay order");
   }
 };
 
-// Service to verify Razorpay payment
+// Service to verify Razorpay payment signature
 const verifyRazorpayPayment = (payment_id, order_id, signature) => {
   const body = `${order_id}|${payment_id}`;
-  
-  // Generate expected signatures in both formats
-  const expectedSignatureHex = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
-    .update(body)
-    .digest('hex');
-    
-  const expectedSignatureBase64 = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
-    .update(body)
-    .digest('base64');
 
-  // Check both hex and base64 formats
+  const expectedSignatureHex = crypto
+    .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+    .update(body)
+    .digest("hex");
+
+  const expectedSignatureBase64 = crypto
+    .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+    .update(body)
+    .digest("base64");
+
   const isHexMatch = expectedSignatureHex === signature;
   const isBase64Match = expectedSignatureBase64 === signature;
   const isValid = isHexMatch || isBase64Match;
 
-  // Debug signature verification
-  console.log('🔍 Signature Verification Debug:', {
+  console.log("🔍 Signature Verification Debug:", {
     body,
     received_signature: signature,
     expected_hex: expectedSignatureHex,
@@ -72,77 +70,65 @@ const verifyRazorpayPayment = (payment_id, order_id, signature) => {
     hex_match: isHexMatch,
     base64_match: isBase64Match,
     is_valid: isValid,
-    key_secret_length: process.env.RAZORPAY_KEY_SECRET?.length || 0
   });
 
   return isValid;
 };
 
-// Service to capture payment (for manual capture orders) - FIXED FORMAT
-const captureRazorpayPayment = async (payment_id, amount, currency = 'INR') => {
-  try {
-    console.log(`🔄 Attempting capture: ${payment_id}, Amount: ${amount}, Currency: ${currency}`);
-    
-    return new Promise((resolve, reject) => {
-      // Add timeout for capture operation
-      const timeout = setTimeout(() => {
-        console.error('⏰ Capture API timeout after 8 seconds');
-        reject(new Error('Capture timeout'));
-      }, 8000);
-
-      // Correct Razorpay capture format: (payment_id, amount, currency, callback)
-      instance.payments.capture(payment_id, amount, currency, (err, payment) => {
-        clearTimeout(timeout);
-        
-        if (err) {
-          console.error('❌ Razorpay Capture Error:', {
-            error: err.error || err,
-            payment_id,
-            amount,
-            currency
-          });
-          return reject(err);
-        }
-        
-        console.log('✅ Payment captured successfully:', {
-          id: payment.id,
-          amount: payment.amount,
-          currency: payment.currency,
-          status: payment.status
-        });
-        resolve(payment);
-      });
-    });
-  } catch (error) {
-    console.error('❌ Error capturing Razorpay payment:', error);
-    throw new Error('Error capturing Razorpay payment: ' + error.message);
-  }
-};
-
-// Service to get payment details with timeout
-const getPaymentDetails = async (payment_id) => {
+// Service to get payment details with configurable timeout
+const getPaymentDetails = async (payment_id, timeoutMs = 30000) => {
   try {
     return new Promise((resolve, reject) => {
-      // Add timeout to prevent hanging
       const timeout = setTimeout(() => {
-        console.error('⏰ Razorpay API timeout after 10 seconds');
-        reject(new Error('Razorpay API timeout'));
-      }, 10000); // 10 second timeout
+        console.error(`⏰ Razorpay API timeout after ${timeoutMs/1000} seconds`);
+        reject(new Error("Razorpay API timeout"));
+      }, timeoutMs);
 
       instance.payments.fetch(payment_id, (err, payment) => {
-        clearTimeout(timeout); // Clear timeout on response
-        
+        clearTimeout(timeout);
+
         if (err) {
-          console.error('❌ Error fetching payment details:', err);
+          console.error("❌ Error fetching payment details:", err);
           return reject(err);
         }
-        console.log('✅ Payment details fetched successfully');
+        console.log("✅ Payment details fetched successfully");
         resolve({ success: true, payment });
       });
     });
   } catch (error) {
-    console.error('❌ Error fetching payment details:', error);
+    console.error("❌ Error fetching payment details:", error);
     return { success: false, error: error.message };
+  }
+};
+
+// Service to capture payment (for authorized payments)
+const captureRazorpayPayment = async (payment_id, amount, currency) => {
+  try {
+    return new Promise((resolve, reject) => {
+      const captureOptions = {
+        amount: amount,
+        currency: currency
+      };
+
+      const timeout = setTimeout(() => {
+        console.error("⏰ Payment capture timeout after 30 seconds");
+        reject(new Error("Payment capture timeout"));
+      }, 30000);
+
+      instance.payments.capture(payment_id, amount, currency, (err, payment) => {
+        clearTimeout(timeout);
+
+        if (err) {
+          console.error("❌ Payment capture error:", err);
+          return reject(err);
+        }
+        console.log("✅ Payment captured successfully:", payment.id);
+        resolve(payment);
+      });
+    });
+  } catch (error) {
+    console.error("❌ Error capturing payment:", error);
+    throw error;
   }
 };
 
@@ -151,21 +137,24 @@ const refundPayment = async (payment_id, amount) => {
   try {
     const refundOptions = {
       payment_id,
-      amount: amount || undefined // If no amount, full refund
+      amount: amount || undefined, // If no amount, full refund
     };
-    
+
     return new Promise((resolve, reject) => {
       instance.payments.refund(payment_id, refundOptions, (err, refund) => {
         if (err) {
-          console.error('❌ Refund Error:', err);
-          return reject({ success: false, error: err.description || err.message });
+          console.error("❌ Refund Error:", err);
+          return reject({
+            success: false,
+            error: err.description || err.message,
+          });
         }
-        console.log('✅ Refund processed successfully:', refund.id);
+        console.log("✅ Refund processed successfully:", refund.id);
         resolve({ success: true, refund });
       });
     });
   } catch (error) {
-    console.error('❌ Error processing refund:', error);
+    console.error("❌ Error processing refund:", error);
     return { success: false, error: error.message };
   }
 };
@@ -175,5 +164,5 @@ module.exports = {
   verifyRazorpayPayment,
   captureRazorpayPayment,
   getPaymentDetails,
-  refundPayment
+  refundPayment,
 };

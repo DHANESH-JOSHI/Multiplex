@@ -301,7 +301,6 @@ exports.updatePayment = async (req, res) => {
             });
         }
 
-        // Step 1: Verify payment with Razorpay
         console.log("🔍 Payment verification request:", { 
             razorpay_order_id, 
             razorpay_payment_id,
@@ -322,44 +321,7 @@ exports.updatePayment = async (req, res) => {
                                     !isTestPayment && 
                                     razorpay_payment_id.length > 15;
         
-        let isValidSignature;
-        
-        if (isTestPayment || isDevelopmentMode) {
-            console.log("⚠️  DEVELOPMENT/TEST MODE: Bypassing signature verification");
-            console.log("Test payment:", isTestPayment, "Dev mode:", isDevelopmentMode);
-            isValidSignature = true;
-        } else {
-            // For production with live keys - try verification but allow bypass
-            try {
-                isValidSignature = verifyRazorpayPayment(razorpay_payment_id, razorpay_order_id, razorpay_signature);
-                console.log("✅ Payment signature verified:", isValidSignature);
-            } catch (verifyError) {
-                console.error("❌ Signature verification error:", verifyError);
-                isValidSignature = false;
-            }
-            
-            // PRODUCTION BYPASS: If signature fails but payment looks real, allow it
-            if (!isValidSignature && isRealRazorpayPayment) {
-                console.log("⚠️  PRODUCTION BYPASS: Real payment detected, allowing despite signature mismatch");
-                console.log("🔧 This happens when Android signature generation differs from server expectation");
-                isValidSignature = true; // Allow real payments to proceed
-            }
-        }
-
-        if (!isValidSignature) {
-            console.log("❌ Signature verification failed - returning error");
-            return res.status(400).json({
-                message: "Invalid payment signature",
-                isSubscribed: false,
-                debug: {
-                    isTestPayment,
-                    isDevelopmentMode,
-                    signatureProvided: !!razorpay_signature
-                }
-            });
-        }
-
-        // Step 2: Find subscription by order_id
+        // Find subscription by order_id first
         console.log("🔍 Looking for subscription with order_id:", razorpay_order_id);
         
         const existingSubscription = await SubscriptionSchema.findOne({
@@ -375,8 +337,75 @@ exports.updatePayment = async (req, res) => {
                 debug: { order_id: razorpay_order_id }
             });
         }
+        
+        let isValidSignature = false;
+        
+        // ENHANCED SIGNATURE VERIFICATION
+        if (isTestPayment || isDevelopmentMode) {
+            console.log("⚠️  DEVELOPMENT/TEST MODE: Bypassing signature verification");
+            console.log("Test payment:", isTestPayment, "Dev mode:", isDevelopmentMode);
+            isValidSignature = true;
+        } else {
+            // Try signature verification with enhanced error handling
+            try {
+                console.log("🔐 Attempting signature verification...");
+                isValidSignature = verifyRazorpayPayment(razorpay_payment_id, razorpay_order_id, razorpay_signature);
+                console.log("✅ Payment signature verified:", isValidSignature);
+                
+                // If signature fails, try alternative verification approaches
+                if (!isValidSignature && isRealRazorpayPayment) {
+                    console.log("🔄 Primary signature failed, attempting payment status verification...");
+                    
+                    try {
+                        // Get payment details to verify authenticity
+                        const paymentDetails = await getPaymentDetails(razorpay_payment_id, 30000); // 30 second timeout
+                        
+                        if (paymentDetails.success && paymentDetails.payment) {
+                            const payment = paymentDetails.payment;
+                            console.log("💳 Payment verification via API:", { 
+                                payment_id: payment.id, 
+                                order_id: payment.order_id,
+                                status: payment.status,
+                                amount: payment.amount
+                            });
+                            
+                            // Verify payment belongs to this order and is legitimate
+                            if (payment.order_id === razorpay_order_id && 
+                                (payment.status === 'captured' || payment.status === 'authorized')) {
+                                console.log("✅ Payment verified via API despite signature mismatch");
+                                isValidSignature = true;
+                            } else {
+                                console.log("❌ Payment API verification failed - order mismatch or invalid status");
+                            }
+                        } else {
+                            console.log("❌ Unable to fetch payment details from Razorpay API");
+                        }
+                    } catch (apiError) {
+                        console.error("❌ Payment API verification failed:", apiError.message);
+                        // Don't fail here - continue with original signature result
+                    }
+                }
+            } catch (verifyError) {
+                console.error("❌ Signature verification error:", verifyError.message);
+                isValidSignature = false;
+            }
+        }
 
-        // Step 3: Get payment details and capture if needed
+        if (!isValidSignature) {
+            console.log("❌ All verification methods failed - rejecting payment");
+            return res.status(400).json({
+                message: "Payment verification failed - invalid signature and unable to verify via API",
+                isSubscribed: false,
+                debug: {
+                    isTestPayment,
+                    isDevelopmentMode,
+                    signatureProvided: !!razorpay_signature,
+                    paymentId: razorpay_payment_id
+                }
+            });
+        }
+
+        // Payment Processing Decision
         console.log(`🔍 Payment processing decision:`, {
             isTestPayment,
             isDevelopmentMode,
@@ -388,51 +417,85 @@ exports.updatePayment = async (req, res) => {
         let captureSuccessful = false;
         let captureError = null;
 
+        // ENHANCED PAYMENT PROCESSING WITH RETRY LOGIC
         if (isRealRazorpayPayment || (!isTestPayment && !isDevelopmentMode)) {
-            try {
-                console.log("💳 Fetching payment details from Razorpay for:", razorpay_payment_id);
-                
-                const paymentDetails = await getPaymentDetails(razorpay_payment_id);
-                console.log("💳 Payment details:", { 
-                    payment_id: paymentDetails.payment.id, 
-                    status: paymentDetails.payment.status,
-                    captured: paymentDetails.payment.captured,
-                    amount: paymentDetails.payment.amount,
-                    currency: paymentDetails.payment.currency
-                });
+            const maxRetries = 3;
+            let retryCount = 0;
+            
+            while (retryCount < maxRetries && !captureSuccessful) {
+                try {
+                    console.log(`💳 Fetching payment details (attempt ${retryCount + 1}/${maxRetries}) for:`, razorpay_payment_id);
+                    
+                    // Increased timeout and retry logic
+                    const paymentDetails = await getPaymentDetails(razorpay_payment_id, 30000); // 30 seconds
+                    
+                    if (!paymentDetails.success || !paymentDetails.payment) {
+                        throw new Error(`Payment details fetch failed: ${paymentDetails.error || 'Unknown error'}`);
+                    }
+                    
+                    const payment = paymentDetails.payment;
+                    console.log("💳 Payment details:", { 
+                        payment_id: payment.id, 
+                        status: payment.status,
+                        captured: payment.captured,
+                        amount: payment.amount,
+                        currency: payment.currency
+                    });
 
-                // Capture payment if not already captured
-                if (!paymentDetails.payment.captured && paymentDetails.payment.status === 'authorized') {
-                    console.log("🔄 Capturing payment:", razorpay_payment_id, "Amount:", paymentDetails.payment.amount, "Currency:", paymentDetails.payment.currency);
+                    // Handle different payment statuses
+                    if (payment.status === 'captured') {
+                        console.log("✅ Payment already captured");
+                        captureSuccessful = true;
+                        break;
+                    } else if (payment.status === 'authorized' && !payment.captured) {
+                        console.log("🔄 Capturing authorized payment:", razorpay_payment_id, "Amount:", payment.amount, "Currency:", payment.currency);
+                        
+                        const captureResult = await captureRazorpayPayment(
+                            razorpay_payment_id, 
+                            payment.amount,
+                            payment.currency
+                        );
+                        
+                        if (captureResult && captureResult.id) {
+                            console.log("✅ Payment captured successfully:", captureResult.id);
+                            captureSuccessful = true;
+                            break;
+                        } else {
+                            throw new Error("Capture returned invalid result");
+                        }
+                    } else if (payment.status === 'failed') {
+                        throw new Error(`Payment failed at gateway: ${payment.error_description || 'Unknown reason'}`);
+                    } else {
+                        console.log("⚠️  Unusual payment status:", payment.status);
+                        captureError = `Payment status: ${payment.status}`;
+                        // Don't break - try again
+                    }
+
+                } catch (error) {
+                    console.error(`❌ Payment processing attempt ${retryCount + 1} failed:`, error.message);
+                    captureError = error.message;
+                    retryCount++;
                     
-                    const captureResult = await captureRazorpayPayment(
-                        razorpay_payment_id, 
-                        paymentDetails.payment.amount,
-                        paymentDetails.payment.currency
-                    );
-                    console.log("✅ Payment captured successfully:", captureResult.id);
-                    captureSuccessful = true;
-                    
-                } else if (paymentDetails.payment.captured) {
-                    console.log("ℹ️  Payment already captured");
-                    captureSuccessful = true;
-                } else {
-                    console.log("⚠️  Payment status not authorized:", paymentDetails.payment.status);
-                    captureError = `Payment status: ${paymentDetails.payment.status}`;
+                    // Wait before retry (exponential backoff)
+                    if (retryCount < maxRetries) {
+                        const waitTime = Math.pow(2, retryCount) * 1000; // 2s, 4s, 8s
+                        console.log(`⏳ Waiting ${waitTime}ms before retry...`);
+                        await new Promise(resolve => setTimeout(resolve, waitTime));
+                    }
                 }
-
-            } catch (error) {
-                console.error("❌ Payment processing failed:", error);
-                captureError = error.message;
-                
-                // For real payments, capture must succeed
+            }
+            
+            // Final check after all retries
+            if (!captureSuccessful) {
+                console.error(`❌ Payment processing failed after ${maxRetries} attempts`);
                 return res.status(400).json({
-                    message: "Payment capture failed. Subscription not activated.",
+                    message: "Payment capture failed after multiple attempts. Please contact support if amount was debited.",
                     isSubscribed: false,
                     error: {
-                        type: "CAPTURE_FAILED",
-                        details: error.message,
-                        payment_id: razorpay_payment_id
+                        type: "CAPTURE_FAILED_AFTER_RETRIES",
+                        details: captureError || "Payment processing timeout",
+                        payment_id: razorpay_payment_id,
+                        attempts: maxRetries
                     }
                 });
             }
@@ -441,20 +504,7 @@ exports.updatePayment = async (req, res) => {
             captureSuccessful = true; // Allow test payments
         }
 
-        // Only proceed with subscription if capture was successful
-        if (!captureSuccessful && !isTestPayment) {
-            return res.status(400).json({
-                message: "Payment capture required for subscription activation",
-                isSubscribed: false,
-                error: {
-                    type: "CAPTURE_REQUIRED",
-                    details: captureError || "Payment not captured",
-                    payment_id: razorpay_payment_id
-                }
-            });
-        }
-
-        // Step 4: Update subscription if verification successful
+        // Step 4: Update subscription if everything successful
         const updated = await SubscriptionSchema.findOneAndUpdate(
             { "payment_info.0.razorpay_order_id": razorpay_order_id },
             {
@@ -486,7 +536,7 @@ exports.updatePayment = async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("❌ updatePayment error:", err);
         return res.status(500).json({ 
             message: "Error updating payment", 
             isSubscribed: false,
@@ -502,160 +552,6 @@ exports.getAllSubscriptions = async (req, res) => {
         res.status(200).json({ message: "Subscriptions fetched successfully", data: subscriptions });
     } catch (error) {
         res.status(500).json({ message: "Error fetching subscriptions", error: error.message });
-    }
-};
-
-// Get single subscription by user_id
-exports.getSubscriptionById = async (req, res) => {
-    try {
-        const subscription = await SubscriptionSchema.findOne({ user_id: req.query.user_id })
-            .populate({
-                path: 'channel_id',
-                select: 'channel_name _id phone email img'
-            })
-            .populate({
-                path: 'plan_id',
-                select: 'name price'
-            })
-            .lean();
-
-        if (!subscription) {
-            return res.status(200).json({
-                message: "Subscription not found",
-                data: []
-            });
-        }
-
-        res.status(200).json({
-            message: "Subscription fetched successfully",
-            data: [subscription]
-        });
-    } catch (error) {
-        res.status(500).json({
-            message: "Error fetching subscription",
-            error: error.message
-        });
-    }
-};
-
-// Update subscription by ID
-exports.updateSubscription = async (req, res) => {
-    try {
-        const updatedSubscription = await SubscriptionSchema.findByIdAndUpdate(
-            req.params.id,
-            req.body,
-            { new: true }
-        );
-
-        if (!updatedSubscription) {
-            return res.status(404).json({ message: "Subscription not found" });
-        }
-
-        res.status(200).json({ message: "Subscription updated successfully", data: updatedSubscription });
-    } catch (error) {
-        res.status(500).json({ message: "Error updating subscription", error: error.message });
-    }
-};
-
-// Delete subscription by ID
-exports.deleteSubscription = async (req, res) => {
-    try {
-        const deletedSubscription = await SubscriptionSchema.findByIdAndDelete(req.params.id);
-        if (!deletedSubscription) {
-            return res.status(404).json({ message: "Subscription not found" });
-        }
-
-        res.status(200).json({ message: "Subscription deleted successfully" });
-    } catch (error) {
-        res.status(500).json({ message: "Error deleting subscription", error: error.message });
-    }
-};
-
-// Check if user has active subscription for a single video
-exports.checkVideoSubscription = async (req, res) => {
-    try {
-        const { user_id, video_id, channel_id } = req.query;
-
-        if (!user_id || !video_id || !channel_id) {
-            return res.status(400).json({ message: "Missing required parameters" });
-        }
-
-        const now = Date.now();
-        const activeSubscription = await SubscriptionSchema.findOne({
-            user_id,
-            video_id,
-            channel_id,
-            status: 1,
-            timestamp_to: { $gt: now }
-        });
-
-        if (!activeSubscription) {
-            return res.status(200).json({
-                message: "No active subscription found for this video",
-                isSubscribed: false,
-                data: []
-            });
-        }
-
-        return res.status(200).json({
-            message: "Active subscription found for this video",
-            isSubscribed: true,
-            data: activeSubscription
-        });
-
-    } catch (error) {
-        res.status(500).json({
-            message: "Error checking video subscription",
-            isSubscribed: false,
-            error: error.message
-        });
-    }
-};
-
-// ENHANCED: Handle Free Content (Case 3)
-exports.processFreeContent = async (req, res) => {
-    const enhancedPaymentService = require('../../services/enhancedPaymentService');
-    
-    try {
-        const { 
-            user_id, 
-            channel_id, 
-            video_id, 
-            plan_id,
-            custom_duration 
-        } = req.body;
-
-        if (!user_id || !channel_id || (!video_id && !plan_id)) {
-            return res.status(400).json({
-                message: "Missing required parameters: user_id, channel_id, and either video_id or plan_id",
-                isSubscribed: false
-            });
-        }
-
-        console.log(`🆓 Processing free content access:`, { user_id, channel_id, video_id, plan_id });
-
-        const result = await enhancedPaymentService.processFreeContent({
-            user_id,
-            channel_id,
-            video_id,
-            plan_id,
-            custom_duration
-        });
-
-        return res.status(201).json({
-            message: result.message,
-            isSubscribed: true,
-            data: result.subscription,
-            correlationId: result.correlationId
-        });
-
-    } catch (error) {
-        console.error("❌ Free content processing failed:", error.message);
-        return res.status(500).json({
-            message: `Free content processing failed: ${error.message}`,
-            isSubscribed: false,
-            error: error.message
-        });
     }
 };
 
@@ -840,318 +736,3 @@ exports.getSubscriptionPaymentDetails = async (req, res) => {
         });
     }
 };
-
-
-
-
-
-
-
-
-
-// const axios = require("axios");
-// const { createRazorpayOrder } = require('../../services/razorpayService');
-// const SubscriptionSchema = require('../../models/subscription.model');
-// const planSchema = require('../../models/plan.model');
-// // Create Razorpay order and save subscription
-// exports.addSubscription = async (req, res) => {
-//     try {
-
-//         const {
-//             plan_id,
-//             user_id,
-//             ammount,
-//             currencyCode,
-//             channel_id,
-//             video_id,
-//             country,
-//             price_amount,
-//             paid_amount,
-//             custom_duration
-//         } = req.body;
-
-//         const now = Date.now();
-
-//         // 0. Check if user already has an active subscription
-//         if (plan_id) {
-//             const activePlan = await SubscriptionSchema.findOne({
-//                 user_id,
-//                 plan_id,
-//                 channel_id,
-//                 status: 1,
-//                 timestamp_to: { $gt: now }
-//             });
-
-//             if (activePlan) {
-//                 return res.status(200).json({
-//                     message: "User already has an active subscription for this plan",
-//                     subscription: activePlan
-//                 });
-//             }
-//         } else if (video_id) {
-//             const activeVideo = await SubscriptionSchema.findOne({
-//                 user_id,
-//                 video_id,
-//                 channel_id,
-//                 status: 1,
-//                 timestamp_to: { $gt: now }
-//             });
-
-//             if (activeVideo) {
-//                 return res.status(200).json({
-//                     message: "User already has an active subscription for this video",
-//                     subscription: activeVideo
-//                 });
-//             }
-//         }
-
-//         // 1. Create Razorpay Order
-//         const razorpayOrder = await createRazorpayOrder(ammount, currencyCode);
-//         // console.log(razorpayOrder);
-
-//         const currentTimestamp = Date.now();
-//         let validityPeriod;
-
-//         // 2. Validity Period calculation
-//         if (!plan_id) {
-//             if (!video_id) {
-//                 return res.status(400).json({ message: "Missing video_id for single video purchase" });
-//             }
-
-//             validityPeriod = 45 * 24 * 60 * 60 * 1000; // 45 days
-//         } else {
-//             const plan = await planSchema.findById(plan_id);
-
-//             if (!plan) {
-//                 return res.status(400).json({ message: "Invalid plan_id" });
-//             }
-
-//             if ((plan.type === "custom" && plan.day) || custom_duration) {
-//                 validityPeriod = (plan.day || custom_duration) * 24 * 60 * 60 * 1000;
-//             } else {
-//                 switch (plan.type) {
-//                     case "monthly":
-//                         validityPeriod = 30 * 24 * 60 * 60 * 1000;
-//                         break;
-//                     case "quarterly":
-//                         validityPeriod = 90 * 24 * 60 * 60 * 1000;
-//                         break;
-//                     case "yearly":
-//                         validityPeriod = 365 * 24 * 60 * 60 * 1000;
-//                         break;
-//                     default:
-//                         validityPeriod = 30 * 24 * 60 * 60 * 1000;
-//                 }
-//             }
-//         }
-
-//         const timestamp_from = currentTimestamp;
-//         const timestamp_to = currentTimestamp + validityPeriod;
-
-//         // 3. Save Subscription
-//         const newSubscription = new SubscriptionSchema({
-//             plan_id: plan_id || null,
-//             user_id,
-//             channel_id,
-//             video_id,
-//             price_amount,
-//             paid_amount,
-//             timestamp_from,
-//             timestamp_to,
-//             payment_method: "Razorpay",
-//             payment_info: [{
-//                 razorpay_order_id: razorpayOrder.id,
-//                 razorpay_payment_id: "",
-//                 razorpay_signature: "",
-//                 amount: razorpayOrder.amount,
-//                 currency: razorpayOrder.currency,
-//                 status: "created"
-//             }],
-//             payment_timestamp: currentTimestamp,
-//             receipt: razorpayOrder.receipt,
-//             razorpay_order_id: razorpayOrder.id,
-//             currency: razorpayOrder.currency,
-//             amount: razorpayOrder.amount,
-//             amount_due: razorpayOrder.amount_due,
-//             amount_paid: razorpayOrder.amount_paid,
-//             created_at: razorpayOrder.created_at,
-//             status: 1
-//         });
-
-//         const savedSubscription = await newSubscription.save();
-
-//         res.status(201).json({
-//             message: "Razorpay order created and subscription added successfully",
-//             data: {
-//                 subscription: savedSubscription,
-//                 razorpayOrder
-//             }
-//         });
-
-//     } catch (error) {
-//         console.error("Error in createSubscriptionWithPayment:", error);
-//         res.status(500).json({ message: "Failed to create subscription with payment", error: error.message });
-//     }
-// };
-
-// exports.updatePayment = async (req, res) => {
-//   try {
-//     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, status } = req.body;
-//     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-//       return res.status(400).json({ message: "Missing payment parameters" });
-//     }
-
-//     const now = Date.now();
-//     const updated = await SubscriptionSchema.findOneAndUpdate(
-//       { "payment_info.0.razorpay_order_id": razorpay_order_id },
-//       {
-//         $set: {
-//           "payment_info.0.razorpay_payment_id": razorpay_payment_id,
-//           "payment_info.0.razorpay_signature": razorpay_signature,
-//           "payment_info.0.status": "paid",
-//           ispayment: 1,
-//           is_active: 1,
-//           status: 1,
-//         }
-//       },
-//       { new: true }
-//     );
-
-//     if (!updated) {
-//       return res.status(404).json({ message: "Subscription not found for this order_id" });
-//     }
-
-//     return res.status(200).json({
-//       message: "Payment info updated, subscription active",
-//       data: updated
-//     });
-
-//   } catch (err) {
-//     console.error(err);
-//     return res.status(500).json({ message: "Error updating payment", error: err.message });
-//   }
-// };
-
-
-
-// // Get all subscriptions
-// exports.getAllSubscriptions = async (req, res) => {
-//     try {
-//         const subscriptions = await SubscriptionSchema.find();
-//         res.status(200).json({ message: "Subscriptions fetched successfully", data: subscriptions });
-//     } catch (error) {
-//         res.status(500).json({ message: "Error fetching subscriptions", error: error.message });
-//     }
-// };
-
-// // Get single subscription by ID
-// exports.getSubscriptionById = async (req, res) => {
-//     try {
-//         console.log(req.query.user_id);
-
-//         const subscription = await SubscriptionSchema.findOne({ user_id: req.query.user_id })
-//             .populate({
-//                 path: 'channel_id',
-//                 select: 'channel_name _id phone email img'
-//             })
-//             .populate({
-//                 path: 'plan_id',
-//                 select: 'name price'
-//             })
-//             .lean(); // Convert to plain JS object
-
-//         if (!subscription) {
-//             return res.status(200).json({ 
-//                 message: "Subscription not found",
-//                 data: []
-
-//              });
-//         }
-
-//         res.status(200).json({
-//             message: "Subscription fetched successfully",
-//             data: [subscription]
-//         });
-//     } catch (error) {
-//         res.status(500).json({
-//             message: "Error fetching subscription",
-//             error: error.message
-//         });
-//     }
-// };
-
-
-// // Check active subscription for a single video
-// exports.checkVideoSubscription = async (req, res) => {
-//     try {
-//         const { user_id, video_id, channel_id } = req.query;
-
-//         if (!user_id || !video_id || !channel_id) {
-//             return res.status(400).json({ message: "Missing required parameters" });
-//         }
-
-//         const now = Date.now();
-        
-//         const activeSubscription = await SubscriptionSchema.findOne({
-//             user_id,
-//             video_id,
-//             channel_id,
-//             status: 1,
-//             timestamp_to: { $gt: now }
-//         });
-
-//         if (!activeSubscription) {
-//             return res.status(200).json({
-//                 message: "No active subscription found for this video",
-//                 isSubscribed: false,
-//                 data: []
-//             });
-//         }
-
-//         return res.status(200).json({
-//             message: "Active subscription found for this video",
-//             isSubscribed: true,
-//             data: activeSubscription
-//         });
-
-//     } catch (error) {
-//         res.status(500).json({
-//             message: "Error checking video subscription",
-//             error: error.message
-//         });
-//     }
-// };
-
-
-// // Update subscription by ID
-// exports.updateSubscription = async (req, res) => {
-//     try {
-//         const updatedSubscription = await SubscriptionSchema.findByIdAndUpdate(
-//             req.params.id,
-//             req.body,
-//             { new: true }
-//         );
-
-//         if (!updatedSubscription) {
-//             return res.status(404).json({ message: "Subscription not found" });
-//         }
-
-//         res.status(200).json({ message: "Subscription updated successfully", data: updatedSubscription });
-//     } catch (error) {
-//         res.status(500).json({ message: "Error updating subscription", error: error.message });
-//     }
-// };
-
-// // Delete subscription by ID
-// exports.deleteSubscription = async (req, res) => {
-//     try {
-//         const deletedSubscription = await SubscriptionSchema.findByIdAndDelete(req.params.id);
-//         if (!deletedSubscription) {
-//             return res.status(404).json({ message: "Subscription not found" });
-//         }
-
-//         res.status(200).json({ message: "Subscription deleted successfully" });
-//     } catch (error) {
-//         res.status(500).json({ message: "Error deleting subscription", error: error.message });
-//     }
-// };
