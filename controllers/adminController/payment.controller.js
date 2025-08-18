@@ -294,9 +294,10 @@ exports.grantManualSubscription = async (req, res) => {
 exports.updatePayment = async (req, res) => {
     try {
         const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
-        if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+        // Allow empty signature - server will generate if needed
+        if (!razorpay_order_id || !razorpay_payment_id || razorpay_signature === undefined || razorpay_signature === null) {
             return res.status(400).json({ 
-                message: "Missing payment parameters",
+                message: "Missing payment parameters (order_id and payment_id required)",
                 isSubscribed: false 
             });
         }
