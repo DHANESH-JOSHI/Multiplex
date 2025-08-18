@@ -314,8 +314,13 @@ exports.updatePayment = async (req, res) => {
                             razorpay_payment_id.startsWith('pay_fake') ||
                             razorpay_signature === 'test_signature';
         
-        // DEVELOPMENT MODE: Skip verification for testing
-        const isDevelopmentMode = process.env.NODE_ENV !== 'production' || req.headers['x-test-mode'] === 'true';
+        // DEVELOPMENT MODE: Only skip for explicit test mode header
+        const isDevelopmentMode = req.headers['x-test-mode'] === 'true';
+        
+        // Real Razorpay payment detection
+        const isRealRazorpayPayment = razorpay_payment_id.startsWith('pay_') && 
+                                    !isTestPayment && 
+                                    razorpay_payment_id.length > 15;
         
         let isValidSignature;
         
@@ -369,23 +374,33 @@ exports.updatePayment = async (req, res) => {
         }
 
         // Step 3: Get payment details and capture if needed
-        if (!isTestPayment && !isDevelopmentMode) {
+        console.log(`🔍 Payment processing decision:`, {
+            isTestPayment,
+            isDevelopmentMode,
+            isRealRazorpayPayment,
+            willCallAPI: isRealRazorpayPayment || (!isTestPayment && !isDevelopmentMode)
+        });
+
+        if (isRealRazorpayPayment || (!isTestPayment && !isDevelopmentMode)) {
             try {
-                console.log("💳 Fetching payment details from Razorpay...");
+                console.log("💳 Fetching payment details from Razorpay for:", razorpay_payment_id);
                 const paymentDetails = await getPaymentDetails(razorpay_payment_id);
                 console.log("💳 Payment details:", { 
                     payment_id: paymentDetails.payment.id, 
                     status: paymentDetails.payment.status,
-                    captured: paymentDetails.payment.captured 
+                    captured: paymentDetails.payment.captured,
+                    amount: paymentDetails.payment.amount
                 });
 
                 // Capture payment if not already captured
                 if (!paymentDetails.payment.captured && paymentDetails.payment.status === 'authorized') {
-                    console.log("🔄 Capturing payment:", razorpay_payment_id);
-                    await captureRazorpayPayment(razorpay_payment_id, paymentDetails.payment.amount);
-                    console.log("✅ Payment captured successfully");
+                    console.log("🔄 Capturing payment:", razorpay_payment_id, "Amount:", paymentDetails.payment.amount);
+                    const captureResult = await captureRazorpayPayment(razorpay_payment_id, paymentDetails.payment.amount);
+                    console.log("✅ Payment captured successfully:", captureResult.id);
                 } else if (paymentDetails.payment.captured) {
                     console.log("ℹ️  Payment already captured");
+                } else {
+                    console.log("⚠️  Payment status:", paymentDetails.payment.status);
                 }
 
             } catch (captureError) {
@@ -401,12 +416,16 @@ exports.updatePayment = async (req, res) => {
                     return res.status(500).json({
                         message: "Payment processing failed",
                         isSubscribed: false,
-                        error: captureError.message || "Razorpay API error"
+                        error: captureError.message || "Razorpay API error",
+                        debug: {
+                            payment_id: razorpay_payment_id,
+                            error_code: captureError.statusCode
+                        }
                     });
                 }
             }
         } else {
-            console.log("⚠️  DEVELOPMENT/TEST MODE: Skipping Razorpay API calls");
+            console.log("⚠️  DEVELOPMENT/TEST MODE: Skipping Razorpay API calls for:", razorpay_payment_id);
         }
 
         // Step 4: Update subscription if verification successful
