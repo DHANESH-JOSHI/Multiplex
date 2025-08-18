@@ -555,6 +555,189 @@ exports.getAllSubscriptions = async (req, res) => {
     }
 };
 
+// Get single subscription by user ID
+exports.getSubscriptionById = async (req, res) => {
+    try {
+        console.log(req.query.user_id);
+
+        const subscription = await SubscriptionSchema.findOne({ user_id: req.query.user_id })
+            .populate({
+                path: 'channel_id',
+                select: 'channel_name _id phone email img'
+            })
+            .populate({
+                path: 'plan_id',
+                select: 'name price'
+            })
+            .lean(); // Convert to plain JS object
+
+        if (!subscription) {
+            return res.status(200).json({ 
+                message: "Subscription not found",
+                data: []
+             });
+        }
+
+        res.status(200).json({
+            message: "Subscription fetched successfully",
+            data: [subscription]
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: "Error fetching subscription",
+            error: error.message
+        });
+    }
+};
+
+// Check active subscription for a single video
+exports.checkVideoSubscription = async (req, res) => {
+    try {
+        const { user_id, video_id, channel_id } = req.query;
+
+        if (!user_id || !video_id || !channel_id) {
+            return res.status(400).json({ message: "Missing required parameters" });
+        }
+
+        const now = Date.now();
+        
+        const activeSubscription = await SubscriptionSchema.findOne({
+            user_id,
+            video_id,
+            channel_id,
+            status: 1,
+            timestamp_to: { $gt: now }
+        });
+
+        if (!activeSubscription) {
+            return res.status(200).json({
+                message: "No active subscription found for this video",
+                isSubscribed: false,
+                data: []
+            });
+        }
+
+        return res.status(200).json({
+            message: "Active subscription found for this video",
+            isSubscribed: true,
+            data: activeSubscription
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            message: "Error checking video subscription",
+            error: error.message
+        });
+    }
+};
+
+// Update subscription by ID
+exports.updateSubscription = async (req, res) => {
+    try {
+        const updatedSubscription = await SubscriptionSchema.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            { new: true }
+        );
+
+        if (!updatedSubscription) {
+            return res.status(404).json({ message: "Subscription not found" });
+        }
+
+        res.status(200).json({ message: "Subscription updated successfully", data: updatedSubscription });
+    } catch (error) {
+        res.status(500).json({ message: "Error updating subscription", error: error.message });
+    }
+};
+
+// Delete subscription by ID
+exports.deleteSubscription = async (req, res) => {
+    try {
+        const deletedSubscription = await SubscriptionSchema.findByIdAndDelete(req.params.id);
+        if (!deletedSubscription) {
+            return res.status(404).json({ message: "Subscription not found" });
+        }
+
+        res.status(200).json({ message: "Subscription deleted successfully" });
+    } catch (error) {
+        res.status(500).json({ message: "Error deleting subscription", error: error.message });
+    }
+};
+
+// Process free content (Case 3)
+exports.processFreeContent = async (req, res) => {
+    try {
+        const {
+            user_id,
+            channel_id,
+            video_id,
+            custom_duration = 2 // Default 2 days for free content
+        } = req.body;
+
+        if (!user_id || !channel_id || !video_id) {
+            return res.status(400).json({
+                message: "Missing required parameters: user_id, channel_id, video_id",
+                isSubscribed: false
+            });
+        }
+
+        // Check if user already has active subscription
+        const now = Date.now();
+        const existing = await SubscriptionSchema.findOne({
+            user_id,
+            video_id,
+            channel_id,
+            status: 1,
+            timestamp_to: { $gt: now }
+        });
+
+        if (existing) {
+            return res.status(200).json({
+                message: "User already has active subscription for this video",
+                isSubscribed: true,
+                data: existing
+            });
+        }
+
+        // Create free subscription
+        const validityMs = custom_duration * 24 * 60 * 60 * 1000;
+        const timestamp_from = now;
+        const timestamp_to = now + validityMs;
+
+        const freeSubscription = new SubscriptionSchema({
+            user_id,
+            channel_id,
+            video_id,
+            plan_id: null,
+            price_amount: 0,
+            paid_amount: 0,
+            timestamp_from,
+            timestamp_to,
+            payment_method: "FREE",
+            payment_info: [],
+            ispayment: 1,
+            is_active: 1,
+            status: 1
+        });
+
+        const saved = await freeSubscription.save();
+
+        return res.status(201).json({
+            message: "Free content access granted successfully",
+            isSubscribed: true,
+            data: saved
+        });
+
+    } catch (error) {
+        console.error("Free content processing error:", error);
+        res.status(500).json({
+            message: "Error processing free content",
+            isSubscribed: false,
+            error: error.message
+        });
+    }
+};
+
 // ENHANCED: Handle Cash Payment (Case 4)
 exports.processCashPayment = async (req, res) => {
     const enhancedPaymentService = require('../../services/enhancedPaymentService');
