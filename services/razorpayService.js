@@ -97,6 +97,7 @@ const verifyRazorpayPayment = (payment_id, order_id, signature) => {
     hex_match: isHexMatch,
     base64_match: isBase64Match,
     is_valid: isValid,
+    key_secret_length: process.env.RAZORPAY_KEY_SECRET?.length || 0
   });
 
   return isValid;
