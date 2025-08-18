@@ -43,8 +43,8 @@ const userSchema = new mongoose.Schema(
   { collection: "user" }
 );
 
-userSchema.plugin(mongooseSequence, {
-  inc_field: "user_id",
-});
+// userSchema.plugin(mongooseSequence, {
+//   inc_field: "user_id",
+// });
 
 module.exports = mongoose.model("User", userSchema);
