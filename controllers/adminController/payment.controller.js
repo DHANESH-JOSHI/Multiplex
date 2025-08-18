@@ -1,5 +1,5 @@
 const axios = require("axios");
-const { createRazorpayOrder, verifyRazorpayPayment, getPaymentDetails, refundPayment } = require('../../services/razorpayService');
+const { createRazorpayOrder, verifyRazorpayPayment, getPaymentDetails, refundPayment, captureRazorpayPayment } = require('../../services/razorpayService');
 const SubscriptionSchema = require('../../models/subscription.model');
 const planSchema = require('../../models/plan.model');
 
@@ -290,80 +290,109 @@ exports.grantManualSubscription = async (req, res) => {
 };
 
 
-// ENHANCED: Update payment info with automatic Razorpay capture
+// Update payment info after Razorpay payment is done with verification and capture
 exports.updatePayment = async (req, res) => {
-    const enhancedPaymentService = require('../../services/enhancedPaymentService');
-    
     try {
-        const { 
-            razorpay_order_id, 
-            razorpay_payment_id, 
-            razorpay_signature, 
-            user_id, 
-            plan_id, 
-            video_id, 
-            channel_id,
-            price_amount,
-            paid_amount,
-            currencyCode
-        } = req.body;
-
-        // Validate required parameters
+        const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
         if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
             return res.status(400).json({ 
-                message: "Missing payment parameters: razorpay_order_id, razorpay_payment_id, razorpay_signature required",
+                message: "Missing payment parameters",
                 isSubscribed: false 
             });
         }
 
-        console.log(`🔄 Processing payment update with automatic capture:`, { 
-            razorpay_order_id, 
-            razorpay_payment_id: razorpay_payment_id.substr(0, 8) + '...' 
-        });
+        // Step 1: Verify payment with Razorpay
+        console.log("🔍 Payment verification request:", { razorpay_order_id, razorpay_payment_id });
+        
+        const isValidSignature = verifyRazorpayPayment(razorpay_payment_id, razorpay_order_id, razorpay_signature);
+        console.log("✅ Payment signature verified:", isValidSignature);
 
-        // Process payment with automatic capture using Enhanced Payment Service
-        const result = await enhancedPaymentService.processRazorpayPayment({
-            user_id,
-            plan_id,
-            video_id,
-            channel_id,
-            razorpay_order_id,
-            razorpay_payment_id,
-            razorpay_signature,
-            price_amount,
-            paid_amount,
-            currencyCode
-        });
+        if (!isValidSignature) {
+            return res.status(400).json({
+                message: "Invalid payment signature",
+                isSubscribed: false
+            });
+        }
 
-        if (result.alreadyProcessed) {
-            return res.status(200).json({
-                message: result.message,
-                isSubscribed: true,
-                data: result.subscription,
-                correlationId: result.correlationId
+        // Step 2: Find subscription by order_id
+        console.log("🔍 Looking for subscription with order_id:", razorpay_order_id);
+        
+        const existingSubscription = await SubscriptionSchema.findOne({
+            "payment_info.0.razorpay_order_id": razorpay_order_id
+        });
+        
+        console.log("📋 Found subscription:", !!existingSubscription);
+        
+        if (!existingSubscription) {
+            return res.status(404).json({
+                message: "Subscription not found for this order_id",
+                isSubscribed: false,
+                debug: { order_id: razorpay_order_id }
+            });
+        }
+
+        // Step 3: Get payment details and capture if needed
+        try {
+            const paymentDetails = await getPaymentDetails(razorpay_payment_id);
+            console.log("💳 Payment details:", { 
+                payment_id: paymentDetails.payment.id, 
+                status: paymentDetails.payment.status,
+                captured: paymentDetails.payment.captured 
+            });
+
+            // Capture payment if not already captured
+            if (!paymentDetails.payment.captured && paymentDetails.payment.status === 'authorized') {
+                console.log("🔄 Capturing payment:", razorpay_payment_id);
+                await captureRazorpayPayment(razorpay_payment_id, paymentDetails.payment.amount);
+                console.log("✅ Payment captured successfully");
+            }
+
+        } catch (captureError) {
+            console.error("❌ Payment capture failed:", captureError);
+            return res.status(500).json({
+                message: "Payment capture failed",
+                isSubscribed: false,
+                error: captureError.message
+            });
+        }
+
+        // Step 4: Update subscription if verification successful
+        const updated = await SubscriptionSchema.findOneAndUpdate(
+            { "payment_info.0.razorpay_order_id": razorpay_order_id },
+            {
+                $set: {
+                    "payment_info.0.razorpay_payment_id": razorpay_payment_id,
+                    "payment_info.0.razorpay_signature": razorpay_signature,
+                    "payment_info.0.status": "paid",
+                    ispayment: 1,
+                    is_active: 1,
+                    status: 1,
+                }
+            },
+            { new: true }
+        );
+
+        console.log("💾 Subscription updated:", !!updated);
+
+        if (!updated) {
+            return res.status(404).json({ 
+                message: "Subscription not found for this order_id",
+                isSubscribed: false 
             });
         }
 
         return res.status(200).json({
-            message: "Payment captured and subscription activated successfully",
+            message: "Payment verified, captured and subscription activated successfully",
             isSubscribed: true,
-            data: result.subscription,
-            paymentDetails: {
-                captured: true,
-                payment_id: result.paymentDetails?.id,
-                amount: result.paymentDetails?.amount,
-                currency: result.paymentDetails?.currency,
-                status: result.paymentDetails?.status
-            },
-            correlationId: result.correlationId
+            data: updated
         });
 
-    } catch (error) {
-        console.error("❌ Enhanced payment update failed:", error.message);
+    } catch (err) {
+        console.error(err);
         return res.status(500).json({ 
-            message: `Payment processing failed: ${error.message}`, 
+            message: "Error updating payment", 
             isSubscribed: false,
-            error: error.message 
+            error: err.message 
         });
     }
 };
