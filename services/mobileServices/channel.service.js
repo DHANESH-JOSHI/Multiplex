@@ -9,7 +9,7 @@ const mongoose = require('mongoose');
 
 const dayjs = require('dayjs');
 const relativeTime = require('dayjs/plugin/relativeTime');
-const { subscribe } = require('../../routes/indexRoutes');
+// Removed circular dependency: const { subscribe } = require('../../routes/indexRoutes');
 const subscriptionModel = require('../../models/subscription.model');
 const subcribeModel = require('../../models/subcribe.model');
 const channelModel = require('../../models/channel.model');
