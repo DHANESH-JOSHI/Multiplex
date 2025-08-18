@@ -97,15 +97,24 @@ const captureRazorpayPayment = async (payment_id, amount) => {
   }
 };
 
-// Service to get payment details
+// Service to get payment details with timeout
 const getPaymentDetails = async (payment_id) => {
   try {
     return new Promise((resolve, reject) => {
+      // Add timeout to prevent hanging
+      const timeout = setTimeout(() => {
+        console.error('⏰ Razorpay API timeout after 10 seconds');
+        reject(new Error('Razorpay API timeout'));
+      }, 10000); // 10 second timeout
+
       instance.payments.fetch(payment_id, (err, payment) => {
+        clearTimeout(timeout); // Clear timeout on response
+        
         if (err) {
           console.error('❌ Error fetching payment details:', err);
           return reject(err);
         }
+        console.log('✅ Payment details fetched successfully');
         resolve({ success: true, payment });
       });
     });
