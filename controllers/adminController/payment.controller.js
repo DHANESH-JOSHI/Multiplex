@@ -384,63 +384,74 @@ exports.updatePayment = async (req, res) => {
             willCallAPI: isRealRazorpayPayment || (!isTestPayment && !isDevelopmentMode)
         });
 
+        // Initialize capture status
+        let captureSuccessful = false;
+        let captureError = null;
+
         if (isRealRazorpayPayment || (!isTestPayment && !isDevelopmentMode)) {
             try {
                 console.log("💳 Fetching payment details from Razorpay for:", razorpay_payment_id);
                 
-                // Add timeout wrapper for the entire operation
-                const paymentOperationPromise = (async () => {
-                    const paymentDetails = await getPaymentDetails(razorpay_payment_id);
-                    console.log("💳 Payment details:", { 
-                        payment_id: paymentDetails.payment.id, 
-                        status: paymentDetails.payment.status,
-                        captured: paymentDetails.payment.captured,
-                        amount: paymentDetails.payment.amount
-                    });
+                const paymentDetails = await getPaymentDetails(razorpay_payment_id);
+                console.log("💳 Payment details:", { 
+                    payment_id: paymentDetails.payment.id, 
+                    status: paymentDetails.payment.status,
+                    captured: paymentDetails.payment.captured,
+                    amount: paymentDetails.payment.amount,
+                    currency: paymentDetails.payment.currency
+                });
 
-                    // Capture payment if not already captured
-                    if (!paymentDetails.payment.captured && paymentDetails.payment.status === 'authorized') {
-                        console.log("🔄 Capturing payment:", razorpay_payment_id, "Amount:", paymentDetails.payment.amount);
-                        const captureResult = await captureRazorpayPayment(razorpay_payment_id, paymentDetails.payment.amount);
-                        console.log("✅ Payment captured successfully:", captureResult.id);
-                    } else if (paymentDetails.payment.captured) {
-                        console.log("ℹ️  Payment already captured");
-                    } else {
-                        console.log("⚠️  Payment status:", paymentDetails.payment.status);
-                    }
-                })();
-
-                // Race between payment operation and timeout
-                await Promise.race([
-                    paymentOperationPromise,
-                    new Promise((_, reject) => 
-                        setTimeout(() => reject(new Error('Payment operation timeout')), 15000)
-                    )
-                ]);
-
-            } catch (captureError) {
-                console.error("❌ Payment API error:", captureError);
-                
-                // Check various error conditions
-                if (captureError.message === 'Payment operation timeout' || 
-                    captureError.message === 'Razorpay API timeout') {
-                    console.log("⏰ Payment API timeout - continuing without capture");
-                    // Continue processing - subscription will still be activated
-                } else if (captureError.statusCode === 400 && 
-                    captureError.error?.description?.includes('does not exist')) {
-                    console.log("⚠️  Payment ID not found in Razorpay - treating as successful");
-                    // Continue processing as successful
-                } else if (captureError.statusCode >= 500) {
-                    console.log("🔧 Razorpay server error - continuing without capture");
-                    // Continue processing for server errors
+                // Capture payment if not already captured
+                if (!paymentDetails.payment.captured && paymentDetails.payment.status === 'authorized') {
+                    console.log("🔄 Capturing payment:", razorpay_payment_id, "Amount:", paymentDetails.payment.amount, "Currency:", paymentDetails.payment.currency);
+                    
+                    const captureResult = await captureRazorpayPayment(
+                        razorpay_payment_id, 
+                        paymentDetails.payment.amount,
+                        paymentDetails.payment.currency
+                    );
+                    console.log("✅ Payment captured successfully:", captureResult.id);
+                    captureSuccessful = true;
+                    
+                } else if (paymentDetails.payment.captured) {
+                    console.log("ℹ️  Payment already captured");
+                    captureSuccessful = true;
                 } else {
-                    // For critical errors, return error but allow some to continue
-                    console.log("🚨 Critical payment error - but continuing for user experience");
-                    // Log error but don't fail the entire payment
+                    console.log("⚠️  Payment status not authorized:", paymentDetails.payment.status);
+                    captureError = `Payment status: ${paymentDetails.payment.status}`;
                 }
+
+            } catch (error) {
+                console.error("❌ Payment processing failed:", error);
+                captureError = error.message;
+                
+                // For real payments, capture must succeed
+                return res.status(400).json({
+                    message: "Payment capture failed. Subscription not activated.",
+                    isSubscribed: false,
+                    error: {
+                        type: "CAPTURE_FAILED",
+                        details: error.message,
+                        payment_id: razorpay_payment_id
+                    }
+                });
             }
         } else {
             console.log("⚠️  DEVELOPMENT/TEST MODE: Skipping Razorpay API calls for:", razorpay_payment_id);
+            captureSuccessful = true; // Allow test payments
+        }
+
+        // Only proceed with subscription if capture was successful
+        if (!captureSuccessful && !isTestPayment) {
+            return res.status(400).json({
+                message: "Payment capture required for subscription activation",
+                isSubscribed: false,
+                error: {
+                    type: "CAPTURE_REQUIRED",
+                    details: captureError || "Payment not captured",
+                    payment_id: razorpay_payment_id
+                }
+            });
         }
 
         // Step 4: Update subscription if verification successful

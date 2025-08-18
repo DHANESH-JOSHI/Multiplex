@@ -78,22 +78,44 @@ const verifyRazorpayPayment = (payment_id, order_id, signature) => {
   return isValid;
 };
 
-// Service to capture payment (for manual capture orders)
-const captureRazorpayPayment = async (payment_id, amount) => {
+// Service to capture payment (for manual capture orders) - FIXED FORMAT
+const captureRazorpayPayment = async (payment_id, amount, currency = 'INR') => {
   try {
+    console.log(`🔄 Attempting capture: ${payment_id}, Amount: ${amount}, Currency: ${currency}`);
+    
     return new Promise((resolve, reject) => {
-      instance.payments.capture(payment_id, amount, (err, payment) => {
+      // Add timeout for capture operation
+      const timeout = setTimeout(() => {
+        console.error('⏰ Capture API timeout after 8 seconds');
+        reject(new Error('Capture timeout'));
+      }, 8000);
+
+      // Correct Razorpay capture format: (payment_id, amount, currency, callback)
+      instance.payments.capture(payment_id, amount, currency, (err, payment) => {
+        clearTimeout(timeout);
+        
         if (err) {
-          console.error('❌ Razorpay Capture Error:', err);
+          console.error('❌ Razorpay Capture Error:', {
+            error: err.error || err,
+            payment_id,
+            amount,
+            currency
+          });
           return reject(err);
         }
-        console.log('✅ Payment captured successfully:', payment.id);
+        
+        console.log('✅ Payment captured successfully:', {
+          id: payment.id,
+          amount: payment.amount,
+          currency: payment.currency,
+          status: payment.status
+        });
         resolve(payment);
       });
     });
   } catch (error) {
     console.error('❌ Error capturing Razorpay payment:', error);
-    throw new Error('Error capturing Razorpay payment');
+    throw new Error('Error capturing Razorpay payment: ' + error.message);
   }
 };
 
