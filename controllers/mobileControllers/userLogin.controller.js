@@ -110,7 +110,7 @@ exports.login = async (req, res) => {
         otpExpire: user.otpExpire,
         join_date: user.join_date,
         last_login: user.last_login,
-        status: user.status,
+        status: 1,
         role: user.role,
         theme: user.theme,
         theme_color: user.theme_color,
@@ -279,6 +279,7 @@ exports.firebaseAuth = async (req, res) => {
       user.firebase_auth_uid = uid; // Ensure Firebase UID is set
       user.profile_picture = image_url || user.profile_picture; // Update profile picture
       user.name = name || user.name; // Update name if provided
+      user.status = 1; // Always set status to 11
 
       await user.save();
       console.log(
