@@ -5,17 +5,15 @@ const userSchema = new mongoose.Schema(
   {
     user_id: {
       type: mongoose.Schema.Types.ObjectId,
-      unique: true
+      unique: true,
     },
     name: String,
     slug: { type: String, required: false },
     username: String,
     email: String,
     is_password_set: { type: Number, required: true, default: 0 },
-    password: { type: String, required: function() { 
-      // Password not required for Firebase/OAuth users
-      return !this.firebase_auth_uid && !this.google_id; 
-    }},
+    password: { type: String },
+
     gender: { type: String, default: 1 },
     role: String,
     token: String,
@@ -25,7 +23,7 @@ const userSchema = new mongoose.Schema(
     join_date: Date,
     last_login: Date,
     deactivate_reason: String,
-    status: { type: mongoose.Schema.Types.Mixed, default: 1 },
+    status: { type: Number, default: 1 },
     phone: String,
     firebase_auth_uid: String,
     otp: {
@@ -46,7 +44,7 @@ const userSchema = new mongoose.Schema(
 );
 
 // Pre-save hook to automatically set user_id to _id
-userSchema.pre('save', function(next) {
+userSchema.pre("save", function (next) {
   if (!this.user_id) {
     this.user_id = this._id;
   }
@@ -54,7 +52,7 @@ userSchema.pre('save', function(next) {
 });
 
 // userSchema.plugin(mongooseSequence, {
-//   inc_field: "user_id", 
+//   inc_field: "user_id",
 // }); // Not needed since user_id = _id
 
 module.exports = mongoose.model("User", userSchema);
