@@ -23,7 +23,7 @@ const userSchema = new mongoose.Schema(
     join_date: Date,
     last_login: Date,
     deactivate_reason: String,
-    status: { type: String, default: "approve" },
+    status: { type: Number, default: 1 },
     phone: String,
     firebase_auth_uid: String,
     otp: {
