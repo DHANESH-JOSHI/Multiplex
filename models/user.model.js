@@ -12,7 +12,10 @@ const userSchema = new mongoose.Schema(
     username: String,
     email: String,
     is_password_set: { type: Number, required: true, default: 0 },
-    password: { type: String, required: true },
+    password: { type: String, required: function() { 
+      // Password not required for Firebase/OAuth users
+      return !this.firebase_auth_uid && !this.google_id; 
+    }},
     gender: { type: String, default: 1 },
     role: String,
     token: String,
