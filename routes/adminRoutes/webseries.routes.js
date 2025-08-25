@@ -9,20 +9,21 @@ const {
   getWebSeriesSeasons,
   getSeasonEpisodes,
   updateWebSeries,
-  deleteWebSeries
+  deleteWebSeries,
 } = require("../../controllers/adminController/webseries.controller");
 
-const {upload}  = require("../../middleware/multer");
+const { upload } = require("../../middleware/multer");
+const { cacheMiddleware } = require("../../middleware/nodeCache");
 
 // Routes for WebSeries
-router.post("/", upload.single('file'), addWebSeries);
+router.post("/", upload.single("file"), addWebSeries);
 router.post("/season", addSeason);
-router.post("/episode", upload.single('file'), addEpisode);
+router.post("/episode", upload.single("file"), addEpisode);
 router.get("/", getAllWebSeries);
-router.get("/details", getWebSeriesById);
+router.get("/details", cacheMiddleware(60), getWebSeriesById);
 router.get("/webSeries/seasons", getWebSeriesSeasons);
 router.get("/seasons/:seasonId/episodes", getSeasonEpisodes);
-router.put("/:id", upload.single('file'), updateWebSeries);
+router.put("/:id", upload.single("file"), updateWebSeries);
 router.delete("/:id", deleteWebSeries);
 
 module.exports = router;
