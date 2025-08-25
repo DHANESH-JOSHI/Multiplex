@@ -196,7 +196,6 @@ exports.verifyOtp = async (req, res) => {
       theme_color: user.theme_color,
       join_date: user.join_date,
       last_login: user.last_login,
-      status: 1,
       profile_picture: user.profile_picture,
       deviceid: user.deviceid,
       fcm: user.fcm,
