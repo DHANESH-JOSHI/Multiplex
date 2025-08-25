@@ -182,6 +182,7 @@ exports.verifyOtp = async (req, res) => {
 
     res.status(200).json({
       success: true,
+      status: "success",
       message: "Login successful",
       user_id: user._id, // ✅ MongoDB ObjectId as user_id
       mongodb_id: user._id, // ✅ Explicit MongoDB ID
