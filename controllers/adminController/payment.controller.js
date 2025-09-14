@@ -10,12 +10,13 @@ const SubscriptionSchema = require("../../models/subscription.model");
 const planSchema = require("../../models/plan.model");
 
 // Create Razorpay order and save subscription
+
 exports.addSubscription = async (req, res) => {
   try {
     const {
       plan_id,
       user_id,
-      ammount,
+      ammount, // keep same name if front-end sends this; consider normalizing later
       currencyCode,
       channel_id,
       video_id,
@@ -51,19 +52,372 @@ exports.addSubscription = async (req, res) => {
       });
     }
 
-    // 1. Create Razorpay Order
-    const razorpayOrder = await createRazorpayOrder(ammount, currencyCode);
-
-    const currentTimestamp = Date.now();
-    let validityPeriod;
-
-    // 2. Validity Period calculation
+    // 1. Validate presence of plan_id or video_id and compute validity
     if (!plan_id && !video_id) {
       return res.status(400).json({ message: "Missing plan_id or video_id" });
     }
 
+    const currentTimestamp = Date.now();
+    let validityPeriod = 0;
+    let plan = null;
+    let video = null;
+
     if (plan_id) {
-      // Plan present (priority)
+      plan = await planSchema.findById(plan_id);
+      if (!plan) {
+        return res.status(400).json({ message: "Invalid plan_id" });
+      }
+
+      if ((plan.type === "custom" && plan.day) || custom_duration) {
+        validityPeriod = (plan.day || custom_duration) * 24 * 60 * 60 * 1000;
+      } else {
+        switch (plan.type) {
+          case "monthly":
+            validityPeriod = 30 * 24 * 60 * 60 * 1000;
+            break;
+          case "quarterly":
+            validityPeriod = 90 * 24 * 60 * 60 * 1000;
+            break;
+          case "yearly":
+            validityPeriod = 365 * 24 * 60 * 60 * 1000;
+            break;
+          default:
+            validityPeriod = 30 * 24 * 60 * 60 * 1000;
+        }
+      }
+    } else if (video_id && !plan_id) {
+      video = await videoSchema.findById(video_id);
+      if (!video) {
+        return res.status(400).json({ message: "Invalid video_id" });
+      }
+      validityPeriod = 48 * 60 * 60 * 1000; // 48 hours
+    }
+
+    const timestamp_from = currentTimestamp;
+    const timestamp_to = currentTimestamp + validityPeriod;
+
+    // 2. Determine finalAmount (fallback to plan/video if ammount missing/zero)
+    // Assumption: incoming `ammount` is in the same unit Razorpay expects (usually paise for INR).
+    // If your front-end sends rupees, convert to paise here: finalAmount = Math.round(ammount * 100)
+    let finalAmount = Number(ammount); // may be NaN if not provided
+    if (!finalAmount || finalAmount <= 0) {
+      if (plan) {
+        // assume plan.price_amount exists and is in same unit as expected by createRazorpayOrder
+        finalAmount = Number(plan.price_amount) || 0;
+      } else if (video) {
+        finalAmount = Number(video.price_amount) || 0;
+      } else {
+        finalAmount = Number(price_amount) || 0;
+      }
+    }
+
+    // 3. Razorpay minimum validation for INR
+    // Razorpay requires >= 100 paise (₹1) for INR. If you store rupees, convert accordingly.
+    if (currencyCode === "INR" && finalAmount > 0 && finalAmount < 100) {
+      return res.status(400).json({
+        message: "Order amount less than minimum allowed (₹1).",
+        minAmount: 100,
+        providedAmount: finalAmount,
+      });
+    }
+
+    // 4. If finalAmount === 0 => create a FREE subscription (skip Razorpay)
+    let razorpayOrder = null;
+    let payment_method = "free";
+    let payment_info = [];
+    let receipt = null;
+    let currency = currencyCode || null;
+
+    if (finalAmount > 0) {
+      // create razorpay order only for paid subscriptions
+      // ensure createRazorpayOrder expects the same unit as finalAmount (paise vs rupees)
+      razorpayOrder = await createRazorpayOrder(finalAmount, currencyCode);
+
+      if (!razorpayOrder || !razorpayOrder.id) {
+        // defensive: if create failed somehow
+        return res
+          .status(500)
+          .json({ message: "Failed to create Razorpay order" });
+      }
+
+      payment_method = "Razorpay";
+      payment_info = [
+        {
+          razorpay_order_id: razorpayOrder.id,
+          razorpay_payment_id: "",
+          razorpay_signature: "",
+          amount: razorpayOrder.amount,
+          currency: razorpayOrder.currency,
+          status: "created",
+        },
+      ];
+      receipt = razorpayOrder.receipt;
+      currency = razorpayOrder.currency;
+    } else {
+      // Free subscription — no payment fields
+      payment_method = "free";
+      payment_info = [];
+      receipt = null;
+      currency = currencyCode || null;
+    }
+
+    // 5. Save Subscription
+    const newSubscription = new SubscriptionSchema({
+      plan_id: plan_id || null,
+      user_id,
+      channel_id,
+      video_id: video_id || null,
+      price_amount: finalAmount, // store resolved price
+      paid_amount: finalAmount > 0 ? 0 : 0,
+      timestamp_from,
+      timestamp_to,
+      payment_method,
+      payment_info,
+      payment_timestamp: currentTimestamp,
+      receipt,
+      razorpay_order_id: razorpayOrder ? razorpayOrder.id : null,
+      currency,
+      amount: razorpayOrder ? razorpayOrder.amount : finalAmount,
+      amount_due: razorpayOrder ? razorpayOrder.amount_due : 0,
+      amount_paid: razorpayOrder ? razorpayOrder.amount_paid : 0,
+      created_at: razorpayOrder ? razorpayOrder.created_at : currentTimestamp,
+      status: 1,
+    });
+
+    const savedSubscription = await newSubscription.save();
+
+    return res.status(200).json({
+      message:
+        finalAmount === 0
+          ? "Free subscription activated successfully"
+          : "Razorpay order created and subscription added successfully",
+      subscription: [savedSubscription],
+      razorpayOrder,
+    });
+  } catch (error) {
+    console.error("Error in addSubscription:", error);
+    return res.status(500).json({
+      message: "Failed to create subscription with payment",
+      error: error.message,
+    });
+  }
+};
+
+// exports.addSubscription = async (req, res) => {
+//   try {
+//     const {
+//       plan_id,
+//       user_id,
+//       ammount,
+//       currencyCode,
+//       channel_id,
+//       video_id,
+//       country,
+//       price_amount,
+//       paid_amount,
+//       custom_duration,
+//     } = req.body;
+
+//     const now = Date.now();
+
+//     // 0. Check if user already has an active subscription
+//     const activeConditions = {
+//       user_id,
+//       channel_id,
+//       status: 1,
+//       timestamp_to: { $gt: now },
+//     };
+
+//     const existingSubscriptions = await SubscriptionSchema.find({
+//       ...activeConditions,
+//       $or: [
+//         plan_id ? { plan_id } : null,
+//         video_id ? { video_id } : null,
+//       ].filter(Boolean),
+//     });
+
+//     if (existingSubscriptions.length > 0) {
+//       return res.status(200).json({
+//         message:
+//           "User already has an active subscription for this plan or video",
+//         subscription: existingSubscriptions,
+//       });
+//     }
+
+//     // 1. Create Razorpay Order
+//     const razorpayOrder = await createRazorpayOrder(ammount, currencyCode);
+
+//     const currentTimestamp = Date.now();
+//     let validityPeriod;
+
+//     // 2. Validity Period calculation
+//     if (!plan_id && !video_id) {
+//       return res.status(400).json({ message: "Missing plan_id or video_id" });
+//     }
+
+//     if (plan_id) {
+//       // Plan present (priority)
+//       const plan = await planSchema.findById(plan_id);
+//       if (!plan) {
+//         return res.status(400).json({ message: "Invalid plan_id" });
+//       }
+
+//       if ((plan.type === "custom" && plan.day) || custom_duration) {
+//         validityPeriod = (plan.day || custom_duration) * 24 * 60 * 60 * 1000;
+//       } else {
+//         switch (plan.type) {
+//           case "monthly":
+//             validityPeriod = 30 * 24 * 60 * 60 * 1000;
+//             break;
+//           case "quarterly":
+//             validityPeriod = 90 * 24 * 60 * 60 * 1000;
+//             break;
+//           case "yearly":
+//             validityPeriod = 365 * 24 * 60 * 60 * 1000;
+//             break;
+//           default:
+//             validityPeriod = 30 * 24 * 60 * 60 * 1000;
+//         }
+//       }
+//     } else if (video_id && !plan_id) {
+//       // Only video present
+//       validityPeriod = 48 * 60 * 60 * 1000; // 48 hours
+//     }
+
+//     const timestamp_from = currentTimestamp;
+//     const timestamp_to = currentTimestamp + validityPeriod;
+
+//     // 3. Save Subscription
+//     const newSubscription = new SubscriptionSchema({
+//       plan_id: plan_id || null,
+//       user_id,
+//       channel_id,
+//       video_id: video_id || null,
+//       price_amount,
+//       paid_amount,
+//       timestamp_from,
+//       timestamp_to,
+//       payment_method: "Razorpay",
+//       payment_info: [
+//         {
+//           razorpay_order_id: razorpayOrder.id,
+//           razorpay_payment_id: "",
+//           razorpay_signature: "",
+//           amount: razorpayOrder.amount,
+//           currency: razorpayOrder.currency,
+//           status: "created",
+//         },
+//       ],
+//       payment_timestamp: currentTimestamp,
+//       receipt: razorpayOrder.receipt,
+//       razorpay_order_id: razorpayOrder.id,
+//       currency: razorpayOrder.currency,
+//       amount: razorpayOrder.amount,
+//       amount_due: razorpayOrder.amount_due,
+//       amount_paid: razorpayOrder.amount_paid,
+//       created_at: razorpayOrder.created_at,
+//       status: 1,
+//     });
+
+//     const savedSubscription = await newSubscription.save();
+
+//     res.status(200).json({
+//       message: "Razorpay order created and subscription added successfully",
+//       subscription: [savedSubscription],
+//       razorpayOrder,
+//     });
+//   } catch (error) {
+//     console.error("Error in createSubscriptionWithPayment:", error);
+//     res
+//       .status(500)
+//       .json({
+//         message: "Failed to create subscription with payment",
+//         error: error.message,
+//       });
+//   }
+// };
+
+// Create In-App Purchase subscription (Apple Pay/Google Play)
+exports.addInAppSubscription = async (req, res) => {
+  try {
+    const {
+      plan_id,
+      user_id,
+      channel_id,
+      video_id,
+      price_amount,
+      paid_amount,
+      custom_duration,
+      platform, // "apple" or "google"
+      transaction_id, // Apple transaction ID or Google purchase token
+      product_id, // App Store/Play Store product ID
+      receipt_data, // Base64 receipt (Apple) or JSON receipt (Google)
+      original_transaction_id, // For Apple subscriptions
+      purchase_date,
+      expires_date,
+    } = req.body;
+
+    // Validate required fields
+    if (!user_id || !platform || !transaction_id) {
+      return res.status(400).json({
+        message:
+          "Missing required parameters: user_id, platform, transaction_id",
+      });
+    }
+
+    if (!plan_id && !video_id) {
+      return res.status(400).json({ message: "Missing plan_id or video_id" });
+    }
+
+    if (!["apple", "google"].includes(platform.toLowerCase())) {
+      return res
+        .status(400)
+        .json({ message: "Platform must be 'apple' or 'google'" });
+    }
+
+    const now = Date.now();
+
+    // Check if user already has an active subscription
+    const activeConditions = {
+      user_id,
+      channel_id,
+      status: 1,
+      timestamp_to: { $gt: now },
+    };
+
+    const existingSubscriptions = await SubscriptionSchema.find({
+      ...activeConditions,
+      $or: [
+        plan_id ? { plan_id } : null,
+        video_id ? { video_id } : null,
+      ].filter(Boolean),
+    });
+
+    if (existingSubscriptions.length > 0) {
+      return res.status(200).json({
+        message:
+          "User already has an active subscription for this plan or video",
+        subscription: existingSubscriptions,
+      });
+    }
+
+    // Check for duplicate transaction
+    const existingTransaction = await SubscriptionSchema.findOne({
+      "payment_info.transaction_id": transaction_id,
+    });
+
+    if (existingTransaction) {
+      return res.status(400).json({
+        message: "Transaction already processed",
+        subscription: existingTransaction,
+      });
+    }
+
+    const currentTimestamp = Date.now();
+    let validityPeriod;
+
+    // Validity Period calculation
+    if (plan_id) {
       const plan = await planSchema.findById(plan_id);
       if (!plan) {
         return res.status(400).json({ message: "Invalid plan_id" });
@@ -87,14 +441,17 @@ exports.addSubscription = async (req, res) => {
         }
       }
     } else if (video_id && !plan_id) {
-      // Only video present
       validityPeriod = 48 * 60 * 60 * 1000; // 48 hours
     }
 
     const timestamp_from = currentTimestamp;
     const timestamp_to = currentTimestamp + validityPeriod;
 
-    // 3. Save Subscription
+    // Create payment method string
+    const paymentMethod =
+      platform.toLowerCase() === "apple" ? "Apple Pay" : "Google Play";
+
+    // Save Subscription
     const newSubscription = new SubscriptionSchema({
       plan_id: plan_id || null,
       user_id,
@@ -104,206 +461,48 @@ exports.addSubscription = async (req, res) => {
       paid_amount,
       timestamp_from,
       timestamp_to,
-      payment_method: "Razorpay",
+      payment_method: paymentMethod,
       payment_info: [
         {
-          razorpay_order_id: razorpayOrder.id,
-          razorpay_payment_id: "",
-          razorpay_signature: "",
-          amount: razorpayOrder.amount,
-          currency: razorpayOrder.currency,
-          status: "created",
+          platform: platform.toLowerCase(),
+          transaction_id,
+          product_id,
+          receipt_data,
+          original_transaction_id,
+          purchase_date: purchase_date || currentTimestamp,
+          expires_date: expires_date || timestamp_to,
+          amount: paid_amount,
+          currency: "USD", // Default for in-app purchases
+          status: "paid",
         },
       ],
       payment_timestamp: currentTimestamp,
-      receipt: razorpayOrder.receipt,
-      razorpay_order_id: razorpayOrder.id,
-      currency: razorpayOrder.currency,
-      amount: razorpayOrder.amount,
-      amount_due: razorpayOrder.amount_due,
-      amount_paid: razorpayOrder.amount_paid,
-      created_at: razorpayOrder.created_at,
+      receipt: transaction_id,
+      currency: "USD",
+      amount: paid_amount,
+      amount_due: 0,
+      amount_paid: paid_amount,
+      created_at: currentTimestamp,
+      ispayment: 1,
+      is_active: 1,
       status: 1,
     });
 
     const savedSubscription = await newSubscription.save();
 
     res.status(200).json({
-      message: "Razorpay order created and subscription added successfully",
+      message: `${paymentMethod} subscription added successfully`,
       subscription: [savedSubscription],
-      razorpayOrder,
+      platform: platform.toLowerCase(),
+      transaction_id,
     });
   } catch (error) {
-    console.error("Error in createSubscriptionWithPayment:", error);
-    res
-      .status(500)
-      .json({
-        message: "Failed to create subscription with payment",
-        error: error.message,
-      });
+    console.error("Error in addInAppSubscription:", error);
+    res.status(500).json({
+      message: "Failed to create in-app subscription",
+      error: error.message,
+    });
   }
-};
-
-// Create In-App Purchase subscription (Apple Pay/Google Play)
-exports.addInAppSubscription = async (req, res) => {
-    try {
-        const {
-            plan_id,
-            user_id,
-            channel_id,
-            video_id,
-            price_amount,
-            paid_amount,
-            custom_duration,
-            platform, // "apple" or "google"
-            transaction_id, // Apple transaction ID or Google purchase token
-            product_id, // App Store/Play Store product ID
-            receipt_data, // Base64 receipt (Apple) or JSON receipt (Google)
-            original_transaction_id, // For Apple subscriptions
-            purchase_date,
-            expires_date
-        } = req.body;
-
-        // Validate required fields
-        if (!user_id || !platform || !transaction_id) {
-            return res.status(400).json({ 
-                message: "Missing required parameters: user_id, platform, transaction_id" 
-            });
-        }
-
-        if (!plan_id && !video_id) {
-            return res.status(400).json({ message: "Missing plan_id or video_id" });
-        }
-
-        if (!["apple", "google"].includes(platform.toLowerCase())) {
-            return res.status(400).json({ message: "Platform must be 'apple' or 'google'" });
-        }
-
-        const now = Date.now();
-
-        // Check if user already has an active subscription
-        const activeConditions = {
-            user_id,
-            channel_id,
-            status: 1,
-            timestamp_to: { $gt: now }
-        };
-
-        const existingSubscriptions = await SubscriptionSchema.find({
-            ...activeConditions,
-            $or: [
-                plan_id ? { plan_id } : null,
-                video_id ? { video_id } : null
-            ].filter(Boolean)
-        });
-
-        if (existingSubscriptions.length > 0) {
-            return res.status(200).json({
-                message: "User already has an active subscription for this plan or video",
-                subscription: existingSubscriptions
-            });
-        }
-
-        // Check for duplicate transaction
-        const existingTransaction = await SubscriptionSchema.findOne({
-            "payment_info.transaction_id": transaction_id
-        });
-
-        if (existingTransaction) {
-            return res.status(400).json({
-                message: "Transaction already processed",
-                subscription: existingTransaction
-            });
-        }
-
-        const currentTimestamp = Date.now();
-        let validityPeriod;
-
-        // Validity Period calculation
-        if (plan_id) {
-            const plan = await planSchema.findById(plan_id);
-            if (!plan) {
-                return res.status(400).json({ message: "Invalid plan_id" });
-            }
-
-            if ((plan.type === "custom" && plan.day) || custom_duration) {
-                validityPeriod = (plan.day || custom_duration) * 24 * 60 * 60 * 1000;
-            } else {
-                switch (plan.type) {
-                    case "monthly":
-                        validityPeriod = 30 * 24 * 60 * 60 * 1000;
-                        break;
-                    case "quarterly":
-                        validityPeriod = 90 * 24 * 60 * 60 * 1000;
-                        break;
-                    case "yearly":
-                        validityPeriod = 365 * 24 * 60 * 60 * 1000;
-                        break;
-                    default:
-                        validityPeriod = 30 * 24 * 60 * 60 * 1000;
-                }
-            }
-        } else if (video_id && !plan_id) {
-            validityPeriod = 48 * 60 * 60 * 1000; // 48 hours
-        }
-
-        const timestamp_from = currentTimestamp;
-        const timestamp_to = currentTimestamp + validityPeriod;
-
-        // Create payment method string
-        const paymentMethod = platform.toLowerCase() === "apple" ? "Apple Pay" : "Google Play";
-
-        // Save Subscription
-        const newSubscription = new SubscriptionSchema({
-            plan_id: plan_id || null,
-            user_id,
-            channel_id,
-            video_id: video_id || null,
-            price_amount,
-            paid_amount,
-            timestamp_from,
-            timestamp_to,
-            payment_method: paymentMethod,
-            payment_info: [{
-                platform: platform.toLowerCase(),
-                transaction_id,
-                product_id,
-                receipt_data,
-                original_transaction_id,
-                purchase_date: purchase_date || currentTimestamp,
-                expires_date: expires_date || timestamp_to,
-                amount: paid_amount,
-                currency: "USD", // Default for in-app purchases
-                status: "paid"
-            }],
-            payment_timestamp: currentTimestamp,
-            receipt: transaction_id,
-            currency: "USD",
-            amount: paid_amount,
-            amount_due: 0,
-            amount_paid: paid_amount,
-            created_at: currentTimestamp,
-            ispayment: 1,
-            is_active: 1,
-            status: 1
-        });
-
-        const savedSubscription = await newSubscription.save();
-
-        res.status(200).json({
-            message: `${paymentMethod} subscription added successfully`,
-            subscription: [savedSubscription],
-            platform: platform.toLowerCase(),
-            transaction_id
-        });
-
-    } catch (error) {
-        console.error("Error in addInAppSubscription:", error);
-        res.status(500).json({ 
-            message: "Failed to create in-app subscription", 
-            error: error.message 
-        });
-    }
 };
 
 exports.addSingleVideoPurchase = async (req, res) => {
@@ -427,11 +626,9 @@ exports.grantManualSubscription = async (req, res) => {
     } = req.body;
 
     if (!user_id || (!plan_id && !video_id)) {
-      return res
-        .status(400)
-        .json({
-          message: "Missing required parameters (user_id + plan_id/video_id)",
-        });
+      return res.status(400).json({
+        message: "Missing required parameters (user_id + plan_id/video_id)",
+      });
     }
 
     const currentTimestamp = Date.now();
@@ -811,12 +1008,10 @@ exports.updatePayment = async (req, res) => {
 exports.getAllSubscriptions = async (req, res) => {
   try {
     const subscriptions = await SubscriptionSchema.find();
-    res
-      .status(200)
-      .json({
-        message: "Subscriptions fetched successfully",
-        data: subscriptions,
-      });
+    res.status(200).json({
+      message: "Subscriptions fetched successfully",
+      data: subscriptions,
+    });
   } catch (error) {
     res
       .status(500)
@@ -914,12 +1109,10 @@ exports.updateSubscription = async (req, res) => {
       return res.status(404).json({ message: "Subscription not found" });
     }
 
-    res
-      .status(200)
-      .json({
-        message: "Subscription updated successfully",
-        data: updatedSubscription,
-      });
+    res.status(200).json({
+      message: "Subscription updated successfully",
+      data: updatedSubscription,
+    });
   } catch (error) {
     res
       .status(500)
