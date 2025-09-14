@@ -8,6 +8,7 @@ const {
 } = require("../../services/razorpayService");
 const SubscriptionSchema = require("../../models/subscription.model");
 const planSchema = require("../../models/plan.model");
+const videosModel = require("../../models/videos.model");
 
 // Create Razorpay order and save subscription
 
@@ -86,7 +87,7 @@ exports.addSubscription = async (req, res) => {
         }
       }
     } else if (video_id && !plan_id) {
-      video = await videoSchema.findById(video_id);
+      video = await videosModel.findById(video_id);
       if (!video) {
         return res.status(400).json({ message: "Invalid video_id" });
       }
