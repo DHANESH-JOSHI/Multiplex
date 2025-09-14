@@ -49,7 +49,7 @@ const subscriptionSchema = new mongoose.Schema(
     ispayment: { type: Number, default: 0 },
     is_active: { type: Boolean, default: true },
 
-    receipt: { type: String, required: false },
+    receipt: { type: String, required: false, default: "" },
     razorpay_order_id: { type: String },
 
     currency: { type: String },
