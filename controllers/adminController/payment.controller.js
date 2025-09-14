@@ -175,7 +175,7 @@ exports.addSubscription = async (req, res) => {
       payment_method,
       payment_info,
       payment_timestamp: currentTimestamp,
-      receipt: receipt || "Free" || null,
+      receipt,
       razorpay_order_id: razorpayOrder ? razorpayOrder.id : null,
       currency,
       amount: razorpayOrder ? razorpayOrder.amount : finalAmount,
