@@ -29,7 +29,6 @@ exports.addSubscription = async (req, res) => {
 
     const now = Date.now();
 
-    // 0. Check if user already has an active subscription
     const activeConditions = {
       user_id,
       channel_id,
@@ -45,7 +44,6 @@ exports.addSubscription = async (req, res) => {
       ].filter(Boolean),
     });
 
-    // 1. Validate presence of plan_id or video_id and compute validity
     if (!plan_id && !video_id) {
       return res.status(400).json({ message: "Missing plan_id or video_id" });
     }
@@ -83,19 +81,15 @@ exports.addSubscription = async (req, res) => {
       if (!video) {
         return res.status(400).json({ message: "Invalid video_id" });
       }
-      validityPeriod = 48 * 60 * 60 * 1000; // 48 hours
+      validityPeriod = 48 * 60 * 60 * 1000;
     }
 
     const timestamp_from = currentTimestamp;
     const timestamp_to = currentTimestamp + validityPeriod;
 
-    // 2. Determine finalAmount (fallback to plan/video if ammount missing/zero)
-    // Assumption: incoming `ammount` is in the same unit Razorpay expects (usually paise for INR).
-    // If your front-end sends rupees, convert to paise here: finalAmount = Math.round(ammount * 100)
-    let finalAmount = Number(ammount); // may be NaN if not provided
+    let finalAmount = Number(ammount);
     if (!finalAmount || finalAmount <= 0) {
       if (plan) {
-        // assume plan.price_amount exists and is in same unit as expected by createRazorpayOrder
         finalAmount = Number(plan.price_amount) || 0;
       } else if (video) {
         finalAmount = Number(video.price_amount) || 0;
@@ -105,7 +99,6 @@ exports.addSubscription = async (req, res) => {
     }
 
     // 3. Razorpay minimum validation for INR
-    // Razorpay requires >= 100 paise (₹1) for INR. If you store rupees, convert accordingly.
     if (currencyCode === "INR" && finalAmount > 0 && finalAmount < 100) {
       return res.status(400).json({
         message: "Order amount less than minimum allowed (₹1).",
@@ -132,7 +125,14 @@ exports.addSubscription = async (req, res) => {
           .status(500)
           .json({ message: "Failed to create Razorpay order" });
       }
-
+      if (existingSubscriptions.length > 0) {
+        return res.status(200).json({
+          message:
+            "User already has an active subscription for this plan or video",
+          subscription: existingSubscriptions,
+          razorpayOrder,
+        });
+      }
       payment_method = "Razorpay";
       payment_info = [
         {
@@ -154,14 +154,6 @@ exports.addSubscription = async (req, res) => {
       currency = currencyCode || null;
     }
 
-    if (existingSubscriptions.length > 0) {
-      return res.status(200).json({
-        message:
-          "User already has an active subscription for this plan or video",
-        subscription: existingSubscriptions,
-        razorpayOrder,
-      });
-    }
     // 5. Save Subscription
     const newSubscription = new SubscriptionSchema({
       plan_id: plan_id || null,
@@ -514,20 +506,20 @@ exports.addSingleVideoPurchase = async (req, res) => {
       video_id,
       country = "",
       currencyCode = "INR",
-      price_amount = 0,
-      paid_amount = 0,
-      custom_duration,
+      price_amount = 0, // Displayed price
+      paid_amount = 0, // Final amount (after discounts)
+      custom_duration, // Optional: duration in days
     } = req.body;
 
+    // 1. Basic validation
     if (!user_id || !channel_id || !video_id) {
       return res
         .status(400)
         .json({ message: "user_id, channel_id, and video_id are required" });
     }
 
+    // 2. Check if user already has an active subscription for this video
     const now = Date.now();
-
-    // 1. Check if user already has an active subscription for this video
     const existing = await SubscriptionSchema.findOne({
       user_id,
       video_id,
@@ -535,27 +527,20 @@ exports.addSingleVideoPurchase = async (req, res) => {
       status: 1,
       timestamp_to: { $gt: now },
     });
-
     if (existing) {
-      const existingPaymentInfo =
-        existing.payment_info && existing.payment_info.length
-          ? existing.payment_info[0]
-          : null;
-
       return res.status(200).json({
         message: "User already has an active subscription for this video",
         subscription: existing,
-        razorpayOrder: existingPaymentInfo || null,
       });
     }
 
-    // 2. Create Razorpay Order only if paid_amount > 0
+    // 3. Create Razorpay Order (only if paid_amount > 0)
     let razorpayOrder = null;
     if (paid_amount > 0) {
       razorpayOrder = await createRazorpayOrder(paid_amount, currencyCode);
     }
 
-    // 3. Determine validity duration (default: 48 hours, or custom)
+    // 4. Determine validity duration (default: 48 hours, or custom)
     const validityMs = custom_duration
       ? custom_duration * 24 * 60 * 60 * 1000
       : 48 * 60 * 60 * 1000;
@@ -563,7 +548,7 @@ exports.addSingleVideoPurchase = async (req, res) => {
     const timestamp_from = now;
     const timestamp_to = now + validityMs;
 
-    // 4. Save subscription
+    // 5. Save subscription
     const subDoc = new SubscriptionSchema({
       user_id,
       channel_id,
@@ -600,6 +585,7 @@ exports.addSingleVideoPurchase = async (req, res) => {
 
     const saved = await subDoc.save();
 
+    // 6. Return success response
     res.status(201).json({
       message:
         paid_amount > 0

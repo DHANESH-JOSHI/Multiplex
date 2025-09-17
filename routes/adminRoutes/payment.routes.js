@@ -20,7 +20,6 @@ const {
   directCapturePayment,
 } = require("../../controllers/adminController/directCapture.controller");
 
-// Existing routes
 router.post("/", addSubscription);
 router.post("/single", addSingleVideoPurchase);
 router.post("/manual", grantManualSubscription);
@@ -32,12 +31,11 @@ router.get("/check_video_subscription", checkVideoSubscription);
 router.put("/:id", updateSubscription);
 router.delete("/:id", deleteSubscription);
 
-// NEW ENHANCED ROUTES for 4 Business Cases
-router.post("/free", processFreeContent); // Case 3: Free Content
-router.post("/cash", processCashPayment); // Case 4: Cash Payment
-router.post("/refund", manualRefundSubscription); // Enhanced refund
+router.post("/free", processFreeContent);
+router.post("/cash", processCashPayment);
+router.post("/refund", manualRefundSubscription);
 router.get("/details/:subscription_id", getSubscriptionPaymentDetails);
-// DIRECT CAPTURE API - Replace receipt API
+
 router.post("/capture", directCapturePayment); // Direct Razorpay capture API
 
 module.exports = router;
