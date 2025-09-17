@@ -7,7 +7,7 @@ const { upload, deleteFileAfterResponse } = require("../../middleware/multer");
 // Routes
 router.get(
   "/",
-  cacheMiddleware(60),
+  cacheMiddleware(5),
   deleteFileAfterResponse,
   MovieController.getAllMovies
 ); // ,
