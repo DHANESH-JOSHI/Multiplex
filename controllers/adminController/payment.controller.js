@@ -535,12 +535,6 @@ exports.addSingleVideoPurchase = async (req, res) => {
       status: 1,
       timestamp_to: { $gt: now },
     });
-    if (existing) {
-      return res.status(200).json({
-        message: "User already has an active subscription for this video",
-        subscription: existing,
-      });
-    }
 
     // 3. Create Razorpay Order (only if paid_amount > 0)
     let razorpayOrder = null;
@@ -556,6 +550,13 @@ exports.addSingleVideoPurchase = async (req, res) => {
     const timestamp_from = now;
     const timestamp_to = now + validityMs;
 
+    if (existing) {
+      return res.status(200).json({
+        message: "User already has an active subscription for this video",
+        subscription: existing,
+        razorpayOrder,
+      });
+    }
     // 5. Save subscription
     const subDoc = new SubscriptionSchema({
       user_id,
