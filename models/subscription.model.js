@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const paymentInfoSchema = new mongoose.Schema(
   {
-    razorpay_order_id: { type: String, required: true },
+    razorpay_order_id: { type: String, required: false },
     razorpay_payment_id: { type: String, default: "" }, // optional now
     razorpay_signature: { type: String, default: "" }, // optional now
     amount: { type: Number, required: true },
